@@ -1,0 +1,214 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums derivados del SQL
+enum EstadoGeneral {
+  activo
+  inactivo
+}
+
+enum EstadoCorto {
+  B
+  D
+  I
+  FS
+  O
+  R
+  OB
+}
+
+enum TipoMovimiento {
+  SALIDA
+  DEVOLUCION
+}
+
+model categorias {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique @db.VarChar(100)
+  descripcion String?   @db.Text
+  estado      EstadoGeneral @default(activo)
+  created_at  DateTime  @default(now()) @db.Timestamp(0)
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamp(0)
+
+  subcategorias subcategorias[]
+  elementos     elementos[]
+
+  @@map("categorias")
+}
+
+model subcategorias {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @db.VarChar(100)
+  descripcion String?   @db.Text
+  categoria_id Int
+  estado      EstadoGeneral @default(activo)
+  created_at  DateTime  @default(now()) @db.Timestamp(0)
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamp(0)
+
+  categoria categorias @relation(fields: [categoria_id], references: [id], onDelete: Cascade)
+  elementos elementos[]
+
+  @@unique([nombre, categoria_id], map: "unique_subcategoria")
+  @@index([categoria_id])
+  @@map("subcategorias")
+}
+
+model elementos {
+  id               Int         @id @default(autoincrement())
+  categoria_id     Int
+  subcategoria_id  Int?
+  cantidad         Int         @default(1)
+  serie            String      @db.VarChar(100)
+  marca            String?     @db.VarChar(100)
+  modelo           String?     @db.VarChar(100)
+  ubicacion        String?     @db.VarChar(200)
+  estado_funcional EstadoCorto @default(B)
+  estado_fisico    EstadoCorto @default(B)
+  fecha_entrada    DateTime    @db.Date
+  codigo_equipo    String?     @db.VarChar(100)
+  observaciones    String?     @db.Text
+  creado_en        DateTime    @default(now()) @db.Timestamp(0)
+  actualizado_en   DateTime    @default(now()) @updatedAt @db.Timestamp(0)
+
+  categoria    categorias   @relation(fields: [categoria_id], references: [id])
+  subcategoria subcategorias? @relation(fields: [subcategoria_id], references: [id], onDelete: SetNull)
+  movimientos  movimientos[]
+  observaciones_rel observaciones[]
+
+  @@index([categoria_id], map: "idx_elementos_categoria")
+  @@index([subcategoria_id], map: "idx_elementos_subcategoria")
+  @@map("elementos")
+}
+
+model logs {
+  id         Int      @id @default(autoincrement())
+  usuario_id Int
+  accion     String   @db.VarChar(100)
+  detalles   String?  @db.Text
+  ip         String?  @db.VarChar(45)
+  creado_en  DateTime @default(now()) @db.Timestamp(0)
+
+  usuario usuarios @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@index([usuario_id])
+  @@map("logs")
+}
+
+model movimientos {
+  id                       Int            @id @default(autoincrement())
+  elemento_id              Int
+  cantidad                 Int
+  orden_numero             String         @db.VarChar(50)
+  fecha_movimiento         DateTime       @db.DateTime(0)
+  dependencia_entrega      String         @db.VarChar(200)
+  funcionario_entrega      String         @db.VarChar(200)
+  cargo_funcionario_entrega String?       @db.VarChar(200)
+  dependencia_recibe       String         @db.VarChar(200)
+  funcionario_recibe       String         @db.VarChar(200)
+  cargo_funcionario_recibe String?        @db.VarChar(200)
+  motivo                   String         @db.Text
+  fecha_estimada_devolucion DateTime      @db.Date
+  fecha_real_devolucion    DateTime?      @db.DateTime(0)
+  observaciones_entrega    String?        @db.Text
+  observaciones_devolucion String?        @db.Text
+  firma_recepcion          String?        @db.VarChar(255)
+  tipo                     TipoMovimiento @default(SALIDA)
+  firma_entrega            String?        @db.VarChar(255)
+  firma_recibe             String?        @db.VarChar(255)
+  codigo_equipo            String?        @db.VarChar(100)
+  serial_equipo            String?        @db.VarChar(100)
+  hora_entrega             DateTime?      @db.Time(0)
+  hora_devolucion          DateTime?      @db.Time(0)
+  numero_ticket            String         @unique @db.VarChar(100)
+  creado_en                DateTime       @default(now()) @db.Timestamp(0)
+  firma_devuelve           String?        @db.VarChar(255)
+  firma_recibe_devolucion  String?        @db.VarChar(255)
+  devuelto_por             String?        @db.VarChar(255)
+  recibido_por             String?        @db.VarChar(255)
+
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+
+  @@index([elemento_id], map: "idx_movimientos_elemento")
+  @@index([tipo], map: "idx_movimientos_tipo")
+  @@index([fecha_movimiento], map: "idx_movimientos_fecha")
+  @@map("movimientos")
+}
+
+model observaciones {
+  id               Int      @id @default(autoincrement())
+  elemento_id      Int
+  fecha_observacion DateTime @db.Date
+  descripcion      String   @db.Text
+  creado_en        DateTime @default(now()) @db.Timestamp(0)
+
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+
+  @@index([elemento_id], map: "idx_observaciones_elemento")
+  @@index([fecha_observacion], map: "idx_observaciones_fecha")
+  @@map("observaciones")
+}
+
+model reportes_generados {
+  id              Int      @id @default(autoincrement())
+  tipo_reporte    String   @db.VarChar(50)
+  nombre_archivo  String   @db.VarChar(255)
+  contenido_pdf   Bytes
+  fecha_generacion DateTime? @default(now()) @db.DateTime(0)
+  generado_por    String?  @default("Sistema") @db.VarChar(100)
+
+  @@map("reportes_generados")
+}
+
+model tickets_guardados {
+  id                         Int       @id @default(autoincrement())
+  numero_ticket              String    @db.VarChar(50)
+  fecha_salida               DateTime  @db.DateTime(0)
+  fecha_estimada_devolucion  DateTime? @db.DateTime(0)
+  elemento                   String?   @db.VarChar(255)
+  serie                      String?   @db.VarChar(100)
+  marca_modelo               String?   @db.VarChar(100)
+  cantidad                   Int       @default(1)
+  dependencia_entrega        String?   @db.VarChar(100)
+  funcionario_entrega        String?   @db.VarChar(100)
+  dependencia_recibe         String?   @db.VarChar(100)
+  funcionario_recibe         String?   @db.VarChar(100)
+  motivo                     String?   @db.VarChar(255)
+  orden_numero               String?   @db.VarChar(50)
+  fecha_guardado             DateTime? @default(now()) @db.DateTime(0)
+  usuario_guardado           String?   @default("Sistema") @db.VarChar(100)
+
+  @@map("tickets_guardados")
+}
+
+model usuarios {
+  id         Int       @id @default(autoincrement())
+  username   String    @unique @db.VarChar(50)
+  password   String    @db.VarChar(255)
+  nombre     String    @db.VarChar(100)
+  rol        Rol       @default(usuario)
+  activo     Boolean?  @default(true)
+  creado_en  DateTime  @default(now()) @db.Timestamp(0)
+  actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  logs logs[]
+
+  @@map("usuarios")
+}
+
+enum Rol {
+  administrador
+  usuario
+}
