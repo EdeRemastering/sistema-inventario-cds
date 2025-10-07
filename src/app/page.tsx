@@ -30,7 +30,7 @@ export default function Home() {
               <Link href="/login">Iniciar sesión</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/(main)">Ir al panel</Link>
+              <Link href="/dashboard">Ir al panel</Link>
             </Button>
           </div>
         </div>

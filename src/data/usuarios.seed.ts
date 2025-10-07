@@ -1,7 +1,7 @@
 import type { PrismaClient } from "../generated/prisma";
 
 export const usuariosSeed = [
-  { id: 1, username: "admin", password: "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", nombre: "Administrador del Sistema", rol: "administrador" as const, activo: true },
+  { id: 1, username: "admin", password: "admin", nombre: "Administrador del Sistema", rol: "administrador" as const, activo: true },
 ];
 
 export async function seedUsuarios(prisma: PrismaClient) {
