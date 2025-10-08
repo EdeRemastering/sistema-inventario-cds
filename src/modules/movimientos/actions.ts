@@ -28,19 +28,19 @@ export async function actionCreateMovimiento(formData: FormData) {
     recibido_por: null,
     ...parsed.data,
   });
-  revalidatePath("/(main)/movimientos");
+  revalidatePath("/movimientos");
 }
 
 export async function actionUpdateMovimiento(formData: FormData) {
   const parsed = movimientoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await updateMovimiento(parsed.data.id, parsed.data);
-  revalidatePath("/(main)/movimientos");
+  revalidatePath("/movimientos");
 }
 
 export async function actionDeleteMovimiento(id: number) {
   await deleteMovimiento(id);
-  revalidatePath("/(main)/movimientos");
+  revalidatePath("/movimientos");
 }
 
 

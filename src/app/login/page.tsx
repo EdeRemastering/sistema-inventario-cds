@@ -28,7 +28,7 @@ export default function LoginPage() {
       {
         loading: "Ingresando...",
         success: () => {
-          router.replace("/(main)");
+          router.replace("/dashboard");
           return "Bienvenido";
         },
         error: "Credenciales inválidas",

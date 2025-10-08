@@ -7,6 +7,7 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
+import { Switch } from "../../../components/ui/switch";
 import { DeleteButton } from "../../../components/delete-button";
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
@@ -16,7 +17,7 @@ export default async function CategoriasPage() {
   async function create(formData: FormData) {
     "use server";
     await actionCreateCategoria(formData);
-    revalidatePath("/(main)/categorias");
+    revalidatePath("/categorias");
   }
   return (
     <div className="space-y-6">
@@ -26,8 +27,21 @@ export default async function CategoriasPage() {
           <form action={create} className="grid gap-3 sm:grid-cols-3">
             <Input name="nombre" placeholder="Nombre" required />
             <Input name="descripcion" placeholder="Descripción" />
-            <div className="flex gap-2">
-              <Input name="estado" defaultValue="activo" className="hidden" />
+            <div className="flex items-center gap-4">
+              <input name="estado" defaultValue="activo" className="hidden" />
+              <div className="flex items-center gap-2">
+                <Switch
+                  defaultChecked
+                  aria-label="Activo"
+                  onCheckedChange={(checked) => {
+                    const input = document.querySelector<HTMLInputElement>(
+                      'input[name=\\"estado\\"]'
+                    );
+                    if (input) input.value = checked ? "activo" : "inactivo";
+                  }}
+                />
+                <span className="text-sm text-muted-foreground">Activo</span>
+              </div>
               <Button type="submit">Crear</Button>
             </div>
           </form>
@@ -75,7 +89,20 @@ function CategoriaRow({
       <input type="hidden" name="id" value={id} />
       <Input name="nombre" defaultValue={nombre} className="w-48" />
       <Input name="descripcion" defaultValue={descripcion} className="flex-1" />
-      <Input name="estado" defaultValue={estado} className="w-28" />
+      <input name="estado" defaultValue={estado} className="hidden" />
+      <div className="flex items-center gap-2">
+        <Switch
+          defaultChecked={estado === "activo"}
+          aria-label="Activo"
+          onCheckedChange={(checked) => {
+            const input = document.querySelector<HTMLInputElement>(
+              'form input[name=\\"estado\\"]'
+            );
+            if (input) input.value = checked ? "activo" : "inactivo";
+          }}
+        />
+        <span className="text-sm text-muted-foreground">Activo</span>
+      </div>
       <div className="ml-auto flex gap-2">
         <Button type="submit" variant="default">
           Guardar

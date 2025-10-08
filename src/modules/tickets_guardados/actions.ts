@@ -25,14 +25,14 @@ export async function actionCreateTicket(formData: FormData) {
     orden_numero: parsed.data.orden_numero ?? null,
     usuario_guardado: parsed.data.usuario_guardado ?? null,
   });
-  revalidatePath("/(main)/tickets");
+  revalidatePath("/tickets");
 }
 
 export async function actionDeleteTicket(formData: FormData) {
   const parsed = ticketDeleteSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await deleteTicket(parsed.data.id);
-  revalidatePath("/(main)/tickets");
+  revalidatePath("/tickets");
 }
 
 

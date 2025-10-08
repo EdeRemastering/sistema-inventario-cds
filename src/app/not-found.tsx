@@ -12,7 +12,7 @@ export default function NotFound() {
             <Link href="/">Ir al inicio</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/(main)">Ir al panel</Link>
+            <Link href="/dashboard">Ir al panel</Link>
           </Button>
         </div>
       </div>

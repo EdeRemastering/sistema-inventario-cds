@@ -9,6 +9,7 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
+  console.log(session);
   if (!session) redirect("/login");
 
   return (

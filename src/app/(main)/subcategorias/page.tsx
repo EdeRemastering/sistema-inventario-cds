@@ -7,6 +7,7 @@ import {
 } from "../../../modules/subcategorias/actions";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { SelectField } from "../../../components/ui/select-field";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { DeleteButton } from "../../../components/delete-button";
 
@@ -29,13 +30,14 @@ export default async function SubcategoriasPage() {
           <form action={create} className="grid gap-3 sm:grid-cols-4">
             <Input name="nombre" placeholder="Nombre" required />
             <Input name="descripcion" placeholder="Descripción" />
-            <select name="categoria_id" className="rounded border px-3 py-2">
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              name="categoria_id"
+              options={categorias.map((c) => ({
+                value: String(c.id),
+                label: c.nombre,
+              }))}
+              placeholder="Categoría"
+            />
             <div className="flex gap-2">
               <Input name="estado" defaultValue="activo" className="hidden" />
               <Button type="submit">Crear</Button>
@@ -85,17 +87,14 @@ function SubcategoriaRow({
         defaultValue={s.descripcion ?? ""}
         className="flex-1"
       />
-      <select
+      <SelectField
         name="categoria_id"
-        defaultValue={s.categoria_id}
-        className="rounded border px-3 py-2"
-      >
-        {categorias.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nombre}
-          </option>
-        ))}
-      </select>
+        defaultValue={String(s.categoria_id)}
+        options={categorias.map((c) => ({
+          value: String(c.id),
+          label: c.nombre,
+        }))}
+      />
       <div className="ml-auto flex gap-2">
         <Button type="submit" variant="default">
           Guardar

@@ -9,14 +9,14 @@ export async function actionCreateReporte(formData: FormData) {
   const parsed = reporteCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await createReporte(parsed.data);
-  revalidatePath("/(main)/reportes");
+  revalidatePath("/reportes");
 }
 
 export async function actionDeleteReporte(formData: FormData) {
   const parsed = reporteDeleteSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await deleteReporte(parsed.data.id);
-  revalidatePath("/(main)/reportes");
+  revalidatePath("/reportes");
 }
 
 

@@ -8,6 +8,7 @@ import {
 } from "../../../modules/elementos/actions";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { SelectField } from "../../../components/ui/select-field";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { DeleteButton } from "../../../components/delete-button";
 
@@ -29,26 +30,23 @@ export default async function ElementosPage() {
       <Card>
         <CardHeader>
           <form action={create} className="grid gap-3 sm:grid-cols-6">
-            <select
+            <SelectField
               name="categoria_id"
-              className="rounded border px-3 py-2"
               required
-            >
-              <option value="">Categoría</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-            <select name="subcategoria_id" className="rounded border px-3 py-2">
-              <option value="">Subcategoría</option>
-              {subcategorias.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre}
-                </option>
-              ))}
-            </select>
+              placeholder="Categoría"
+              options={categorias.map((c) => ({
+                value: String(c.id),
+                label: c.nombre,
+              }))}
+            />
+            <SelectField
+              name="subcategoria_id"
+              placeholder="Subcategoría"
+              options={subcategorias.map((s) => ({
+                value: String(s.id),
+                label: s.nombre,
+              }))}
+            />
             <Input name="serie" placeholder="Serie" required />
             <Input name="marca" placeholder="Marca" />
             <Input name="modelo" placeholder="Modelo" />
@@ -118,29 +116,23 @@ function ElementoRow({
       className="grid items-center gap-2 rounded border p-3 sm:grid-cols-8"
     >
       <input type="hidden" name="id" value={e.id} />
-      <select
+      <SelectField
         name="categoria_id"
-        defaultValue={e.categoria_id}
-        className="rounded border px-2 py-1"
-      >
-        {categorias.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nombre}
-          </option>
-        ))}
-      </select>
-      <select
+        defaultValue={String(e.categoria_id)}
+        options={categorias.map((c) => ({
+          value: String(c.id),
+          label: c.nombre,
+        }))}
+      />
+      <SelectField
         name="subcategoria_id"
-        defaultValue={e.subcategoria_id ?? ""}
-        className="rounded border px-2 py-1"
-      >
-        <option value="">—</option>
-        {subcategorias.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.nombre}
-          </option>
-        ))}
-      </select>
+        defaultValue={e.subcategoria_id ? String(e.subcategoria_id) : undefined}
+        placeholder="—"
+        options={subcategorias.map((s) => ({
+          value: String(s.id),
+          label: s.nombre,
+        }))}
+      />
       <Input name="serie" defaultValue={e.serie} />
       <Input name="marca" defaultValue={e.marca ?? ""} />
       <Input name="modelo" defaultValue={e.modelo ?? ""} />

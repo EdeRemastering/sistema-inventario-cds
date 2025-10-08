@@ -17,19 +17,19 @@ export async function actionCreateElemento(formData: FormData) {
     observaciones: parsed.data.observaciones ?? null,
     subcategoria_id: parsed.data.subcategoria_id ?? null,
   });
-  revalidatePath("/(main)/elementos");
+  revalidatePath("/elementos");
 }
 
 export async function actionUpdateElemento(formData: FormData) {
   const parsed = elementoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await updateElemento(parsed.data.id, parsed.data);
-  revalidatePath("/(main)/elementos");
+  revalidatePath("/elementos");
 }
 
 export async function actionDeleteElemento(id: number) {
   await deleteElemento(id);
-  revalidatePath("/(main)/elementos");
+  revalidatePath("/elementos");
 }
 
 

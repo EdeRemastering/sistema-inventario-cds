@@ -9,14 +9,14 @@ export async function actionCreateLog(formData: FormData) {
   const parsed = logCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await createLog(parsed.data);
-  revalidatePath("/(main)/logs");
+  revalidatePath("/logs");
 }
 
 export async function actionDeleteLog(formData: FormData) {
   const parsed = logDeleteSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await deleteLog(parsed.data.id);
-  revalidatePath("/(main)/logs");
+  revalidatePath("/logs");
 }
 
 

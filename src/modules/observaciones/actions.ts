@@ -9,19 +9,19 @@ export async function actionCreateObservacion(formData: FormData) {
   const parsed = observacionCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await createObservacion(parsed.data);
-  revalidatePath("/(main)/observaciones");
+  revalidatePath("/observaciones");
 }
 
 export async function actionUpdateObservacion(formData: FormData) {
   const parsed = observacionUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await updateObservacion(parsed.data.id, parsed.data);
-  revalidatePath("/(main)/observaciones");
+  revalidatePath("/observaciones");
 }
 
 export async function actionDeleteObservacion(id: number) {
   await deleteObservacion(id);
-  revalidatePath("/(main)/observaciones");
+  revalidatePath("/observaciones");
 }
 
 

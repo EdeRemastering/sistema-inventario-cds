@@ -12,14 +12,14 @@ type NavItem = {
 };
 
 const items: NavItem[] = [
-  { href: "/(main)", label: "Inicio", icon: LayoutDashboard },
-  { href: "/(main)/categorias", label: "Categorías", icon: FolderTree },
-  { href: "/(main)/subcategorias", label: "Subcategorías", icon: Boxes },
-  { href: "/(main)/elementos", label: "Elementos", icon: Package2 },
-  { href: "/(main)/movimientos", label: "Movimientos", icon: ClipboardList },
-  { href: "/(main)/observaciones", label: "Observaciones", icon: FileText },
-  { href: "/(main)/tickets", label: "Tickets", icon: Ticket },
-  { href: "/(main)/logs", label: "Logs", icon: ListChecks },
+  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
+  { href: "/categorias", label: "Categorías", icon: FolderTree },
+  { href: "/subcategorias", label: "Subcategorías", icon: Boxes },
+  { href: "/elementos", label: "Elementos", icon: Package2 },
+  { href: "/movimientos", label: "Movimientos", icon: ClipboardList },
+  { href: "/observaciones", label: "Observaciones", icon: FileText },
+  { href: "/tickets", label: "Tickets", icon: Ticket },
+  { href: "/logs", label: "Logs", icon: ListChecks },
 ];
 
 export function DashboardSidebar() {

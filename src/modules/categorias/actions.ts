@@ -13,19 +13,19 @@ export async function actionCreateCategoria(formData: FormData) {
     descripcion: parsed.data.descripcion ?? null,
     estado: parsed.data.estado,
   });
-  revalidatePath("/(main)/categorias");
+  revalidatePath("/categorias");
 }
 
 export async function actionUpdateCategoria(formData: FormData) {
   const parsed = categoriaUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await updateCategoria(parsed.data.id, parsed.data);
-  revalidatePath("/(main)/categorias");
+  revalidatePath("/categorias");
 }
 
 export async function actionDeleteCategoria(id: number) {
   await deleteCategoria(id);
-  revalidatePath("/(main)/categorias");
+  revalidatePath("/categorias");
 }
 
 

@@ -9,18 +9,18 @@ export async function actionCreateUsuario(formData: FormData) {
   const parsed = createUsuarioSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await createUsuario(parsed.data);
-  revalidatePath("/(main)/usuarios");
+  revalidatePath("/usuarios");
 }
 
 export async function actionUpdateUsuario(formData: FormData) {
   const parsed = updateUsuarioSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await updateUsuario(parsed.data);
-  revalidatePath("/(main)/usuarios");
+  revalidatePath("/usuarios");
 }
 
 export async function actionDeleteUsuario(id: number) {
   await deleteUsuario(id);
-  revalidatePath("/(main)/usuarios");
+  revalidatePath("/usuarios");
 }
 

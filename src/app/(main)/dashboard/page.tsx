@@ -2,12 +2,12 @@ import Link from "next/link";
 
 export default function MainHome() {
   const modules = [
-    { name: "Elementos", href: "/(main)/elementos" },
-    { name: "Movimientos", href: "/(main)/movimientos" },
-    { name: "Observaciones", href: "/(main)/observaciones" },
-    { name: "Reportes", href: "/(main)/reportes" },
-    { name: "Usuarios", href: "/(main)/usuarios" },
-    { name: "Logs", href: "/(main)/logs" },
+    { name: "Elementos", href: "/elementos" },
+    { name: "Movimientos", href: "/movimientos" },
+    { name: "Observaciones", href: "/observaciones" },
+    { name: "Reportes", href: "/reportes" },
+    { name: "Usuarios", href: "/usuarios" },
+    { name: "Logs", href: "/logs" },
   ];
   return (
     <div className="space-y-4">
