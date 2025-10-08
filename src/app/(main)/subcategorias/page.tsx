@@ -10,6 +10,23 @@ import { Input } from "../../../components/ui/input";
 import { SelectField } from "../../../components/ui/select-field";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { DeleteButton } from "../../../components/delete-button";
+import { revalidatePath } from "next/cache";
+
+// Handlers para las acciones de subcategorías
+async function handleCreateSubcategoria(formData: FormData) {
+  await actionCreateSubcategoria(formData);
+  revalidatePath("/subcategorias");
+}
+
+async function handleUpdateSubcategoria(formData: FormData) {
+  await actionUpdateSubcategoria(formData);
+  revalidatePath("/subcategorias");
+}
+
+async function handleDeleteSubcategoria(id: number) {
+  await actionDeleteSubcategoria(id);
+  revalidatePath("/subcategorias");
+}
 
 export default async function SubcategoriasPage() {
   const [subcategorias, categorias] = await Promise.all([
@@ -17,17 +34,15 @@ export default async function SubcategoriasPage() {
     listCategorias(),
   ]);
 
-  async function create(formData: FormData) {
-    "use server";
-    await actionCreateSubcategoria(formData);
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Subcategorías</h1>
       <Card>
         <CardHeader>
-          <form action={create} className="grid gap-3 sm:grid-cols-4">
+          <form
+            action={handleCreateSubcategoria}
+            className="grid gap-3 sm:grid-cols-4"
+          >
             <Input name="nombre" placeholder="Nombre" required />
             <Input name="descripcion" placeholder="Descripción" />
             <SelectField
@@ -71,13 +86,9 @@ function SubcategoriaRow({
   s: SubcategoriaItem;
   categorias: CategoriaOption[];
 }) {
-  async function update(formData: FormData) {
-    "use server";
-    await actionUpdateSubcategoria(formData);
-  }
   return (
     <form
-      action={update}
+      action={handleUpdateSubcategoria}
       className="flex items-center gap-2 rounded border p-3"
     >
       <input type="hidden" name="id" value={s.id} />
@@ -99,12 +110,7 @@ function SubcategoriaRow({
         <Button type="submit" variant="default">
           Guardar
         </Button>
-        <DeleteButton
-          onConfirm={async () => {
-            "use server";
-            await actionDeleteSubcategoria(s.id);
-          }}
-        >
+        <DeleteButton onConfirm={() => handleDeleteSubcategoria(s.id)}>
           Eliminar
         </DeleteButton>
       </div>

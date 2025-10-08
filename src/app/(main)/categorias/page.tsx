@@ -1,121 +1,137 @@
+"use client";
+
 import { listCategorias } from "../../../modules/categorias/services";
 import {
   actionCreateCategoria,
   actionDeleteCategoria,
   actionUpdateCategoria,
 } from "../../../modules/categorias/actions";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { Switch } from "../../../components/ui/switch";
-import { DeleteButton } from "../../../components/delete-button";
-import { revalidatePath } from "next/cache";
-import { Suspense } from "react";
+import { CategoriaForm } from "../../../components/categorias/categoria-form";
+import { CategoriaRow } from "../../../components/categorias/categoria-row";
+import { useEffect, useState } from "react";
 
-export default async function CategoriasPage() {
-  const categorias = await listCategorias();
-  async function create(formData: FormData) {
-    "use server";
-    await actionCreateCategoria(formData);
-    revalidatePath("/categorias");
+// Handlers para las acciones de categorías
+async function handleCreateCategoria(data: {
+  nombre: string;
+  descripcion?: string;
+  estado: string;
+}) {
+  const formData = new FormData();
+  formData.append("nombre", data.nombre);
+  if (data.descripcion) formData.append("descripcion", data.descripcion);
+  formData.append("estado", data.estado);
+
+  await actionCreateCategoria(formData);
+}
+
+async function handleUpdateCategoria(data: {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  estado: string;
+}) {
+  const formData = new FormData();
+  formData.append("id", String(data.id));
+  formData.append("nombre", data.nombre);
+  if (data.descripcion) formData.append("descripcion", data.descripcion);
+  formData.append("estado", data.estado);
+
+  await actionUpdateCategoria(formData);
+}
+
+async function handleDeleteCategoria(id: number) {
+  await actionDeleteCategoria(id);
+}
+
+export default function CategoriasPage() {
+  const [categorias, setCategorias] = useState<Array<{
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    estado: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const data = await listCategorias();
+        setCategorias(data);
+      } catch (error) {
+        console.error("Error fetching categorias:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategorias();
+  }, []);
+
+  const handleCreate = async (data: {
+    nombre: string;
+    descripcion?: string;
+    estado: string;
+  }) => {
+    await handleCreateCategoria(data);
+    // Refetch categorias after creation
+    const updatedCategorias = await listCategorias();
+    setCategorias(updatedCategorias);
+  };
+
+  const handleUpdate = async (data: {
+    id: number;
+    nombre: string;
+    descripcion?: string;
+    estado: string;
+  }) => {
+    await handleUpdateCategoria(data);
+    // Refetch categorias after update
+    const updatedCategorias = await listCategorias();
+    setCategorias(updatedCategorias);
+  };
+
+  const handleDelete = async (id: number) => {
+    await handleDeleteCategoria(id);
+    // Refetch categorias after deletion
+    const updatedCategorias = await listCategorias();
+    setCategorias(updatedCategorias);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-semibold">Categorías</h1>
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
   }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Categorías</h1>
       <Card>
         <CardHeader>
-          <form action={create} className="grid gap-3 sm:grid-cols-3">
-            <Input name="nombre" placeholder="Nombre" required />
-            <Input name="descripcion" placeholder="Descripción" />
-            <div className="flex items-center gap-4">
-              <input name="estado" defaultValue="activo" className="hidden" />
-              <div className="flex items-center gap-2">
-                <Switch
-                  defaultChecked
-                  aria-label="Activo"
-                  onCheckedChange={(checked) => {
-                    const input = document.querySelector<HTMLInputElement>(
-                      'input[name=\\"estado\\"]'
-                    );
-                    if (input) input.value = checked ? "activo" : "inactivo";
-                  }}
-                />
-                <span className="text-sm text-muted-foreground">Activo</span>
-              </div>
-              <Button type="submit">Crear</Button>
-            </div>
-          </form>
+          <CategoriaForm action={handleCreate} />
         </CardHeader>
         <CardContent>
-          <Suspense>
-            <div className="space-y-3">
-              {categorias.map((c) => (
-                <CategoriaRow
-                  key={c.id}
-                  id={c.id}
-                  nombre={c.nombre}
-                  descripcion={c.descripcion ?? ""}
-                  estado={c.estado}
-                />
-              ))}
-            </div>
-          </Suspense>
+          <div className="space-y-3">
+            {categorias.map((c) => (
+              <CategoriaRow
+                key={c.id}
+                id={c.id}
+                nombre={c.nombre}
+                descripcion={c.descripcion ?? ""}
+                estado={c.estado}
+                onUpdate={handleUpdate}
+                onDelete={() => handleDelete(c.id)}
+              />
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function CategoriaRow({
-  id,
-  nombre,
-  descripcion,
-  estado,
-}: {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  estado: string;
-}) {
-  async function update(formData: FormData) {
-    "use server";
-    await actionUpdateCategoria(formData);
-  }
-  return (
-    <form
-      action={update}
-      className="flex items-center gap-2 rounded border p-3"
-    >
-      <input type="hidden" name="id" value={id} />
-      <Input name="nombre" defaultValue={nombre} className="w-48" />
-      <Input name="descripcion" defaultValue={descripcion} className="flex-1" />
-      <input name="estado" defaultValue={estado} className="hidden" />
-      <div className="flex items-center gap-2">
-        <Switch
-          defaultChecked={estado === "activo"}
-          aria-label="Activo"
-          onCheckedChange={(checked) => {
-            const input = document.querySelector<HTMLInputElement>(
-              'form input[name=\\"estado\\"]'
-            );
-            if (input) input.value = checked ? "activo" : "inactivo";
-          }}
-        />
-        <span className="text-sm text-muted-foreground">Activo</span>
-      </div>
-      <div className="ml-auto flex gap-2">
-        <Button type="submit" variant="default">
-          Guardar
-        </Button>
-        <DeleteButton
-          onConfirm={async () => {
-            "use server";
-            await actionDeleteCategoria(id);
-          }}
-        >
-          Eliminar
-        </DeleteButton>
-      </div>
-    </form>
   );
 }

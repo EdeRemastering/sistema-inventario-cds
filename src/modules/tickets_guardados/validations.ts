@@ -17,6 +17,10 @@ export const ticketCreateSchema = z.object({
   usuario_guardado: z.string().optional(),
 });
 
+export const ticketUpdateSchema = ticketCreateSchema.partial().extend({
+  id: z.coerce.number().int().positive(),
+});
+
 export const ticketDeleteSchema = z.object({ id: z.number().int().positive() });
 
 

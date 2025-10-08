@@ -7,15 +7,18 @@ import { createElemento, deleteElemento, updateElemento } from "./services";
 
 export async function actionCreateElemento(formData: FormData) {
   const parsed = elementoCreateSchema.safeParse(formDataToObject(formData));
-  if (!parsed.success) throw new Error("Datos inválidos");
+  if (!parsed.success) {
+    console.error("Validation error:", parsed.error);
+    throw new Error("Datos inválidos");
+  }
   await createElemento({
     ...parsed.data,
-    marca: parsed.data.marca ?? null,
-    modelo: parsed.data.modelo ?? null,
-    ubicacion: parsed.data.ubicacion ?? null,
-    codigo_equipo: parsed.data.codigo_equipo ?? null,
-    observaciones: parsed.data.observaciones ?? null,
-    subcategoria_id: parsed.data.subcategoria_id ?? null,
+    marca: parsed.data.marca === "" ? null : parsed.data.marca || null,
+    modelo: parsed.data.modelo === "" ? null : parsed.data.modelo || null,
+    ubicacion: parsed.data.ubicacion === "" ? null : parsed.data.ubicacion || null,
+    codigo_equipo: parsed.data.codigo_equipo === "" ? null : parsed.data.codigo_equipo || null,
+    observaciones: parsed.data.observaciones === "" ? null : parsed.data.observaciones || null,
+    subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
   });
   revalidatePath("/elementos");
 }
@@ -23,7 +26,15 @@ export async function actionCreateElemento(formData: FormData) {
 export async function actionUpdateElemento(formData: FormData) {
   const parsed = elementoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
-  await updateElemento(parsed.data.id, parsed.data);
+  await updateElemento(parsed.data.id, {
+    ...parsed.data,
+    marca: parsed.data.marca === "" ? null : parsed.data.marca || null,
+    modelo: parsed.data.modelo === "" ? null : parsed.data.modelo || null,
+    ubicacion: parsed.data.ubicacion === "" ? null : parsed.data.ubicacion || null,
+    codigo_equipo: parsed.data.codigo_equipo === "" ? null : parsed.data.codigo_equipo || null,
+    observaciones: parsed.data.observaciones === "" ? null : parsed.data.observaciones || null,
+    subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
+  });
   revalidatePath("/elementos");
 }
 

@@ -11,6 +11,23 @@ import { Input } from "../../../components/ui/input";
 import { SelectField } from "../../../components/ui/select-field";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { DeleteButton } from "../../../components/delete-button";
+import { revalidatePath } from "next/cache";
+
+// Handlers para las acciones de elementos
+async function handleCreateElemento(formData: FormData) {
+  await actionCreateElemento(formData);
+  revalidatePath("/elementos");
+}
+
+async function handleUpdateElemento(formData: FormData) {
+  await actionUpdateElemento(formData);
+  revalidatePath("/elementos");
+}
+
+async function handleDeleteElemento(id: number) {
+  await actionDeleteElemento(id);
+  revalidatePath("/elementos");
+}
 
 export default async function ElementosPage() {
   const [elementos, categorias, subcategorias] = await Promise.all([
@@ -19,17 +36,15 @@ export default async function ElementosPage() {
     listSubcategorias(),
   ]);
 
-  async function create(formData: FormData) {
-    "use server";
-    await actionCreateElemento(formData);
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Elementos</h1>
       <Card>
         <CardHeader>
-          <form action={create} className="grid gap-3 sm:grid-cols-6">
+          <form
+            action={handleCreateElemento}
+            className="grid gap-3 sm:grid-cols-6"
+          >
             <SelectField
               name="categoria_id"
               required
@@ -106,13 +121,9 @@ function ElementoRow({
   categorias: CategoriaOption[];
   subcategorias: SubcategoriaOption[];
 }) {
-  async function update(formData: FormData) {
-    "use server";
-    await actionUpdateElemento(formData);
-  }
   return (
     <form
-      action={update}
+      action={handleUpdateElemento}
       className="grid items-center gap-2 rounded border p-3 sm:grid-cols-8"
     >
       <input type="hidden" name="id" value={e.id} />
@@ -139,12 +150,7 @@ function ElementoRow({
       <Input name="cantidad" type="number" defaultValue={String(e.cantidad)} />
       <div className="ml-auto flex gap-2">
         <Button type="submit">Guardar</Button>
-        <DeleteButton
-          onConfirm={async () => {
-            "use server";
-            await actionDeleteElemento(e.id);
-          }}
-        >
+        <DeleteButton onConfirm={() => handleDeleteElemento(e.id)}>
           Eliminar
         </DeleteButton>
       </div>

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { formDataToObject } from "../../utils/form";
-import { ticketCreateSchema, ticketDeleteSchema } from "./validations";
-import { createTicket, deleteTicket } from "./services";
+import { ticketCreateSchema, ticketUpdateSchema, ticketDeleteSchema } from "./validations";
+import { createTicket, updateTicket, deleteTicket } from "./services";
 
 export async function actionCreateTicket(formData: FormData) {
   const parsed = ticketCreateSchema.safeParse(formDataToObject(formData));
@@ -28,10 +28,18 @@ export async function actionCreateTicket(formData: FormData) {
   revalidatePath("/tickets");
 }
 
-export async function actionDeleteTicket(formData: FormData) {
-  const parsed = ticketDeleteSchema.safeParse(formDataToObject(formData));
-  if (!parsed.success) throw new Error("Datos inválidos");
-  await deleteTicket(parsed.data.id);
+export async function actionUpdateTicket(formData: FormData) {
+  const parsed = ticketUpdateSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) {
+    console.error("Validation error:", parsed.error);
+    throw new Error("Datos inválidos");
+  }
+  await updateTicket(parsed.data.id, parsed.data);
+  revalidatePath("/tickets");
+}
+
+export async function actionDeleteTicket(id: number) {
+  await deleteTicket(id);
   revalidatePath("/tickets");
 }
 

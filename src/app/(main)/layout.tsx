@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../../lib/auth";
 import { DashboardSidebar } from "../../components/dashboard/sidebar";
+import { ThemeProvider } from "../../contexts/theme-context";
 
 export default async function MainLayout({
   children,
@@ -13,9 +14,11 @@ export default async function MainLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-dvh bg-background grid sm:grid-cols-[16rem_1fr]">
-      <DashboardSidebar />
-      <main className="p-6">{children}</main>
-    </div>
+    <ThemeProvider>
+      <div className="min-h-dvh bg-background grid sm:grid-cols-[16rem_1fr]">
+        <DashboardSidebar />
+        <main className="p-6">{children}</main>
+      </div>
+    </ThemeProvider>
   );
 }

@@ -12,10 +12,8 @@ export async function actionCreateLog(formData: FormData) {
   revalidatePath("/logs");
 }
 
-export async function actionDeleteLog(formData: FormData) {
-  const parsed = logDeleteSchema.safeParse(formDataToObject(formData));
-  if (!parsed.success) throw new Error("Datos inválidos");
-  await deleteLog(parsed.data.id);
+export async function actionDeleteLog(id: number) {
+  await deleteLog(id);
   revalidatePath("/logs");
 }
 

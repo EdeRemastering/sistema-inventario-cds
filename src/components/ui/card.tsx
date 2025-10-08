@@ -9,7 +9,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded border bg-card text-card-foreground shadow ${
+      className={`rounded border border-primary/30 bg-card text-card-foreground shadow ${
         className ?? ""
       }`}
     >
@@ -25,7 +25,15 @@ export function CardHeader({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={`p-4 border-b ${className ?? ""}`}>{children}</div>;
+  return (
+    <div
+      className={`p-4 border-b border-primary/40 bg-accent/30 text-accent-foreground ${
+        className ?? ""
+      }`}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function CardContent({

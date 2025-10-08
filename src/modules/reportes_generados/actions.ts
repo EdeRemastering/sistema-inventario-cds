@@ -12,10 +12,8 @@ export async function actionCreateReporte(formData: FormData) {
   revalidatePath("/reportes");
 }
 
-export async function actionDeleteReporte(formData: FormData) {
-  const parsed = reporteDeleteSchema.safeParse(formDataToObject(formData));
-  if (!parsed.success) throw new Error("Datos inválidos");
-  await deleteReporte(parsed.data.id);
+export async function actionDeleteReporte(id: number) {
+  await deleteReporte(id);
   revalidatePath("/reportes");
 }
 
