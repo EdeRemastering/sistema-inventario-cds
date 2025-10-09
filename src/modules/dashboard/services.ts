@@ -63,22 +63,23 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       where: {
         fecha_estimada_devolucion: {
           gte: now
-        }
+        },
+        tipo: "SALIDA"
       }
     }),
-    prisma.tickets.count({
+    prisma.tickets_guardados.count({
       where: {
         fecha_estimada_devolucion: {
           gte: now
         }
       }
     }),
-    prisma.reportes.count(),
+    prisma.reportes_generados.count(),
     
     // Comparaciones temporales
     prisma.elementos.count({
       where: {
-        created_at: {
+        creado_en: {
           gte: inicioMesAnterior,
           lte: finMesAnterior
         }
@@ -94,7 +95,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     }),
     prisma.usuarios.count({
       where: {
-        created_at: {
+        creado_en: {
           gte: inicioMesAnterior,
           lte: finMesAnterior
         }
@@ -131,7 +132,7 @@ export async function getActividadReciente(): Promise<ActividadReciente[]> {
   // Obtener elementos recientes
   const elementosRecientes = await prisma.elementos.findMany({
     take: 3,
-    orderBy: { created_at: 'desc' },
+    orderBy: { creado_en: 'desc' },
     include: {
       categoria: true
     }
@@ -142,7 +143,7 @@ export async function getActividadReciente(): Promise<ActividadReciente[]> {
       id: elemento.id,
       tipo: 'elemento',
       descripcion: `Nuevo elemento agregado: ${elemento.serie}`,
-      fecha: elemento.created_at,
+      fecha: elemento.creado_en,
     });
   });
 
@@ -167,7 +168,7 @@ export async function getActividadReciente(): Promise<ActividadReciente[]> {
   // Obtener usuarios recientes
   const usuariosRecientes = await prisma.usuarios.findMany({
     take: 2,
-    orderBy: { created_at: 'desc' }
+    orderBy: { creado_en: 'desc' }
   });
 
   usuariosRecientes.forEach(usuario => {
@@ -175,7 +176,7 @@ export async function getActividadReciente(): Promise<ActividadReciente[]> {
       id: usuario.id,
       tipo: 'usuario',
       descripcion: `Usuario registrado: ${usuario.nombre}`,
-      fecha: usuario.created_at,
+      fecha: usuario.creado_en,
       usuario: usuario.nombre,
     });
   });
