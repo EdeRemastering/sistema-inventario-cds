@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,9 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { Form } from "../ui/form";
-import { FormField } from "../ui/form-field";
-import { FormInput } from "../ui/form-input";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 const schema = z.object({
   usuario_id: z.string().min(1, "Selecciona usuario"),
@@ -22,7 +22,7 @@ const schema = z.object({
   descripcion: z.string().optional(),
 });
 
-type FormShape = z.infer<typeof schema>;
+type LogFormData = z.infer<typeof schema>;
 
 type UsuarioOption = { id: number; nombre: string };
 
@@ -30,7 +30,7 @@ type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
   usuarios: UsuarioOption[];
-  defaultValues?: Partial<FormShape>;
+  defaultValues?: Partial<LogFormData>;
   hiddenFields?: Record<string, string | number>;
 };
 
@@ -42,20 +42,54 @@ export function LogUpsertDialog({
   hiddenFields,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
-  const form = useForm<FormShape>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<LogFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       usuario_id:
         defaultValues?.usuario_id ??
         (usuarios[0] ? String(usuarios[0].id) : ""),
       ...defaultValues,
-    } as FormShape,
+    } as LogFormData,
   });
 
-  const onValid = () => formRef.current?.requestSubmit();
-  const onInvalid = () => {};
+  const onSubmit = async (data: LogFormData) => {
+    try {
+      const formData = new FormData();
+
+      // Agregar campos del formulario
+      formData.append("usuario_id", data.usuario_id);
+      formData.append("accion", data.accion);
+      if (data.descripcion) formData.append("descripcion", data.descripcion);
+
+      // Agregar campos ocultos
+      if (hiddenFields) {
+        Object.entries(hiddenFields).forEach(([name, value]) => {
+          formData.append(name, String(value));
+        });
+      }
+
+      const promise = serverAction(formData);
+
+      await toast.promise(promise, {
+        loading: create ? "Creando log..." : "Actualizando log...",
+        success: create
+          ? "Log creado exitosamente"
+          : "Log actualizado exitosamente",
+        error: "Error al procesar el formulario",
+      });
+
+      reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const btnText = create ? "Crear" : "Editar";
   const title = create ? "Crear log" : "Editar log";
@@ -69,60 +103,75 @@ export function LogUpsertDialog({
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form ref={formRef} action={serverAction} className="grid gap-3">
-              {hiddenFields &&
-                Object.entries(hiddenFields).map(([n, v]) => (
-                  <input key={n} type="hidden" name={n} value={String(v)} />
-                ))}
-              <div className="grid gap-1">
-                <label className="text-sm font-medium" htmlFor="usuario_id">
-                  Usuario
-                </label>
-                <select
-                  id="usuario_id"
-                  name="usuario_id"
-                  defaultValue={form.getValues("usuario_id")}
-                  onChange={(e) =>
-                    form.setValue("usuario_id", e.target.value, {
-                      shouldValidate: true,
-                    })
-                  }
-                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/40 h-9 w-full min-w-0 rounded-md border-2 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow,border-color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-primary focus-visible:ring-primary/30 focus-visible:ring-[3px] hover:border-primary/60"
-                >
-                  <option value="" disabled>
-                    Selecciona usuario
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+            {/* Usuario */}
+            <div className="grid gap-1">
+              <Label htmlFor="usuario_id">Usuario</Label>
+              <select
+                id="usuario_id"
+                {...register("usuario_id")}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="" disabled>
+                  Selecciona usuario
+                </option>
+                {usuarios.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nombre}
                   </option>
-                  {usuarios.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <FormField name="accion" label="Acción">
-                <FormInput name="accion" />
-              </FormField>
-              <FormField name="descripcion" label="Descripción">
-                <FormInput name="descripcion" />
-              </FormField>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={form.handleSubmit(onValid, onInvalid)}
-                >
-                  {submitText}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                ))}
+              </select>
+              {errors.usuario_id && (
+                <p className="text-red-500 text-sm">
+                  {errors.usuario_id.message}
+                </p>
+              )}
+            </div>
+
+            {/* Acción */}
+            <div className="grid gap-1">
+              <Label htmlFor="accion">Acción</Label>
+              <Input
+                id="accion"
+                type="text"
+                placeholder="Descripción de la acción"
+                {...register("accion")}
+              />
+              {errors.accion && (
+                <p className="text-red-500 text-sm">{errors.accion.message}</p>
+              )}
+            </div>
+
+            {/* Descripción */}
+            <div className="grid gap-1">
+              <Label htmlFor="descripcion">Descripción (opcional)</Label>
+              <textarea
+                id="descripcion"
+                rows={3}
+                placeholder="Descripción adicional..."
+                {...register("descripcion")}
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              {errors.descripcion && (
+                <p className="text-red-500 text-sm">
+                  {errors.descripcion.message}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {submitText}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

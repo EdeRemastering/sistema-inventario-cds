@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,9 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { Form } from "../ui/form";
-import { FormField } from "../ui/form-field";
-import { FormInput } from "../ui/form-input";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 const schema = z.object({
   elemento_id: z.string().min(1, "Selecciona elemento"),
@@ -33,7 +33,7 @@ const schema = z.object({
   observaciones_entrega: z.string().optional(),
 });
 
-type FormShape = z.infer<typeof schema>;
+type MovimientoFormData = z.infer<typeof schema>;
 
 type ElementoOption = {
   id: number;
@@ -46,7 +46,7 @@ type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
   elementos: ElementoOption[];
-  defaultValues?: Partial<FormShape>;
+  defaultValues?: Partial<MovimientoFormData>;
   hiddenFields?: Record<string, string | number>;
 };
 
@@ -58,27 +58,78 @@ export function MovimientoUpsertDialog({
   hiddenFields,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
-  const form = useForm<FormShape>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<MovimientoFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      elemento_id:
-        defaultValues?.elemento_id ??
-        (elementos[0] ? String(elementos[0].id) : ""),
-      fecha_movimiento:
-        defaultValues?.fecha_movimiento ??
-        new Date().toISOString().slice(0, 16),
-      fecha_estimada_devolucion:
-        defaultValues?.fecha_estimada_devolucion ??
-        new Date().toISOString().slice(0, 10),
-      cantidad: defaultValues?.cantidad ?? "1",
+      cantidad: "1",
       ...defaultValues,
-    } as FormShape,
+    } as MovimientoFormData,
   });
 
-  const onValid = () => formRef.current?.requestSubmit();
-  const onInvalid = () => {};
+  const onSubmit = async (data: MovimientoFormData) => {
+    try {
+      const formData = new FormData();
+
+      // Agregar todos los campos del formulario
+      formData.append("elemento_id", data.elemento_id);
+      formData.append("cantidad", data.cantidad);
+      if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
+      formData.append("fecha_movimiento", data.fecha_movimiento);
+      formData.append("dependencia_entrega", data.dependencia_entrega);
+      formData.append("funcionario_entrega", data.funcionario_entrega);
+      if (data.cargo_funcionario_entrega)
+        formData.append(
+          "cargo_funcionario_entrega",
+          data.cargo_funcionario_entrega
+        );
+      formData.append("dependencia_recibe", data.dependencia_recibe);
+      formData.append("funcionario_recibe", data.funcionario_recibe);
+      if (data.cargo_funcionario_recibe)
+        formData.append(
+          "cargo_funcionario_recibe",
+          data.cargo_funcionario_recibe
+        );
+      if (data.motivo) formData.append("motivo", data.motivo);
+      formData.append(
+        "fecha_estimada_devolucion",
+        data.fecha_estimada_devolucion
+      );
+      if (data.numero_ticket)
+        formData.append("numero_ticket", data.numero_ticket);
+      if (data.observaciones_entrega)
+        formData.append("observaciones_entrega", data.observaciones_entrega);
+
+      // Agregar campos ocultos
+      if (hiddenFields) {
+        Object.entries(hiddenFields).forEach(([name, value]) => {
+          formData.append(name, String(value));
+        });
+      }
+
+      const promise = serverAction(formData);
+
+      await toast.promise(promise, {
+        loading: create
+          ? "Creando movimiento..."
+          : "Actualizando movimiento...",
+        success: create
+          ? "Movimiento creado exitosamente"
+          : "Movimiento actualizado exitosamente",
+        error: "Error al procesar el formulario",
+      });
+
+      reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const btnText = create ? "Crear" : "Editar";
   const title = create ? "Crear movimiento" : "Editar movimiento";
@@ -88,113 +139,251 @@ export function MovimientoUpsertDialog({
     <>
       <Button onClick={() => setOpen(true)}>{btnText}</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form ref={formRef} action={serverAction} className="grid gap-3">
-              {hiddenFields &&
-                Object.entries(hiddenFields).map(([n, v]) => (
-                  <input key={n} type="hidden" name={n} value={String(v)} />
-                ))}
-
-              <div className="grid gap-1">
-                <label className="text-sm font-medium" htmlFor="elemento_id">
-                  Elemento
-                </label>
-                <select
-                  id="elemento_id"
-                  name="elemento_id"
-                  defaultValue={form.getValues("elemento_id")}
-                  onChange={(e) =>
-                    form.setValue("elemento_id", e.target.value, {
-                      shouldValidate: true,
-                    })
-                  }
-                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/40 h-9 w-full min-w-0 rounded-md border-2 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow,border-color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-primary focus-visible:ring-primary/30 focus-visible:ring-[3px] hover:border-primary/60"
-                >
-                  <option value="" disabled>
-                    Selecciona elemento
-                  </option>
-                  {elementos.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {`${e.serie} - ${e.marca || ""} ${e.modelo || ""}`.trim()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <FormField name="cantidad" label="Cantidad">
-                <FormInput
-                  name="cantidad"
-                  type="number"
-                  min={1}
-                  defaultValue="1"
-                />
-              </FormField>
-              <FormField name="orden_numero" label="Orden">
-                <FormInput name="orden_numero" />
-              </FormField>
-              <FormField name="fecha_movimiento" label="Fecha movimiento">
-                <FormInput
-                  name="fecha_movimiento"
-                  type="datetime-local"
-                  defaultValue={form.getValues("fecha_movimiento")}
-                />
-              </FormField>
-              <FormField name="dependencia_entrega" label="Dep. entrega">
-                <FormInput name="dependencia_entrega" />
-              </FormField>
-              <FormField name="funcionario_entrega" label="Func. entrega">
-                <FormInput name="funcionario_entrega" />
-              </FormField>
-              <FormField name="cargo_funcionario_entrega" label="Cargo entrega">
-                <FormInput name="cargo_funcionario_entrega" />
-              </FormField>
-              <FormField name="dependencia_recibe" label="Dep. recibe">
-                <FormInput name="dependencia_recibe" />
-              </FormField>
-              <FormField name="funcionario_recibe" label="Func. recibe">
-                <FormInput name="funcionario_recibe" />
-              </FormField>
-              <FormField name="cargo_funcionario_recibe" label="Cargo recibe">
-                <FormInput name="cargo_funcionario_recibe" />
-              </FormField>
-              <FormField name="numero_ticket" label="Nº Ticket">
-                <FormInput name="numero_ticket" />
-              </FormField>
-              <FormField
-                name="fecha_estimada_devolucion"
-                label="Fecha estimada devolución"
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+            {/* Elemento */}
+            <div className="grid gap-1">
+              <Label htmlFor="elemento_id">Elemento</Label>
+              <select
+                id="elemento_id"
+                {...register("elemento_id")}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <FormInput
-                  name="fecha_estimada_devolucion"
-                  type="date"
-                  defaultValue={form.getValues("fecha_estimada_devolucion")}
-                />
-              </FormField>
-              <FormField name="observaciones_entrega" label="Observaciones">
-                <FormInput name="observaciones_entrega" />
-              </FormField>
+                <option value="" disabled>
+                  Selecciona elemento
+                </option>
+                {elementos.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.serie} - {e.marca} {e.modelo}
+                  </option>
+                ))}
+              </select>
+              {errors.elemento_id && (
+                <p className="text-red-500 text-sm">
+                  {errors.elemento_id.message}
+                </p>
+              )}
+            </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={form.handleSubmit(onValid, onInvalid)}
-                >
-                  {submitText}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            {/* Cantidad y Orden */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="cantidad">Cantidad</Label>
+                <Input
+                  id="cantidad"
+                  type="number"
+                  min="1"
+                  {...register("cantidad")}
+                />
+                {errors.cantidad && (
+                  <p className="text-red-500 text-sm">
+                    {errors.cantidad.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="orden_numero">Número de Orden</Label>
+                <Input
+                  id="orden_numero"
+                  type="text"
+                  {...register("orden_numero")}
+                />
+                {errors.orden_numero && (
+                  <p className="text-red-500 text-sm">
+                    {errors.orden_numero.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Fechas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="fecha_movimiento">Fecha de Movimiento</Label>
+                <Input
+                  id="fecha_movimiento"
+                  type="datetime-local"
+                  {...register("fecha_movimiento")}
+                />
+                {errors.fecha_movimiento && (
+                  <p className="text-red-500 text-sm">
+                    {errors.fecha_movimiento.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="fecha_estimada_devolucion">
+                  Fecha Estimada de Devolución
+                </Label>
+                <Input
+                  id="fecha_estimada_devolucion"
+                  type="date"
+                  {...register("fecha_estimada_devolucion")}
+                />
+                {errors.fecha_estimada_devolucion && (
+                  <p className="text-red-500 text-sm">
+                    {errors.fecha_estimada_devolucion.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Dependencia de Entrega */}
+            <div className="grid gap-1">
+              <Label htmlFor="dependencia_entrega">
+                Dependencia de Entrega
+              </Label>
+              <Input
+                id="dependencia_entrega"
+                type="text"
+                {...register("dependencia_entrega")}
+              />
+              {errors.dependencia_entrega && (
+                <p className="text-red-500 text-sm">
+                  {errors.dependencia_entrega.message}
+                </p>
+              )}
+            </div>
+
+            {/* Funcionario de Entrega */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="funcionario_entrega">
+                  Funcionario de Entrega
+                </Label>
+                <Input
+                  id="funcionario_entrega"
+                  type="text"
+                  {...register("funcionario_entrega")}
+                />
+                {errors.funcionario_entrega && (
+                  <p className="text-red-500 text-sm">
+                    {errors.funcionario_entrega.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="cargo_funcionario_entrega">Cargo</Label>
+                <Input
+                  id="cargo_funcionario_entrega"
+                  type="text"
+                  {...register("cargo_funcionario_entrega")}
+                />
+                {errors.cargo_funcionario_entrega && (
+                  <p className="text-red-500 text-sm">
+                    {errors.cargo_funcionario_entrega.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Dependencia que Recibe */}
+            <div className="grid gap-1">
+              <Label htmlFor="dependencia_recibe">Dependencia que Recibe</Label>
+              <Input
+                id="dependencia_recibe"
+                type="text"
+                {...register("dependencia_recibe")}
+              />
+              {errors.dependencia_recibe && (
+                <p className="text-red-500 text-sm">
+                  {errors.dependencia_recibe.message}
+                </p>
+              )}
+            </div>
+
+            {/* Funcionario que Recibe */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="funcionario_recibe">
+                  Funcionario que Recibe
+                </Label>
+                <Input
+                  id="funcionario_recibe"
+                  type="text"
+                  {...register("funcionario_recibe")}
+                />
+                {errors.funcionario_recibe && (
+                  <p className="text-red-500 text-sm">
+                    {errors.funcionario_recibe.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="cargo_funcionario_recibe">Cargo</Label>
+                <Input
+                  id="cargo_funcionario_recibe"
+                  type="text"
+                  {...register("cargo_funcionario_recibe")}
+                />
+                {errors.cargo_funcionario_recibe && (
+                  <p className="text-red-500 text-sm">
+                    {errors.cargo_funcionario_recibe.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Motivo y Número de Ticket */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="motivo">Motivo</Label>
+                <Input id="motivo" type="text" {...register("motivo")} />
+                {errors.motivo && (
+                  <p className="text-red-500 text-sm">
+                    {errors.motivo.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="numero_ticket">Número de Ticket</Label>
+                <Input
+                  id="numero_ticket"
+                  type="text"
+                  {...register("numero_ticket")}
+                />
+                {errors.numero_ticket && (
+                  <p className="text-red-500 text-sm">
+                    {errors.numero_ticket.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Observaciones */}
+            <div className="grid gap-1">
+              <Label htmlFor="observaciones_entrega">
+                Observaciones de Entrega
+              </Label>
+              <textarea
+                id="observaciones_entrega"
+                rows={3}
+                {...register("observaciones_entrega")}
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              {errors.observaciones_entrega && (
+                <p className="text-red-500 text-sm">
+                  {errors.observaciones_entrega.message}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {submitText}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,9 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { Form } from "../ui/form";
-import { FormField } from "../ui/form-field";
-import { FormInput } from "../ui/form-input";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 const schema = z.object({
   categoria_id: z.string().min(1, "Selecciona categoría"),
@@ -25,7 +25,7 @@ const schema = z.object({
   cantidad: z.string().min(1, "Cantidad requerida"),
 });
 
-type FormShape = z.infer<typeof schema>;
+type ElementoFormData = z.infer<typeof schema>;
 
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string };
@@ -35,7 +35,7 @@ type Props = {
   create?: boolean;
   categorias: CategoriaOption[];
   subcategorias: SubcategoriaOption[];
-  defaultValues?: Partial<FormShape>;
+  defaultValues?: Partial<ElementoFormData>;
   hiddenFields?: Record<string, string | number>;
 };
 
@@ -48,22 +48,63 @@ export function ElementoUpsertDialog({
   hiddenFields,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
-  const form = useForm<FormShape>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<ElementoFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      categoria_id:
-        defaultValues?.categoria_id ??
-        (categorias[0] ? String(categorias[0].id) : ""),
-      subcategoria_id: defaultValues?.subcategoria_id ?? "",
-      cantidad: defaultValues?.cantidad ?? "1",
+      cantidad: "1",
       ...defaultValues,
-    } as FormShape,
+    } as ElementoFormData,
   });
 
-  const onValid = () => formRef.current?.requestSubmit();
-  const onInvalid = () => {};
+  // Filtrar subcategorías por categoría seleccionada
+  const selectedCategoriaId = watch("categoria_id");
+  const filteredSubcategorias = subcategorias.filter(
+    (sub) => sub.categoria_id === parseInt(selectedCategoriaId || "0")
+  );
+
+  const onSubmit = async (data: ElementoFormData) => {
+    try {
+      const formData = new FormData();
+
+      // Agregar campos del formulario
+      formData.append("categoria_id", data.categoria_id);
+      if (data.subcategoria_id)
+        formData.append("subcategoria_id", data.subcategoria_id);
+      formData.append("serie", data.serie);
+      if (data.marca) formData.append("marca", data.marca);
+      if (data.modelo) formData.append("modelo", data.modelo);
+      formData.append("cantidad", data.cantidad);
+
+      // Agregar campos ocultos
+      if (hiddenFields) {
+        Object.entries(hiddenFields).forEach(([name, value]) => {
+          formData.append(name, String(value));
+        });
+      }
+
+      const promise = serverAction(formData);
+
+      await toast.promise(promise, {
+        loading: create ? "Creando elemento..." : "Actualizando elemento...",
+        success: create
+          ? "Elemento creado exitosamente"
+          : "Elemento actualizado exitosamente",
+        error: "Error al procesar el formulario",
+      });
+
+      reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const btnText = create ? "Crear" : "Editar";
   const title = create ? "Crear elemento" : "Editar elemento";
@@ -77,104 +118,127 @@ export function ElementoUpsertDialog({
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form ref={formRef} action={serverAction} className="grid gap-3">
-              {hiddenFields &&
-                Object.entries(hiddenFields).map(([name, value]) => (
-                  <input
-                    key={name}
-                    type="hidden"
-                    name={name}
-                    value={String(value)}
-                  />
-                ))}
-
-              <div className="grid gap-1">
-                <label className="text-sm font-medium" htmlFor="categoria_id">
-                  Categoría
-                </label>
-                <select
-                  id="categoria_id"
-                  name="categoria_id"
-                  defaultValue={form.getValues("categoria_id")}
-                  onChange={(e) =>
-                    form.setValue("categoria_id", e.target.value, {
-                      shouldValidate: true,
-                    })
-                  }
-                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/40 h-9 w-full min-w-0 rounded-md border-2 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow,border-color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-primary focus-visible:ring-primary/30 focus-visible:ring-[3px] hover:border-primary/60"
-                >
-                  <option value="" disabled>
-                    Selecciona categoría
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+            {/* Categoría */}
+            <div className="grid gap-1">
+              <Label htmlFor="categoria_id">Categoría</Label>
+              <select
+                id="categoria_id"
+                {...register("categoria_id")}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="" disabled>
+                  Selecciona categoría
+                </option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
                   </option>
-                  {categorias.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                ))}
+              </select>
+              {errors.categoria_id && (
+                <p className="text-red-500 text-sm">
+                  {errors.categoria_id.message}
+                </p>
+              )}
+            </div>
 
+            {/* Subcategoría */}
+            <div className="grid gap-1">
+              <Label htmlFor="subcategoria_id">Subcategoría</Label>
+              <select
+                id="subcategoria_id"
+                {...register("subcategoria_id")}
+                disabled={!selectedCategoriaId}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Selecciona subcategoría</option>
+                {filteredSubcategorias.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+              {errors.subcategoria_id && (
+                <p className="text-red-500 text-sm">
+                  {errors.subcategoria_id.message}
+                </p>
+              )}
+            </div>
+
+            {/* Serie */}
+            <div className="grid gap-1">
+              <Label htmlFor="serie">Serie</Label>
+              <Input
+                id="serie"
+                type="text"
+                placeholder="Número de serie"
+                {...register("serie")}
+              />
+              {errors.serie && (
+                <p className="text-red-500 text-sm">{errors.serie.message}</p>
+              )}
+            </div>
+
+            {/* Marca y Modelo */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <label
-                  className="text-sm font-medium"
-                  htmlFor="subcategoria_id"
-                >
-                  Subcategoría
-                </label>
-                <select
-                  id="subcategoria_id"
-                  name="subcategoria_id"
-                  defaultValue={form.getValues("subcategoria_id")}
-                  onChange={(e) =>
-                    form.setValue("subcategoria_id", e.target.value)
-                  }
-                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/40 h-9 w-full min-w-0 rounded-md border-2 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow,border-color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-primary focus-visible:ring-primary/30 focus-visible:ring-[3px] hover:border-primary/60"
-                >
-                  <option value="">—</option>
-                  {subcategorias.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <FormField name="serie" label="Serie">
-                <FormInput name="serie" placeholder="Serie" />
-              </FormField>
-              <FormField name="marca" label="Marca">
-                <FormInput name="marca" placeholder="Marca" />
-              </FormField>
-              <FormField name="modelo" label="Modelo">
-                <FormInput name="modelo" placeholder="Modelo" />
-              </FormField>
-              <FormField name="cantidad" label="Cantidad">
-                <FormInput
-                  name="cantidad"
-                  type="number"
-                  min={1}
-                  defaultValue="1"
+                <Label htmlFor="marca">Marca</Label>
+                <Input
+                  id="marca"
+                  type="text"
+                  placeholder="Marca"
+                  {...register("marca")}
                 />
-              </FormField>
+                {errors.marca && (
+                  <p className="text-red-500 text-sm">{errors.marca.message}</p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="modelo">Modelo</Label>
+                <Input
+                  id="modelo"
+                  type="text"
+                  placeholder="Modelo"
+                  {...register("modelo")}
+                />
+                {errors.modelo && (
+                  <p className="text-red-500 text-sm">
+                    {errors.modelo.message}
+                  </p>
+                )}
+              </div>
+            </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={form.handleSubmit(onValid, onInvalid)}
-                >
-                  {submitText}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            {/* Cantidad */}
+            <div className="grid gap-1">
+              <Label htmlFor="cantidad">Cantidad</Label>
+              <Input
+                id="cantidad"
+                type="number"
+                min="1"
+                {...register("cantidad")}
+              />
+              {errors.cantidad && (
+                <p className="text-red-500 text-sm">
+                  {errors.cantidad.message}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {submitText}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

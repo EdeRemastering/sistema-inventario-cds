@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,21 +13,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { Form } from "../ui/form";
-import { FormField } from "../ui/form-field";
-import { FormInput } from "../ui/form-input";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 const schema = z.object({
   tipo_reporte: z.string().min(1, "Tipo requerido"),
   nombre_archivo: z.string().min(1, "Nombre requerido"),
 });
 
-type FormShape = z.infer<typeof schema>;
+type ReporteFormData = z.infer<typeof schema>;
 
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
-  defaultValues?: Partial<FormShape>;
+  defaultValues?: Partial<ReporteFormData>;
   hiddenFields?: Record<string, string | number>;
 };
 
@@ -37,15 +37,48 @@ export function ReporteUpsertDialog({
   hiddenFields,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
-  const form = useForm<FormShape>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ReporteFormData>({
     resolver: zodResolver(schema),
-    defaultValues: { ...defaultValues } as FormShape,
+    defaultValues: { ...defaultValues } as ReporteFormData,
   });
 
-  const onValid = () => formRef.current?.requestSubmit();
-  const onInvalid = () => {};
+  const onSubmit = async (data: ReporteFormData) => {
+    try {
+      const formData = new FormData();
+
+      // Agregar campos del formulario
+      formData.append("tipo_reporte", data.tipo_reporte);
+      formData.append("nombre_archivo", data.nombre_archivo);
+
+      // Agregar campos ocultos
+      if (hiddenFields) {
+        Object.entries(hiddenFields).forEach(([name, value]) => {
+          formData.append(name, String(value));
+        });
+      }
+
+      const promise = serverAction(formData);
+
+      await toast.promise(promise, {
+        loading: create ? "Creando reporte..." : "Actualizando reporte...",
+        success: create
+          ? "Reporte creado exitosamente"
+          : "Reporte actualizado exitosamente",
+        error: "Error al procesar el formulario",
+      });
+
+      reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const btnText = create ? "Crear" : "Editar";
   const title = create ? "Crear reporte" : "Editar reporte";
@@ -59,35 +92,52 @@ export function ReporteUpsertDialog({
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form ref={formRef} action={serverAction} className="grid gap-3">
-              {hiddenFields &&
-                Object.entries(hiddenFields).map(([n, v]) => (
-                  <input key={n} type="hidden" name={n} value={String(v)} />
-                ))}
-              <FormField name="tipo_reporte" label="Tipo de reporte">
-                <FormInput name="tipo_reporte" placeholder="Tipo" />
-              </FormField>
-              <FormField name="nombre_archivo" label="Nombre del archivo">
-                <FormInput name="nombre_archivo" placeholder="Nombre" />
-              </FormField>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={form.handleSubmit(onValid, onInvalid)}
-                >
-                  {submitText}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+            {/* Tipo de Reporte */}
+            <div className="grid gap-1">
+              <Label htmlFor="tipo_reporte">Tipo de Reporte</Label>
+              <Input
+                id="tipo_reporte"
+                type="text"
+                placeholder="Ej: Inventario General, Movimientos por Período"
+                {...register("tipo_reporte")}
+              />
+              {errors.tipo_reporte && (
+                <p className="text-red-500 text-sm">
+                  {errors.tipo_reporte.message}
+                </p>
+              )}
+            </div>
+
+            {/* Nombre del Archivo */}
+            <div className="grid gap-1">
+              <Label htmlFor="nombre_archivo">Nombre del Archivo</Label>
+              <Input
+                id="nombre_archivo"
+                type="text"
+                placeholder="Ej: inventario_2024.pdf"
+                {...register("nombre_archivo")}
+              />
+              {errors.nombre_archivo && (
+                <p className="text-red-500 text-sm">
+                  {errors.nombre_archivo.message}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {submitText}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>
