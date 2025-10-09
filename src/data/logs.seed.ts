@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export const logsSeed = [
   { id: 1, usuario_id: 1, accion: "INICIO_SESION", detalles: "Inicio de sesión exitoso", ip: "::1", creado_en: new Date("2025-09-19T20:19:43") },

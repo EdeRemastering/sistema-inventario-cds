@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 // Función helper para convertir string de tiempo a Date
 function timeStringToDate(timeString: string): Date {

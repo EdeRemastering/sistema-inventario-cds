@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export const reportesSeed = [
   // Cargamos sólo metadatos; contenido_pdf real se omite por tamaño

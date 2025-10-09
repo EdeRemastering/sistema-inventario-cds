@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export const elementosSeed = [
   { id: 1, categoria_id: 4, subcategoria_id: 38, cantidad: 1, serie: "N/A", marca: "LG", modelo: "N/A", ubicacion: "AMBIENTE DE APRENDIZAJE N°1", estado_funcional: "B" as const, estado_fisico: "B" as const, fecha_entrada: new Date("2025-09-19"), codigo_equipo: "AA01-ME-01-01", observaciones: "En buen estado" },

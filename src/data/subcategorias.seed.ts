@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export const subcategoriasSeed = [
   { id: 1, nombre: "SILLA PLASTICA", categoria_id: 1 },
