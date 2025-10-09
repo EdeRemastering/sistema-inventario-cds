@@ -1,0 +1,371 @@
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
+// Extender jsPDF para incluir autoTable
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: Record<string, unknown>) => jsPDF;
+  }
+}
+
+export type ReporteData = {
+  titulo: string;
+  fecha: Date;
+  datos: Record<string, unknown>[];
+  columnas: string[];
+  campos: string[];
+};
+
+export type InventarioReporteData = {
+  elementos: Array<{
+    id: number;
+    serie: string;
+    marca: string | null;
+    modelo: string | null;
+    cantidad: number;
+    ubicacion: string | null;
+    estado_funcional: string;
+    estado_fisico: string;
+    categoria: { nombre: string };
+    subcategoria: { nombre: string } | null;
+  }>;
+};
+
+export type MovimientosReporteData = {
+  movimientos: Array<{
+    id: number;
+    numero_ticket: string;
+    fecha_movimiento: Date;
+    tipo: string;
+    cantidad: number;
+    elemento: {
+      serie: string;
+      marca: string | null;
+      modelo: string | null;
+    };
+    dependencia_entrega: string;
+    funcionario_entrega: string;
+    dependencia_recibe: string;
+    funcionario_recibe: string;
+    fecha_estimada_devolucion: Date;
+    fecha_real_devolucion: Date | null;
+  }>;
+};
+
+export type PrestamosActivosReporteData = {
+  prestamos: Array<{
+    id: number;
+    numero_ticket: string;
+    fecha_movimiento: Date;
+    cantidad: number;
+    elemento: {
+      serie: string;
+      marca: string | null;
+      modelo: string | null;
+    };
+    dependencia_recibe: string;
+    funcionario_recibe: string;
+    fecha_estimada_devolucion: Date;
+  }>;
+};
+
+/**
+ * Genera un reporte PDF genérico
+ */
+export function generateGenericReport(data: ReporteData): string {
+  const doc = new jsPDF();
+  
+  // Título
+  doc.setFontSize(20);
+  doc.text(data.titulo, 20, 30);
+  
+  // Fecha
+  doc.setFontSize(12);
+  doc.text(`Fecha: ${data.fecha.toLocaleDateString()}`, 20, 50);
+  
+  // Tabla de datos
+  const tableData = data.datos.map(item => 
+    data.campos.map(campo => item[campo] || '')
+  );
+  
+  doc.autoTable({
+    head: [data.columnas],
+    body: tableData,
+    startY: 60,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [66, 139, 202] },
+  });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Genera reporte de inventario completo
+ */
+export function generateInventarioReport(data: InventarioReporteData): string {
+  const doc = new jsPDF();
+  
+  // Título
+  doc.setFontSize(20);
+  doc.text("INVENTARIO COMPLETO", 20, 30);
+  
+  // Fecha
+  doc.setFontSize(12);
+  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 50);
+  doc.text(`Total de elementos: ${data.elementos.length}`, 20, 60);
+  
+  // Tabla de elementos
+  const tableData = data.elementos.map(elemento => [
+    elemento.id.toString(),
+    elemento.serie,
+    elemento.marca || 'N/A',
+    elemento.modelo || 'N/A',
+    elemento.cantidad.toString(),
+    elemento.ubicacion || 'N/A',
+    elemento.estado_funcional,
+    elemento.estado_fisico,
+    elemento.categoria.nombre,
+    elemento.subcategoria?.nombre || 'N/A'
+  ]);
+  
+  doc.autoTable({
+    head: [['ID', 'Serie', 'Marca', 'Modelo', 'Cantidad', 'Ubicación', 'Estado Funcional', 'Estado Físico', 'Categoría', 'Subcategoría']],
+    body: tableData,
+    startY: 70,
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: [66, 139, 202] },
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 20 },
+      3: { cellWidth: 20 },
+      4: { cellWidth: 15 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 20 },
+      7: { cellWidth: 20 },
+      8: { cellWidth: 25 },
+      9: { cellWidth: 25 }
+    }
+  });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Genera reporte de movimientos
+ */
+export function generateMovimientosReport(data: MovimientosReporteData): string {
+  const doc = new jsPDF();
+  
+  // Título
+  doc.setFontSize(20);
+  doc.text("REPORTE DE MOVIMIENTOS", 20, 30);
+  
+  // Fecha
+  doc.setFontSize(12);
+  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 50);
+  doc.text(`Total de movimientos: ${data.movimientos.length}`, 20, 60);
+  
+  // Tabla de movimientos
+  const tableData = data.movimientos.map(movimiento => [
+    movimiento.numero_ticket,
+    movimiento.fecha_movimiento.toLocaleDateString(),
+    movimiento.tipo,
+    `${movimiento.elemento.serie} - ${movimiento.elemento.marca} ${movimiento.elemento.modelo}`,
+    movimiento.cantidad.toString(),
+    movimiento.dependencia_entrega,
+    movimiento.funcionario_entrega,
+    movimiento.dependencia_recibe,
+    movimiento.funcionario_recibe,
+    movimiento.fecha_estimada_devolucion.toLocaleDateString(),
+    movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
+  ]);
+  
+  doc.autoTable({
+    head: [['Ticket', 'Fecha', 'Tipo', 'Elemento', 'Cantidad', 'Dependencia Entrega', 'Funcionario Entrega', 'Dependencia Recibe', 'Funcionario Recibe', 'Fecha Est. Devolución', 'Fecha Real Devolución']],
+    body: tableData,
+    startY: 70,
+    styles: { fontSize: 6 },
+    headStyles: { fillColor: [66, 139, 202] },
+    columnStyles: {
+      0: { cellWidth: 20 },
+      1: { cellWidth: 20 },
+      2: { cellWidth: 15 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 15 },
+      5: { cellWidth: 25 },
+      6: { cellWidth: 25 },
+      7: { cellWidth: 25 },
+      8: { cellWidth: 25 },
+      9: { cellWidth: 20 },
+      10: { cellWidth: 20 }
+    }
+  });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Genera reporte de préstamos activos
+ */
+export function generatePrestamosActivosReport(data: PrestamosActivosReporteData): string {
+  const doc = new jsPDF();
+  
+  // Título
+  doc.setFontSize(20);
+  doc.text("PRÉSTAMOS ACTIVOS", 20, 30);
+  
+  // Fecha
+  doc.setFontSize(12);
+  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 50);
+  doc.text(`Total de préstamos activos: ${data.prestamos.length}`, 20, 60);
+  
+  // Tabla de préstamos activos
+  const tableData = data.prestamos.map(prestamo => [
+    prestamo.numero_ticket,
+    prestamo.fecha_movimiento.toLocaleDateString(),
+    `${prestamo.elemento.serie} - ${prestamo.elemento.marca} ${prestamo.elemento.modelo}`,
+    prestamo.cantidad.toString(),
+    prestamo.dependencia_recibe,
+    prestamo.funcionario_recibe,
+    prestamo.fecha_estimada_devolucion.toLocaleDateString(),
+    prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
+  ]);
+  
+  doc.autoTable({
+    head: [['Ticket', 'Fecha', 'Elemento', 'Cantidad', 'Dependencia', 'Funcionario', 'Fecha Est. Devolución', 'Estado']],
+    body: tableData,
+    startY: 70,
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: [66, 139, 202] },
+    columnStyles: {
+      0: { cellWidth: 20 },
+      1: { cellWidth: 20 },
+      2: { cellWidth: 35 },
+      3: { cellWidth: 15 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 30 },
+      6: { cellWidth: 25 },
+      7: { cellWidth: 20 }
+    }
+  });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Exporta datos a Excel
+ */
+export function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx'): void {
+  // Esta función se implementaría con la librería xlsx
+  // Por ahora retornamos un placeholder
+  console.log('Exportando a Excel:', filename, data);
+}
+
+/**
+ * Exporta inventario completo a Excel
+ */
+export function exportInventarioToExcel(data: InventarioReporteData): string {
+  const excelData = data.elementos.map(elemento => ({
+    'ID': elemento.id,
+    'Serie': elemento.serie,
+    'Marca': elemento.marca || 'N/A',
+    'Modelo': elemento.modelo || 'N/A',
+    'Cantidad': elemento.cantidad,
+    'Ubicación': elemento.ubicacion || 'N/A',
+    'Estado Funcional': elemento.estado_funcional,
+    'Estado Físico': elemento.estado_fisico,
+    'Categoría': elemento.categoria.nombre,
+    'Subcategoría': elemento.subcategoria?.nombre || 'N/A'
+  }));
+
+  // En una implementación real, aquí usarías la librería xlsx
+  // Por ahora simulamos la descarga
+  const csvContent = [
+    Object.keys(excelData[0] || {}).join(','),
+    ...excelData.map(row => Object.values(row).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'inventario_completo.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  return 'Inventario exportado exitosamente';
+}
+
+/**
+ * Exporta movimientos a Excel
+ */
+export function exportMovimientosToExcel(data: MovimientosReporteData): string {
+  const excelData = data.movimientos.map(movimiento => ({
+    'ID': movimiento.id,
+    'Ticket': movimiento.numero_ticket,
+    'Fecha': movimiento.fecha_movimiento.toLocaleDateString(),
+    'Tipo': movimiento.tipo,
+    'Elemento': `${movimiento.elemento.serie} - ${movimiento.elemento.marca} ${movimiento.elemento.modelo}`,
+    'Cantidad': movimiento.cantidad,
+    'Dependencia Entrega': movimiento.dependencia_entrega,
+    'Funcionario Entrega': movimiento.funcionario_entrega,
+    'Dependencia Recibe': movimiento.dependencia_recibe,
+    'Funcionario Recibe': movimiento.funcionario_recibe,
+    'Fecha Est. Devolución': movimiento.fecha_estimada_devolucion.toLocaleDateString(),
+    'Fecha Real Devolución': movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
+  }));
+
+  const csvContent = [
+    Object.keys(excelData[0] || {}).join(','),
+    ...excelData.map(row => Object.values(row).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'movimientos.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  return 'Movimientos exportados exitosamente';
+}
+
+/**
+ * Exporta préstamos activos a Excel
+ */
+export function exportPrestamosActivosToExcel(data: PrestamosActivosReporteData): string {
+  const excelData = data.prestamos.map(prestamo => ({
+    'ID': prestamo.id,
+    'Ticket': prestamo.numero_ticket,
+    'Fecha': prestamo.fecha_movimiento.toLocaleDateString(),
+    'Elemento': `${prestamo.elemento.serie} - ${prestamo.elemento.marca} ${prestamo.elemento.modelo}`,
+    'Cantidad': prestamo.cantidad,
+    'Dependencia': prestamo.dependencia_recibe,
+    'Funcionario': prestamo.funcionario_recibe,
+    'Fecha Est. Devolución': prestamo.fecha_estimada_devolucion.toLocaleDateString(),
+    'Estado': prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
+  }));
+
+  const csvContent = [
+    Object.keys(excelData[0] || {}).join(','),
+    ...excelData.map(row => Object.values(row).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'prestamos_activos.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  return 'Préstamos activos exportados exitosamente';
+}

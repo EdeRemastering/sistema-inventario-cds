@@ -1,7 +1,15 @@
 import { Suspense } from "react";
-import { getDashboardStats, getActividadReciente } from "../../../modules/dashboard/services";
-import { DashboardStatsCards, DashboardQuickStats } from "../../../components/dashboard/dashboard-stats";
+import {
+  getDashboardStats,
+  getActividadReciente,
+} from "../../../modules/dashboard/services";
+import {
+  DashboardStatsCards,
+  DashboardQuickStats,
+} from "../../../components/dashboard/dashboard-stats";
 import { RecentActivity } from "../../../components/dashboard/recent-activity";
+import { LowStockAlerts } from "../../../components/dashboard/low-stock-alerts";
+import { AdvancedCharts } from "../../../components/dashboard/advanced-charts";
 import { DashboardSkeleton } from "../../../components/skeletons";
 
 async function DashboardContent() {
@@ -21,10 +29,13 @@ async function DashboardContent() {
 
       <DashboardStatsCards stats={stats} />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <RecentActivity actividades={actividades} />
         <DashboardQuickStats stats={stats} />
+        <LowStockAlerts />
       </div>
+
+      <AdvancedCharts stats={stats} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,9 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { SignaturePadComponent } from "../ui/signature-pad";
+import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
+import { validateStock } from "../../lib/stock-control";
 
 const schema = z.object({
   elemento_id: z.string().min(1, "Selecciona elemento"),
@@ -46,7 +49,10 @@ type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
   elementos: ElementoOption[];
-  defaultValues?: Partial<MovimientoFormData>;
+  defaultValues?: Partial<MovimientoFormData> & {
+    firma_entrega?: string | null;
+    firma_recibe?: string | null;
+  };
   hiddenFields?: Record<string, string | number>;
 };
 
@@ -58,11 +64,19 @@ export function MovimientoUpsertDialog({
   hiddenFields,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
+  const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
+  const [stockInfo, setStockInfo] = useState<{
+    available: number;
+    total: number;
+  } | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<MovimientoFormData>({
     resolver: zodResolver(schema),
@@ -72,8 +86,51 @@ export function MovimientoUpsertDialog({
     } as MovimientoFormData,
   });
 
+  const selectedElementoId = watch("elemento_id");
+  const cantidad = watch("cantidad");
+
+  // Generar número de ticket automáticamente al crear
+  useEffect(() => {
+    if (create && open && !defaultValues?.numero_ticket) {
+      generateUniqueTicketNumber().then((ticketNumber) => {
+        setValue("numero_ticket", ticketNumber);
+      });
+    }
+  }, [create, open, defaultValues?.numero_ticket, setValue]);
+
+  // Validar stock cuando cambie el elemento o cantidad
+  useEffect(() => {
+    if (selectedElementoId && cantidad) {
+      validateStock(parseInt(selectedElementoId), parseInt(cantidad)).then(
+        (result) => {
+          if (result.isValid) {
+            setStockInfo({
+              available: result.availableQuantity,
+              total: result.availableQuantity + parseInt(cantidad),
+            });
+          } else {
+            setStockInfo(null);
+            toast.error(result.message || "Stock insuficiente");
+          }
+        }
+      );
+    }
+  }, [selectedElementoId, cantidad]);
+
   const onSubmit = async (data: MovimientoFormData) => {
     try {
+      // Validar stock antes de enviar
+      if (selectedElementoId && cantidad) {
+        const stockValidation = await validateStock(
+          parseInt(selectedElementoId),
+          parseInt(cantidad)
+        );
+        if (!stockValidation.isValid) {
+          toast.error(stockValidation.message || "Stock insuficiente");
+          return;
+        }
+      }
+
       const formData = new FormData();
 
       // Agregar todos los campos del formulario
@@ -105,6 +162,10 @@ export function MovimientoUpsertDialog({
       if (data.observaciones_entrega)
         formData.append("observaciones_entrega", data.observaciones_entrega);
 
+      // Agregar firmas digitales
+      if (firmaEntrega) formData.append("firma_entrega", firmaEntrega);
+      if (firmaRecibe) formData.append("firma_recibe", firmaRecibe);
+
       // Agregar campos ocultos
       if (hiddenFields) {
         Object.entries(hiddenFields).forEach(([name, value]) => {
@@ -125,6 +186,9 @@ export function MovimientoUpsertDialog({
       });
 
       reset();
+      setFirmaEntrega(null);
+      setFirmaRecibe(null);
+      setStockInfo(null);
       setOpen(false);
     } catch (error) {
       console.error("Error:", error);
@@ -181,6 +245,11 @@ export function MovimientoUpsertDialog({
                 {errors.cantidad && (
                   <p className="text-red-500 text-sm">
                     {errors.cantidad.message}
+                  </p>
+                )}
+                {stockInfo && (
+                  <p className="text-xs text-muted-foreground">
+                    Stock disponible: {stockInfo.available} unidades
                   </p>
                 )}
               </div>
@@ -369,6 +438,23 @@ export function MovimientoUpsertDialog({
                   {errors.observaciones_entrega.message}
                 </p>
               )}
+            </div>
+
+            {/* Firmas Digitales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SignaturePadComponent
+                label="Firma de Entrega"
+                onSignatureChange={setFirmaEntrega}
+                defaultValue={defaultValues?.firma_entrega}
+                required={create}
+              />
+
+              <SignaturePadComponent
+                label="Firma de Recibo"
+                onSignatureChange={setFirmaRecibe}
+                defaultValue={defaultValues?.firma_recibe}
+                required={create}
+              />
             </div>
 
             <DialogFooter>
