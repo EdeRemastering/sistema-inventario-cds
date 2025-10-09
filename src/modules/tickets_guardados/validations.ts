@@ -7,7 +7,7 @@ export const ticketCreateSchema = z.object({
   elemento: z.string().optional(),
   serie: z.string().optional(),
   marca_modelo: z.string().optional(),
-  cantidad: z.number().int().positive().default(1),
+  cantidad: z.coerce.number().int().positive().default(1),
   dependencia_entrega: z.string().optional(),
   funcionario_entrega: z.string().optional(),
   dependencia_recibe: z.string().optional(),

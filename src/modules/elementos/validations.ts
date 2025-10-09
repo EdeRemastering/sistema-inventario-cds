@@ -12,7 +12,7 @@ export const elementoCreateSchema = z.object({
   ubicacion: z.string().optional().or(z.literal("")),
   estado_funcional: estadoCorto.default("B"),
   estado_fisico: estadoCorto.default("B"),
-  fecha_entrada: z.coerce.date(),
+  fecha_entrada: z.coerce.date().default(new Date()),
   codigo_equipo: z.string().optional().or(z.literal("")),
   observaciones: z.string().optional().or(z.literal("")),
 });

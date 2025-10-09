@@ -9,10 +9,10 @@ export async function actionCreateMovimiento(formData: FormData) {
   const parsed = movimientoCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   await createMovimiento({
-    cargo_funcionario_entrega: null,
-    cargo_funcionario_recibe: null,
+    cargo_funcionario_entrega: parsed.data.cargo_funcionario_entrega || null,
+    cargo_funcionario_recibe: parsed.data.cargo_funcionario_recibe || null,
     fecha_real_devolucion: null,
-    observaciones_entrega: null,
+    observaciones_entrega: parsed.data.observaciones_entrega || null,
     observaciones_devolucion: null,
     firma_recepcion: null,
     firma_entrega: null,
@@ -21,7 +21,6 @@ export async function actionCreateMovimiento(formData: FormData) {
     serial_equipo: null,
     hora_entrega: null,
     hora_devolucion: null,
-    numero_ticket: parsed.data.numero_ticket ?? "",
     firma_devuelve: null,
     firma_recibe_devolucion: null,
     devuelto_por: null,

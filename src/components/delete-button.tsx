@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import {
@@ -35,29 +35,55 @@ export function DeleteButton({
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
   const handleConfirm = useCallback(async () => {
     if (action) {
       setSubmitting(true);
-      // Submit via server action form
-      formRef.current?.requestSubmit();
-      setSubmitting(false);
-      setOpen(false);
+
+      try {
+        const formData = new FormData();
+
+        // Agregar campos ocultos si existen
+        if (fields) {
+          Object.entries(fields).forEach(([name, value]) => {
+            formData.append(name, String(value));
+          });
+        }
+
+        const promise = action(formData);
+
+        await toast.promise(promise, {
+          loading: "Eliminando...",
+          success: "Eliminado correctamente",
+          error: "No se pudo eliminar",
+        });
+
+        setSubmitting(false);
+        setOpen(false);
+      } catch (error) {
+        setSubmitting(false);
+        console.error("Error al eliminar:", error);
+      }
       return;
     }
 
     if (onConfirm) {
       setSubmitting(true);
-      await toast.promise(onConfirm(), {
-        loading: "Eliminando...",
-        success: "Eliminado correctamente",
-        error: "No se pudo eliminar",
-      });
-      setSubmitting(false);
-      setOpen(false);
+
+      try {
+        await toast.promise(onConfirm(), {
+          loading: "Eliminando...",
+          success: "Eliminado correctamente",
+          error: "No se pudo eliminar",
+        });
+        setSubmitting(false);
+        setOpen(false);
+      } catch (error) {
+        setSubmitting(false);
+        console.error("Error al eliminar:", error);
+      }
     }
-  }, [action, onConfirm]);
+  }, [action, onConfirm, fields]);
 
   return (
     <>
@@ -90,19 +116,6 @@ export function DeleteButton({
               {confirmText}
             </Button>
           </DialogFooter>
-          {action ? (
-            <form ref={formRef} action={action} className="hidden">
-              {fields &&
-                Object.entries(fields).map(([name, value]) => (
-                  <input
-                    key={name}
-                    type="hidden"
-                    name={name}
-                    value={String(value)}
-                  />
-                ))}
-            </form>
-          ) : null}
         </DialogContent>
       </Dialog>
     </>
