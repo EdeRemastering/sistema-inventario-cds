@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "../../lib/utils";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   Boxes,
@@ -15,7 +14,22 @@ import {
   ListChecks,
   Users,
   BarChart3,
+  LogOut,
 } from "lucide-react";
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 type NavItem = {
   href: string;
@@ -38,30 +52,79 @@ const items: NavItem[] = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
   return (
-    <aside className="hidden border-r bg-card/50 sm:block sm:w-64">
-      <div className="flex items-center justify-between p-4">
-        <div className="text-lg font-semibold text-primary">Sistema CDs</div>
-        <ThemeToggle />
-      </div>
-      <nav className="grid gap-1 p-2">
-        {items.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-2 rounded px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                active && "bg-primary text-primary-foreground font-medium"
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center justify-between px-2 py-2">
+          <div className="text-lg font-semibold text-sidebar-foreground">
+            Sistema CDs
+          </div>
+          <ThemeToggle />
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href;
+                return (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      tooltip={label}
+                    >
+                      <Link href={href}>
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {session?.user && (
+                <SidebarMenuItem>
+                  <div className="flex flex-col gap-1 px-2 py-1">
+                    <div className="text-sm font-medium text-sidebar-foreground">
+                      {session.user.name}
+                    </div>
+                    <div className="text-xs text-sidebar-foreground/70">
+                      Usuario autenticado
+                    </div>
+                  </div>
+                </SidebarMenuItem>
               )}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+              <SidebarSeparator />
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleSignOut}
+                  tooltip="Cerrar sesión"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Cerrar sesión</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarFooter>
+    </Sidebar>
   );
 }

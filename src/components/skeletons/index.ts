@@ -7,4 +7,5 @@ export { ReportesSkeleton } from "./reportes";
 export { SubcategoriasSkeleton } from "./subcategorias";
 export { ObservacionesSkeleton } from "./observaciones";
 export { TicketsSkeleton } from "./tickets";
+export { DashboardSkeleton } from "./dashboard";
 export { ListSkeleton } from "./list";
