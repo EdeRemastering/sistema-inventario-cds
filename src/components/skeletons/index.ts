@@ -1,0 +1,10 @@
+export { ElementosSkeleton } from "./elementos";
+export { CategoriasSkeleton } from "./categorias";
+export { UsuariosSkeleton } from "./usuarios";
+export { LogsSkeleton } from "./logs";
+export { MovimientosSkeleton } from "./movimientos";
+export { ReportesSkeleton } from "./reportes";
+export { SubcategoriasSkeleton } from "./subcategorias";
+export { ObservacionesSkeleton } from "./observaciones";
+export { TicketsSkeleton } from "./tickets";
+export { ListSkeleton } from "./list";

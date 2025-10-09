@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { formDataToObject } from "../../utils/form";
-import { logCreateSchema, logDeleteSchema } from "./validations";
+import { logCreateSchema } from "./validations";
 import { createLog, deleteLog } from "./services";
 
 export async function actionCreateLog(formData: FormData) {

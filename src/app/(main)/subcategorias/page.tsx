@@ -8,7 +8,9 @@ import {
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { SubcategoriaUpsertDialog } from "../../../components/subcategorias/subcategoria-upsert-dialog";
 import { DeleteButton } from "../../../components/delete-button";
+import { SubcategoriasSkeleton } from "../../../components/skeletons/subcategorias";
 import { revalidatePath } from "next/cache";
+import { Suspense } from "react";
 
 // Handlers como variables (server actions)
 const handleCreateSubcategoria = async (formData: FormData) => {
@@ -31,7 +33,7 @@ const handleDeleteSubcategoria = async (formData: FormData) => {
   revalidatePath("/subcategorias");
 };
 
-export default async function SubcategoriasPage() {
+async function SubcategoriasContent() {
   const [subcategorias, categorias] = await Promise.all([
     listSubcategorias(),
     listCategorias(),
@@ -88,5 +90,13 @@ export default async function SubcategoriasPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SubcategoriasPage() {
+  return (
+    <Suspense fallback={<SubcategoriasSkeleton />}>
+      <SubcategoriasContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { CategoriaUpsertDialog } from "../../../components/categorias/categoria-upsert-dialog";
-// import { CategoriaRow } from "../../../components/categorias/categoria-row";
 import {
   actionCreateCategoria,
   actionDeleteCategoria,
@@ -8,8 +7,10 @@ import {
   actionUpdateCategoria,
 } from "../../../modules/categorias/actions";
 import { DeleteButton } from "../../../components/delete-button";
+import { CategoriasSkeleton } from "../../../components/skeletons/categorias";
+import { Suspense } from "react";
 
-export default async function CategoriasPage() {
+async function CategoriasContent() {
   const categorias = await actionListCategorias();
 
   return (
@@ -64,5 +65,13 @@ export default async function CategoriasPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function CategoriasPage() {
+  return (
+    <Suspense fallback={<CategoriasSkeleton />}>
+      <CategoriasContent />
+    </Suspense>
   );
 }

@@ -8,6 +8,7 @@ import {
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { ObservacionUpsertDialog } from "../../../components/observaciones/observacion-upsert-dialog";
 import { DeleteButton } from "../../../components/delete-button";
+import { ObservacionesSkeleton } from "../../../components/skeletons/observaciones";
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
@@ -32,7 +33,7 @@ const handleDeleteObservacion = async (formData: FormData) => {
   revalidatePath("/observaciones");
 };
 
-export default async function ObservacionesPage() {
+async function ObservacionesContent() {
   const [observaciones, elementos] = await Promise.all([
     listObservaciones(),
     listElementos(),
@@ -52,46 +53,52 @@ export default async function ObservacionesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Suspense>
-            <div className="space-y-3">
-              {observaciones.map((o) => (
-                <div
-                  key={o.id}
-                  className="flex items-center justify-between gap-3 rounded border p-3"
-                >
-                  <div className="text-sm">
-                    <div className="font-medium">{o.descripcion}</div>
-                    <div className="text-muted-foreground">
-                      {new Date(o.fecha_observacion).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <ObservacionUpsertDialog
-                      create={false}
-                      serverAction={handleUpdateObservacion}
-                      elementos={elementos}
-                      defaultValues={{
-                        elemento_id: String(o.elemento_id),
-                        fecha_observacion: new Date(o.fecha_observacion)
-                          .toISOString()
-                          .slice(0, 10),
-                        descripcion: o.descripcion,
-                      }}
-                      hiddenFields={{ id: o.id }}
-                    />
-                    <DeleteButton
-                      action={handleDeleteObservacion}
-                      fields={{ id: o.id }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+          <div className="space-y-3">
+            {observaciones.map((o) => (
+              <div
+                key={o.id}
+                className="flex items-center justify-between gap-3 rounded border p-3"
+              >
+                <div className="text-sm">
+                  <div className="font-medium">{o.descripcion}</div>
+                  <div className="text-muted-foreground">
+                    {new Date(o.fecha_observacion).toLocaleDateString()}
                   </div>
                 </div>
-              ))}
-            </div>
-          </Suspense>
+                <div className="ml-auto flex items-center gap-2">
+                  <ObservacionUpsertDialog
+                    create={false}
+                    serverAction={handleUpdateObservacion}
+                    elementos={elementos}
+                    defaultValues={{
+                      elemento_id: String(o.elemento_id),
+                      fecha_observacion: new Date(o.fecha_observacion)
+                        .toISOString()
+                        .slice(0, 10),
+                      descripcion: o.descripcion,
+                    }}
+                    hiddenFields={{ id: o.id }}
+                  />
+                  <DeleteButton
+                    action={handleDeleteObservacion}
+                    fields={{ id: o.id }}
+                  >
+                    Eliminar
+                  </DeleteButton>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ObservacionesPage() {
+  return (
+    <Suspense fallback={<ObservacionesSkeleton />}>
+      <ObservacionesContent />
+    </Suspense>
   );
 }

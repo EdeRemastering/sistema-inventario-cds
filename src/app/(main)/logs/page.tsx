@@ -3,9 +3,11 @@ import { listUsuarios } from "../../../modules/usuario/services";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { LogUpsertDialog } from "../../../components/logs/log-upsert-dialog";
 import { DeleteButton } from "../../../components/delete-button";
+import { LogsSkeleton } from "../../../components/skeletons/logs";
 import { Suspense } from "react";
+import { actionCreateLog, actionDeleteLog } from "../../../modules/logs/actions";
 
-export default async function LogsPage() {
+async function LogsContent() {
   const [logs, usuarios] = await Promise.all([listLogs(), listUsuarios()]);
 
   return (
@@ -16,67 +18,58 @@ export default async function LogsPage() {
           <div className="flex items-center justify-end">
             <LogUpsertDialog
               create
-              serverAction={async (fd) => {
-                "use server";
-                const { actionCreateLog } = await import(
-                  "../../../modules/logs/actions"
-                );
-                await actionCreateLog(fd);
-              }}
+              serverAction={actionCreateLog}
               usuarios={usuarios}
             />
           </div>
         </CardHeader>
         <CardContent>
-          <Suspense>
-            <div className="space-y-3">
-              {logs.map((l) => (
-                <div
-                  key={l.id}
-                  className="flex items-center justify-between gap-3 rounded border p-3"
-                >
-                  <div className="text-sm">
-                    <div className="font-medium">{l.accion}</div>
-                    <div className="text-muted-foreground">
-                      {l.detalles ?? ""}
-                    </div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <LogUpsertDialog
-                      create={false}
-                      serverAction={async (fd) => {
-                        "use server";
-                        const { actionCreateLog } = await import(
-                          "../../../modules/logs/actions"
-                        );
-                        await actionCreateLog(fd);
-                      }}
-                      usuarios={usuarios}
-                      defaultValues={{
-                        usuario_id: String(l.usuario_id),
-                        accion: l.accion,
-                        descripcion: l.detalles ?? "",
-                      }}
-                      hiddenFields={{ id: l.id }}
-                    />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        "use server";
-                        const { actionDeleteLog } = await import(
-                          "../../../modules/logs/actions"
-                        );
-                        await actionDeleteLog(l.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+          <div className="space-y-3">
+            {logs.map((l) => (
+              <div
+                key={l.id}
+                className="flex items-center justify-between gap-3 rounded border p-3"
+              >
+                <div className="text-sm">
+                  <div className="font-medium">{l.accion}</div>
+                  <div className="text-muted-foreground">
+                    {l.detalles ?? ""}
                   </div>
                 </div>
-              ))}
-            </div>
-          </Suspense>
+                <div className="ml-auto flex items-center gap-2">
+                  <LogUpsertDialog
+                    create={false}
+                    serverAction={actionCreateLog}
+                    usuarios={usuarios}
+                    defaultValues={{
+                      usuario_id: String(l.usuario_id),
+                      accion: l.accion,
+                      descripcion: l.detalles ?? "",
+                    }}
+                    hiddenFields={{ id: l.id }}
+                  />
+                  <DeleteButton
+                    action={async () => {
+                      "use server";
+                      await actionDeleteLog(l.id);
+                    }}
+                  >
+                    Eliminar
+                  </DeleteButton>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LogsPage() {
+  return (
+    <Suspense fallback={<LogsSkeleton />}>
+      <LogsContent />
+    </Suspense>
   );
 }
