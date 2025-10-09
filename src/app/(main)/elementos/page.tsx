@@ -83,8 +83,6 @@ export default function ElementosPage() {
     });
   };
 
-
-
   if (loading || isPending) {
     return (
       <div className="space-y-6">
@@ -145,7 +143,7 @@ export default function ElementosPage() {
                   />
                   <DeleteButton
                     action={async () => {
-                       await actionDeleteElemento(e.id);
+                      await actionDeleteElemento(e.id);
                     }}
                     fields={{ id: e.id }}
                   >
