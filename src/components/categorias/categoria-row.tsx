@@ -83,7 +83,13 @@ export function CategoriaRow({
           >
             {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
           </Button>
-          <DeleteButton onConfirm={onDelete}>Eliminar</DeleteButton>
+          <Button
+            formAction={async () => {}}
+            type="submit"
+            variant="destructive"
+          >
+            Eliminar
+          </Button>
         </div>
       </form>
     </Form>

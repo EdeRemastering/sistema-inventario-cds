@@ -11,21 +11,26 @@ import { ObservacionRow } from "../../../components/observaciones/observacion-ro
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
-// Handlers para las acciones de observaciones
-async function handleCreateObservacion(formData: FormData) {
+// Handlers como variables (server actions)
+const handleCreateObservacion = async (formData: FormData) => {
+  "use server";
   await actionCreateObservacion(formData);
   revalidatePath("/observaciones");
-}
+};
 
-async function handleUpdateObservacion(formData: FormData) {
+const handleUpdateObservacion = async (formData: FormData) => {
+  "use server";
   await actionUpdateObservacion(formData);
   revalidatePath("/observaciones");
-}
+};
 
-async function handleDeleteObservacion(id: number) {
+const handleDeleteObservacion = async (formData: FormData) => {
+  "use server";
+  const id = Number(formData.get("id"));
+  if (!id) return;
   await actionDeleteObservacion(id);
   revalidatePath("/observaciones");
-}
+};
 
 export default async function ObservacionesPage() {
   const [observaciones, elementos] = await Promise.all([
@@ -52,7 +57,7 @@ export default async function ObservacionesPage() {
                   observacion={o}
                   elementos={elementos}
                   onUpdate={handleUpdateObservacion}
-                  onDelete={() => handleDeleteObservacion(o.id)}
+                  onDelete={handleDeleteObservacion}
                 />
               ))}
             </div>

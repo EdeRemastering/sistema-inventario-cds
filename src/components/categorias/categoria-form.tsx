@@ -10,6 +10,7 @@ import { FormInput } from "../ui/form-input";
 import { FormTextarea } from "../ui/form-textarea";
 import { FormSwitch } from "../ui/form-switch";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 const categoriaFormSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -20,13 +21,13 @@ const categoriaFormSchema = z.object({
 type CategoriaFormData = z.infer<typeof categoriaFormSchema>;
 
 type CategoriaFormProps = {
-  action: (data: CategoriaFormData) => Promise<void>;
+  serverAction: (formData: FormData) => Promise<void>;
   submitText?: string;
   defaultValues?: Partial<CategoriaFormData>;
 };
 
 export function CategoriaForm({
-  action,
+  serverAction,
   submitText = "Crear",
   defaultValues,
 }: CategoriaFormProps) {
@@ -38,19 +39,28 @@ export function CategoriaForm({
     },
   });
 
-  const onSubmit = form.handleSubmit(async (data) => {
-    try {
-      await action(data);
-      form.reset();
-      toast.success("Categoría guardada exitosamente");
-    } catch (error) {
-      toast.error("Error al guardar la categoría");
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const submitWithValidation = form.handleSubmit(
+    async () => {
+      try {
+        // Si la validación pasa, disparamos el submit nativo hacia la server action
+        formRef.current?.requestSubmit();
+      } catch {
+        // noop
+      }
+    },
+    () => {
+      toast.error("Revisa los campos del formulario");
     }
-  });
+  );
 
   return (
     <Form {...form}>
-      <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-3">
+      <form
+        ref={formRef}
+        action={serverAction}
+        className="grid gap-3 sm:grid-cols-3"
+      >
         <FormField name="nombre" label="Nombre">
           <FormInput name="nombre" placeholder="Nombre" />
         </FormField>
@@ -63,7 +73,11 @@ export function CategoriaForm({
           <FormField name="estado">
             <FormSwitch name="estado" label="Activo" />
           </FormField>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button
+            type="button"
+            onClick={submitWithValidation}
+            disabled={form.formState.isSubmitting}
+          >
             {form.formState.isSubmitting ? "Guardando..." : submitText}
           </Button>
         </div>

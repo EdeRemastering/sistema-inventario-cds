@@ -11,21 +11,26 @@ import { MovimientoRow } from "../../../components/movimientos/movimiento-row";
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
-// Handlers para las acciones de movimientos
-async function handleCreateMovimiento(formData: FormData) {
+// Handlers como variables (server actions)
+const handleCreateMovimiento = async (formData: FormData) => {
+  "use server";
   await actionCreateMovimiento(formData);
   revalidatePath("/movimientos");
-}
+};
 
-async function handleUpdateMovimiento(formData: FormData) {
+const handleUpdateMovimiento = async (formData: FormData) => {
+  "use server";
   await actionUpdateMovimiento(formData);
   revalidatePath("/movimientos");
-}
+};
 
-async function handleDeleteMovimiento(id: number) {
+const handleDeleteMovimiento = async (formData: FormData) => {
+  "use server";
+  const id = Number(formData.get("id"));
+  if (!id) return;
   await actionDeleteMovimiento(id);
   revalidatePath("/movimientos");
-}
+};
 
 export default async function MovimientosPage() {
   const [movimientos, elementos] = await Promise.all([
@@ -52,7 +57,7 @@ export default async function MovimientosPage() {
                   movimiento={m}
                   elementos={elementos}
                   onUpdate={handleUpdateMovimiento}
-                  onDelete={() => handleDeleteMovimiento(m.id)}
+                  onDelete={handleDeleteMovimiento}
                 />
               ))}
             </div>

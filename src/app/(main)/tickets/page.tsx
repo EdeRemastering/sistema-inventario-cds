@@ -10,21 +10,26 @@ import { TicketRow } from "../../../components/tickets/ticket-row";
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
-// Handlers para las acciones de tickets
-async function handleCreateTicket(formData: FormData) {
+// Handlers como variables (server actions)
+const handleCreateTicket = async (formData: FormData) => {
+  "use server";
   await actionCreateTicket(formData);
   revalidatePath("/tickets");
-}
+};
 
-async function handleUpdateTicket(formData: FormData) {
+const handleUpdateTicket = async (formData: FormData) => {
+  "use server";
   await actionUpdateTicket(formData);
   revalidatePath("/tickets");
-}
+};
 
-async function handleDeleteTicket(id: number) {
+const handleDeleteTicket = async (formData: FormData) => {
+  "use server";
+  const id = Number(formData.get("id"));
+  if (!id) return;
   await actionDeleteTicket(id);
   revalidatePath("/tickets");
-}
+};
 
 export default async function TicketsPage() {
   const tickets = await listTickets();
@@ -44,7 +49,7 @@ export default async function TicketsPage() {
                   key={t.id}
                   ticket={t}
                   onUpdate={handleUpdateTicket}
-                  onDelete={() => handleDeleteTicket(t.id)}
+                  onDelete={handleDeleteTicket}
                 />
               ))}
             </div>

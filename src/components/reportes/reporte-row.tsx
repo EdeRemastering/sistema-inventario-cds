@@ -1,5 +1,6 @@
 import { Button } from "../ui/button";
 import { DeleteButton } from "../delete-button";
+import { actionDeleteReporte } from "@/modules/reportes_generados/actions";
 
 type ReporteItem = {
   id: number;
@@ -11,10 +12,9 @@ type ReporteItem = {
 
 type ReporteRowProps = {
   reporte: ReporteItem;
-  onDelete: () => Promise<void>;
 };
 
-export function ReporteRow({ reporte, onDelete }: ReporteRowProps) {
+export function ReporteRow({ reporte }: ReporteRowProps) {
   return (
     <div className="flex items-center gap-4 rounded border p-4">
       <div className="flex-1">
@@ -36,7 +36,7 @@ export function ReporteRow({ reporte, onDelete }: ReporteRowProps) {
         <Button variant="outline" size="sm">
           Descargar
         </Button>
-        <DeleteButton onConfirm={onDelete}>Eliminar</DeleteButton>
+        <DeleteButton onConfirm={() => actionDeleteReporte(reporte.id)}>Eliminar</DeleteButton>
       </div>
     </div>
   );

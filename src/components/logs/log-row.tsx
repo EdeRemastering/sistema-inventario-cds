@@ -1,4 +1,4 @@
-import { Button } from "../ui/button";
+import { actionDeleteLog } from "@/modules/logs/actions";
 import { DeleteButton } from "../delete-button";
 
 type LogItem = {
@@ -19,10 +19,9 @@ type UsuarioOption = {
 type LogRowProps = {
   log: LogItem;
   usuarios: UsuarioOption[];
-  onDelete: () => Promise<void>;
 };
 
-export function LogRow({ log, usuarios, onDelete }: LogRowProps) {
+export function LogRow({ log, usuarios }: LogRowProps) {
   const usuario = usuarios.find((u) => u.id === log.usuario_id);
 
   return (
@@ -44,7 +43,7 @@ export function LogRow({ log, usuarios, onDelete }: LogRowProps) {
         {log.detalles && <p className="text-sm mt-2">{log.detalles}</p>}
       </div>
       <div className="flex gap-2">
-        <DeleteButton onConfirm={onDelete}>Eliminar</DeleteButton>
+        <DeleteButton onConfirm={() => actionDeleteLog(log.id)}>Eliminar</DeleteButton>
       </div>
     </div>
   );

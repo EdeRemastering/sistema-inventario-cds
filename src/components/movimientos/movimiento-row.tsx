@@ -1,6 +1,6 @@
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { SelectField } from "../ui/select-field";
+// Nota: usamos <select> nativo para mantener este componente como Server Component
 import { DeleteButton } from "../delete-button";
 
 type MovimientoItem = {
@@ -35,7 +35,7 @@ type MovimientoRowProps = {
   movimiento: MovimientoItem;
   elementos: ElementoOption[];
   onUpdate: (formData: FormData) => Promise<void>;
-  onDelete: () => Promise<void>;
+  onDelete: (formData: FormData) => Promise<void>;
 };
 
 export function MovimientoRow({
@@ -52,14 +52,17 @@ export function MovimientoRow({
       >
         <input type="hidden" name="id" value={movimiento.id} />
 
-        <SelectField
+        <select
           name="elemento_id"
           defaultValue={String(movimiento.elemento_id)}
-          options={elementos.map((e) => ({
-            value: String(e.id),
-            label: `${e.serie} - ${e.marca || ""} ${e.modelo || ""}`.trim(),
-          }))}
-        />
+          className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/40 h-9 w-full min-w-0 rounded-md border-2 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow,border-color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-primary focus-visible:ring-primary/30 focus-visible:ring-[3px] hover:border-primary/60"
+        >
+          {elementos.map((e) => (
+            <option key={e.id} value={e.id}>
+              {`${e.serie} - ${e.marca || ""} ${e.modelo || ""}`.trim()}
+            </option>
+          ))}
+        </select>
 
         <Input
           name="cantidad"
@@ -133,8 +136,13 @@ export function MovimientoRow({
 
         <div className="sm:col-span-2 lg:col-span-3 flex justify-end gap-2">
           <Button type="submit">Guardar</Button>
-          <DeleteButton onConfirm={onDelete}>Eliminar</DeleteButton>
         </div>
+      </form>
+      <form action={onDelete} className="flex justify-end">
+        <input type="hidden" name="id" value={movimiento.id} />
+        <Button type="submit" variant="destructive">
+          Eliminar
+        </Button>
       </form>
     </div>
   );

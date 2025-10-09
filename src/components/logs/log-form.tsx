@@ -1,3 +1,4 @@
+import { actionCreateLog } from "@/modules/logs/actions";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { SelectField } from "../ui/select-field";
@@ -9,18 +10,16 @@ type UsuarioOption = {
 };
 
 type LogFormProps = {
-  action: (formData: FormData) => Promise<void>;
   usuarios: UsuarioOption[];
   submitText?: string;
 };
 
 export function LogForm({
-  action,
   usuarios,
   submitText = "Crear Log",
 }: LogFormProps) {
   return (
-    <form action={action} className="grid gap-4 sm:grid-cols-2">
+    <form action={actionCreateLog} className="grid gap-4 sm:grid-cols-2">
       <SelectField
         name="usuario_id"
         required

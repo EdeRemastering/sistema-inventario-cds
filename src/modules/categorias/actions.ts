@@ -28,4 +28,11 @@ export async function actionDeleteCategoria(id: number) {
   revalidatePath("/categorias");
 }
 
+// Listado desde cliente sin usar servicios directamente en cliente
+export async function actionListCategorias() {
+  "use server";
+  const list = await (await import("./services")).listCategorias();
+  return list;
+}
+
 

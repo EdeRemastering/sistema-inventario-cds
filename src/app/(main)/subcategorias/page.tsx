@@ -5,28 +5,31 @@ import {
   actionDeleteSubcategoria,
   actionUpdateSubcategoria,
 } from "../../../modules/subcategorias/actions";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { SelectField } from "../../../components/ui/select-field";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
+import { SubcategoriaUpsertDialog } from "../../../components/subcategorias/subcategoria-upsert-dialog";
 import { DeleteButton } from "../../../components/delete-button";
 import { revalidatePath } from "next/cache";
 
-// Handlers para las acciones de subcategorías
-async function handleCreateSubcategoria(formData: FormData) {
+// Handlers como variables (server actions)
+const handleCreateSubcategoria = async (formData: FormData) => {
+  "use server";
   await actionCreateSubcategoria(formData);
   revalidatePath("/subcategorias");
-}
+};
 
-async function handleUpdateSubcategoria(formData: FormData) {
+const handleUpdateSubcategoria = async (formData: FormData) => {
+  "use server";
   await actionUpdateSubcategoria(formData);
   revalidatePath("/subcategorias");
-}
+};
 
-async function handleDeleteSubcategoria(id: number) {
+const handleDeleteSubcategoria = async (formData: FormData) => {
+  "use server";
+  const id = Number(formData.get("id"));
+  if (!id) return;
   await actionDeleteSubcategoria(id);
   revalidatePath("/subcategorias");
-}
+};
 
 export default async function SubcategoriasPage() {
   const [subcategorias, categorias] = await Promise.all([
@@ -39,81 +42,51 @@ export default async function SubcategoriasPage() {
       <h1 className="text-2xl font-semibold">Subcategorías</h1>
       <Card>
         <CardHeader>
-          <form
-            action={handleCreateSubcategoria}
-            className="grid gap-3 sm:grid-cols-4"
-          >
-            <Input name="nombre" placeholder="Nombre" required />
-            <Input name="descripcion" placeholder="Descripción" />
-            <SelectField
-              name="categoria_id"
-              options={categorias.map((c) => ({
-                value: String(c.id),
-                label: c.nombre,
-              }))}
-              placeholder="Categoría"
+          <div className="flex items-center justify-end">
+            <SubcategoriaUpsertDialog
+              create
+              serverAction={handleCreateSubcategoria}
+              categorias={categorias}
             />
-            <div className="flex gap-2">
-              <Input name="estado" defaultValue="activo" className="hidden" />
-              <Button type="submit">Crear</Button>
-            </div>
-          </form>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {subcategorias.map((s) => (
-              <SubcategoriaRow key={s.id} s={s} categorias={categorias} />
+              <div
+                key={s.id}
+                className="flex items-center justify-between gap-3 rounded border p-3"
+              >
+                <div className="text-sm">
+                  <div className="font-medium">{s.nombre}</div>
+                  <div className="text-muted-foreground">
+                    {s.descripcion ?? ""}
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <SubcategoriaUpsertDialog
+                    create={false}
+                    serverAction={handleUpdateSubcategoria}
+                    categorias={categorias}
+                    defaultValues={{
+                      nombre: s.nombre,
+                      descripcion: s.descripcion ?? "",
+                      categoria_id: String(s.categoria_id),
+                    }}
+                    hiddenFields={{ id: s.id }}
+                  />
+                  <DeleteButton
+                    action={handleDeleteSubcategoria}
+                    fields={{ id: s.id }}
+                  >
+                    Eliminar
+                  </DeleteButton>
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-type CategoriaOption = { id: number; nombre: string };
-type SubcategoriaItem = {
-  id: number;
-  nombre: string;
-  descripcion: string | null;
-  categoria_id: number;
-};
-
-function SubcategoriaRow({
-  s,
-  categorias,
-}: {
-  s: SubcategoriaItem;
-  categorias: CategoriaOption[];
-}) {
-  return (
-    <form
-      action={handleUpdateSubcategoria}
-      className="flex items-center gap-2 rounded border p-3"
-    >
-      <input type="hidden" name="id" value={s.id} />
-      <Input name="nombre" defaultValue={s.nombre} className="w-48" />
-      <Input
-        name="descripcion"
-        defaultValue={s.descripcion ?? ""}
-        className="flex-1"
-      />
-      <SelectField
-        name="categoria_id"
-        defaultValue={String(s.categoria_id)}
-        options={categorias.map((c) => ({
-          value: String(c.id),
-          label: c.nombre,
-        }))}
-      />
-      <div className="ml-auto flex gap-2">
-        <Button type="submit" variant="default">
-          Guardar
-        </Button>
-        <DeleteButton onConfirm={() => handleDeleteSubcategoria(s.id)}>
-          Eliminar
-        </DeleteButton>
-      </div>
-    </form>
   );
 }

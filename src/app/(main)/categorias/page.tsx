@@ -1,133 +1,64 @@
-"use client";
-
-import { listCategorias } from "../../../modules/categorias/services";
+import { Card, CardContent, CardHeader } from "../../../components/ui/card";
+import { CategoriaUpsertDialog } from "../../../components/categorias/categoria-upsert-dialog";
+// import { CategoriaRow } from "../../../components/categorias/categoria-row";
 import {
   actionCreateCategoria,
   actionDeleteCategoria,
+  actionListCategorias,
   actionUpdateCategoria,
 } from "../../../modules/categorias/actions";
-import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { CategoriaForm } from "../../../components/categorias/categoria-form";
-import { CategoriaRow } from "../../../components/categorias/categoria-row";
-import { useEffect, useState } from "react";
+import { DeleteButton } from "../../../components/delete-button";
 
-// Handlers para las acciones de categorías
-async function handleCreateCategoria(data: {
-  nombre: string;
-  descripcion?: string;
-  estado: string;
-}) {
-  const formData = new FormData();
-  formData.append("nombre", data.nombre);
-  if (data.descripcion) formData.append("descripcion", data.descripcion);
-  formData.append("estado", data.estado);
-
-  await actionCreateCategoria(formData);
-}
-
-async function handleUpdateCategoria(data: {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  estado: string;
-}) {
-  const formData = new FormData();
-  formData.append("id", String(data.id));
-  formData.append("nombre", data.nombre);
-  if (data.descripcion) formData.append("descripcion", data.descripcion);
-  formData.append("estado", data.estado);
-
-  await actionUpdateCategoria(formData);
-}
-
-async function handleDeleteCategoria(id: number) {
-  await actionDeleteCategoria(id);
-}
-
-export default function CategoriasPage() {
-  const [categorias, setCategorias] = useState<Array<{
-    id: number;
-    nombre: string;
-    descripcion: string | null;
-    estado: string;
-  }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCategorias = async () => {
-      try {
-        const data = await listCategorias();
-        setCategorias(data);
-      } catch (error) {
-        console.error("Error fetching categorias:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategorias();
-  }, []);
-
-  const handleCreate = async (data: {
-    nombre: string;
-    descripcion?: string;
-    estado: string;
-  }) => {
-    await handleCreateCategoria(data);
-    // Refetch categorias after creation
-    const updatedCategorias = await listCategorias();
-    setCategorias(updatedCategorias);
-  };
-
-  const handleUpdate = async (data: {
-    id: number;
-    nombre: string;
-    descripcion?: string;
-    estado: string;
-  }) => {
-    await handleUpdateCategoria(data);
-    // Refetch categorias after update
-    const updatedCategorias = await listCategorias();
-    setCategorias(updatedCategorias);
-  };
-
-  const handleDelete = async (id: number) => {
-    await handleDeleteCategoria(id);
-    // Refetch categorias after deletion
-    const updatedCategorias = await listCategorias();
-    setCategorias(updatedCategorias);
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Categorías</h1>
-        <div className="animate-pulse">
-          <div className="h-32 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+export default async function CategoriasPage() {
+  const categorias = await actionListCategorias();
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Categorías</h1>
       <Card>
         <CardHeader>
-          <CategoriaForm action={handleCreate} />
+          <div className="flex items-center justify-between">
+            <div />
+            <CategoriaUpsertDialog
+              create
+              serverAction={actionCreateCategoria}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {categorias.map((c) => (
-              <CategoriaRow
+              <div
                 key={c.id}
-                id={c.id}
-                nombre={c.nombre}
-                descripcion={c.descripcion ?? ""}
-                estado={c.estado}
-                onUpdate={handleUpdate}
-                onDelete={() => handleDelete(c.id)}
-              />
+                className="flex items-center justify-between gap-3 rounded border p-3"
+              >
+                <div className="text-sm">
+                  <div className="font-medium">{c.nombre}</div>
+                  <div className="text-muted-foreground">
+                    {c.descripcion ?? ""}
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <CategoriaUpsertDialog
+                    create={false}
+                    serverAction={actionUpdateCategoria}
+                    defaultValues={{
+                      nombre: c.nombre,
+                      descripcion: c.descripcion ?? "",
+                      estado: c.estado as "activo" | "inactivo",
+                    }}
+                    hiddenFields={{ id: c.id }}
+                  />
+                  <DeleteButton
+                    action={async () => {
+                      "use server";
+                      await actionDeleteCategoria(c.id);
+                    }}
+                  >
+                    Eliminar
+                  </DeleteButton>
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>
