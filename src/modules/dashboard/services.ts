@@ -25,7 +25,6 @@ export interface ActividadReciente {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const now = new Date();
-  const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1);
   const inicioMesAnterior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const finMesAnterior = new Date(now.getFullYear(), now.getMonth(), 0);
   const inicioSemanaAnterior = new Date(now);

@@ -19,7 +19,7 @@ import { Label } from "../ui/label";
 const schema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   descripcion: z.string().optional(),
-  estado: z.boolean().optional(),
+  estado: z.enum(["activo", "inactivo"]),
 });
 
 type CategoriaFormData = z.infer<typeof schema>;
@@ -53,7 +53,7 @@ export function CategoriaUpsertDialog({
   } = useForm<CategoriaFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      estado: true,
+      estado: "activo",
       ...defaultValues,
     } as CategoriaFormData,
   });
@@ -65,7 +65,7 @@ export function CategoriaUpsertDialog({
       // Agregar campos del formulario
       formData.append("nombre", data.nombre);
       if (data.descripcion) formData.append("descripcion", data.descripcion);
-      formData.append("estado", data.estado ? "activo" : "inactivo");
+      formData.append("estado", data.estado);
 
       // Agregar campos ocultos
       if (hiddenFields) {
@@ -132,18 +132,20 @@ export function CategoriaUpsertDialog({
                 </p>
               )}
             </div>
-            <div className="flex items-center space-x-2">
-              <input
+            <div className="grid gap-1">
+              <Label htmlFor="estado">Estado</Label>
+              <select
                 id="estado"
-                type="checkbox"
                 {...register("estado")}
-                className="h-4 w-4 rounded border border-input bg-background shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <Label htmlFor="estado">Activo</Label>
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+              {errors.estado && (
+                <p className="text-red-500 text-sm">{errors.estado.message}</p>
+              )}
             </div>
-            {errors.estado && (
-              <p className="text-red-500 text-sm">{errors.estado.message}</p>
-            )}
             <DialogFooter>
               <Button
                 type="button"

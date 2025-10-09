@@ -28,7 +28,7 @@ const schema = z.object({
 type ElementoFormData = z.infer<typeof schema>;
 
 type CategoriaOption = { id: number; nombre: string };
-type SubcategoriaOption = { id: number; nombre: string };
+type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
 
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
