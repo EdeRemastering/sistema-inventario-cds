@@ -93,7 +93,7 @@ export function CategoriaUpsertDialog({
               <FormField name="descripcion" label="Descripción">
                 <FormTextarea
                   name="descripcion"
-                  placeholder="Descripción"
+                  placeholder="Descripción" 
                   rows={2}
                 />
               </FormField>

@@ -6,8 +6,8 @@ import {
   actionUpdateMovimiento,
 } from "../../../modules/movimientos/actions";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { MovimientoForm } from "../../../components/movimientos/movimiento-form";
-import { MovimientoRow } from "../../../components/movimientos/movimiento-row";
+import { MovimientoUpsertDialog } from "../../../components/movimientos/movimiento-upsert-dialog";
+import { DeleteButton } from "../../../components/delete-button";
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
@@ -43,22 +43,67 @@ export default async function MovimientosPage() {
       <h1 className="text-2xl font-semibold">Movimientos</h1>
       <Card>
         <CardHeader>
-          <MovimientoForm
-            action={handleCreateMovimiento}
-            elementos={elementos}
-          />
+          <div className="flex items-center justify-end">
+            <MovimientoUpsertDialog
+              create
+              serverAction={handleCreateMovimiento}
+              elementos={elementos}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Suspense>
             <div className="space-y-3">
               {movimientos.map((m) => (
-                <MovimientoRow
+                <div
                   key={m.id}
-                  movimiento={m}
-                  elementos={elementos}
-                  onUpdate={handleUpdateMovimiento}
-                  onDelete={handleDeleteMovimiento}
-                />
+                  className="flex items-center justify-between gap-3 rounded border p-3"
+                >
+                  <div className="text-sm">
+                    <div className="font-medium">{m.numero_ticket}</div>
+                    <div className="text-muted-foreground">
+                      Cantidad: {m.cantidad}
+                    </div>
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <MovimientoUpsertDialog
+                      create={false}
+                      serverAction={handleUpdateMovimiento}
+                      elementos={elementos}
+                      defaultValues={{
+                        elemento_id: String(m.elemento_id),
+                        cantidad: String(m.cantidad),
+                        orden_numero: m.orden_numero,
+                        fecha_movimiento: new Date(m.fecha_movimiento)
+                          .toISOString()
+                          .slice(0, 16),
+                        dependencia_entrega: m.dependencia_entrega,
+                        funcionario_entrega: m.funcionario_entrega,
+                        cargo_funcionario_entrega:
+                          m.cargo_funcionario_entrega ?? "",
+                        dependencia_recibe: m.dependencia_recibe,
+                        funcionario_recibe: m.funcionario_recibe,
+                        cargo_funcionario_recibe:
+                          m.cargo_funcionario_recibe ?? "",
+                        motivo: m.motivo,
+                        fecha_estimada_devolucion: new Date(
+                          m.fecha_estimada_devolucion
+                        )
+                          .toISOString()
+                          .slice(0, 10),
+                        numero_ticket: m.numero_ticket,
+                        observaciones_entrega: m.observaciones_entrega ?? "",
+                      }}
+                      hiddenFields={{ id: m.id }}
+                    />
+                    <DeleteButton
+                      action={handleDeleteMovimiento}
+                      fields={{ id: m.id }}
+                    >
+                      Eliminar
+                    </DeleteButton>
+                  </div>
+                </div>
               ))}
             </div>
           </Suspense>

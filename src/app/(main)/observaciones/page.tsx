@@ -6,8 +6,8 @@ import {
   actionUpdateObservacion,
 } from "../../../modules/observaciones/actions";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { ObservacionForm } from "../../../components/observaciones/observacion-form";
-import { ObservacionRow } from "../../../components/observaciones/observacion-row";
+import { ObservacionUpsertDialog } from "../../../components/observaciones/observacion-upsert-dialog";
+import { DeleteButton } from "../../../components/delete-button";
 import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
@@ -43,22 +43,50 @@ export default async function ObservacionesPage() {
       <h1 className="text-2xl font-semibold">Observaciones</h1>
       <Card>
         <CardHeader>
-          <ObservacionForm
-            action={handleCreateObservacion}
-            elementos={elementos}
-          />
+          <div className="flex items-center justify-end">
+            <ObservacionUpsertDialog
+              create
+              serverAction={handleCreateObservacion}
+              elementos={elementos}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Suspense>
             <div className="space-y-3">
               {observaciones.map((o) => (
-                <ObservacionRow
+                <div
                   key={o.id}
-                  observacion={o}
-                  elementos={elementos}
-                  onUpdate={handleUpdateObservacion}
-                  onDelete={handleDeleteObservacion}
-                />
+                  className="flex items-center justify-between gap-3 rounded border p-3"
+                >
+                  <div className="text-sm">
+                    <div className="font-medium">{o.descripcion}</div>
+                    <div className="text-muted-foreground">
+                      {new Date(o.fecha_observacion).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <ObservacionUpsertDialog
+                      create={false}
+                      serverAction={handleUpdateObservacion}
+                      elementos={elementos}
+                      defaultValues={{
+                        elemento_id: String(o.elemento_id),
+                        fecha_observacion: new Date(o.fecha_observacion)
+                          .toISOString()
+                          .slice(0, 10),
+                        descripcion: o.descripcion,
+                      }}
+                      hiddenFields={{ id: o.id }}
+                    />
+                    <DeleteButton
+                      action={handleDeleteObservacion}
+                      fields={{ id: o.id }}
+                    >
+                      Eliminar
+                    </DeleteButton>
+                  </div>
+                </div>
               ))}
             </div>
           </Suspense>

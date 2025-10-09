@@ -9,8 +9,8 @@ import {
   actionUpdateElemento,
 } from "../../../modules/elementos/actions";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { ElementoForm } from "../../../components/elementos/elemento-form";
-import { ElementoRow } from "../../../components/elementos/elemento-row";
+import { ElementoUpsertDialog } from "../../../components/elementos/elemento-upsert-dialog";
+import { DeleteButton } from "../../../components/delete-button";
 import { useEffect, useState, useTransition } from "react";
 
 // Función para obtener datos
@@ -83,17 +83,7 @@ export default function ElementosPage() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    startTransition(async () => {
-      try {
-        await actionDeleteElemento(id);
-        const result = await fetchData();
-        setData(result);
-      } catch (error) {
-        console.error("Error deleting elemento:", error);
-      }
-    });
-  };
+
 
   if (loading || isPending) {
     return (
@@ -113,26 +103,56 @@ export default function ElementosPage() {
       <h1 className="text-2xl font-semibold">Elementos</h1>
       <Card>
         <CardHeader>
-          <ElementoForm
-            action={handleCreate}
-            categorias={categorias}
-            subcategorias={subcategorias}
-          />
+          <div className="flex items-center justify-end">
+            <ElementoUpsertDialog
+              create
+              serverAction={handleCreate}
+              categorias={categorias}
+              subcategorias={subcategorias}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {elementos.map((e) => (
-              <ElementoRow
+              <div
                 key={e.id}
-                elemento={e}
-                categorias={categorias}
-                subcategorias={subcategorias}
-                onUpdate={handleUpdate}
-                onDelete={(formData) => {
-                  const id = Number(formData.get("id"));
-                  return handleDelete(id);
-                }}
-              />
+                className="flex items-center justify-between gap-3 rounded border p-3"
+              >
+                <div className="text-sm">
+                  <div className="font-medium">{e.serie}</div>
+                  <div className="text-muted-foreground">
+                    Cantidad: {e.cantidad}
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <ElementoUpsertDialog
+                    create={false}
+                    serverAction={handleUpdate}
+                    categorias={categorias}
+                    subcategorias={subcategorias}
+                    defaultValues={{
+                      categoria_id: String(e.categoria_id),
+                      subcategoria_id: e.subcategoria_id
+                        ? String(e.subcategoria_id)
+                        : "",
+                      serie: e.serie,
+                      marca: e.marca ?? "",
+                      modelo: e.modelo ?? "",
+                      cantidad: String(e.cantidad),
+                    }}
+                    hiddenFields={{ id: e.id }}
+                  />
+                  <DeleteButton
+                    action={async () => {
+                       await actionDeleteElemento(e.id);
+                    }}
+                    fields={{ id: e.id }}
+                  >
+                    Eliminar
+                  </DeleteButton>
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>

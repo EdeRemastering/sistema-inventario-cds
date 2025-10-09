@@ -32,7 +32,7 @@ export default async function UsuariosPage() {
             </span>
             <div className="ml-auto flex gap-2">
               <DeleteButton
-                onConfirm={async () => {
+                action={async () => {
                   "use server";
                   await actionDeleteUsuario(u.id);
                 }}

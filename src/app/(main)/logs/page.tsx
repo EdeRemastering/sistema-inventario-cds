@@ -1,8 +1,8 @@
 import { listLogs } from "../../../modules/logs/services";
 import { listUsuarios } from "../../../modules/usuario/services";
 import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { LogForm } from "../../../components/logs/log-form";
-import { LogRow } from "../../../components/logs/log-row";
+import { LogUpsertDialog } from "../../../components/logs/log-upsert-dialog";
+import { DeleteButton } from "../../../components/delete-button";
 import { Suspense } from "react";
 
 export default async function LogsPage() {
@@ -13,17 +13,65 @@ export default async function LogsPage() {
       <h1 className="text-2xl font-semibold">Logs del Sistema</h1>
       <Card>
         <CardHeader>
-          <LogForm usuarios={usuarios} />
+          <div className="flex items-center justify-end">
+            <LogUpsertDialog
+              create
+              serverAction={async (fd) => {
+                "use server";
+                const { actionCreateLog } = await import(
+                  "../../../modules/logs/actions"
+                );
+                await actionCreateLog(fd);
+              }}
+              usuarios={usuarios}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Suspense>
             <div className="space-y-3">
               {logs.map((l) => (
-                <LogRow
+                <div
                   key={l.id}
-                  log={l}
-                  usuarios={usuarios}
-                />
+                  className="flex items-center justify-between gap-3 rounded border p-3"
+                >
+                  <div className="text-sm">
+                    <div className="font-medium">{l.accion}</div>
+                    <div className="text-muted-foreground">
+                      {l.detalles ?? ""}
+                    </div>
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <LogUpsertDialog
+                      create={false}
+                      serverAction={async (fd) => {
+                        "use server";
+                        const { actionCreateLog } = await import(
+                          "../../../modules/logs/actions"
+                        );
+                        await actionCreateLog(fd);
+                      }}
+                      usuarios={usuarios}
+                      defaultValues={{
+                        usuario_id: String(l.usuario_id),
+                        accion: l.accion,
+                        descripcion: l.detalles ?? "",
+                      }}
+                      hiddenFields={{ id: l.id }}
+                    />
+                    <DeleteButton
+                      onConfirm={async () => {
+                        "use server";
+                        const { actionDeleteLog } = await import(
+                          "../../../modules/logs/actions"
+                        );
+                        await actionDeleteLog(l.id);
+                      }}
+                    >
+                      Eliminar
+                    </DeleteButton>
+                  </div>
+                </div>
               ))}
             </div>
           </Suspense>
