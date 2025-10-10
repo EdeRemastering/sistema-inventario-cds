@@ -319,12 +319,30 @@ export async function generatePrestamosActivosReport(data: PrestamosActivosRepor
 }
 
 /**
- * Exporta datos a Excel
+ * Exporta datos a Excel usando CSV (compatible con Excel)
  */
-export function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx'): void {
-  // Esta función se implementaría con la librería xlsx
-  // Por ahora retornamos un placeholder
-  console.log('Exportando a Excel:', filename, data);
+export function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.csv'): void {
+  if (data.length === 0) {
+    console.warn('No hay datos para exportar');
+    return;
+  }
+
+  const csvContent = [
+    Object.keys(data[0] || {}).join(','),
+    ...data.map(row => Object.values(row).map(value => 
+      typeof value === 'string' && value.includes(',') ? `"${value}"` : value
+    ).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 /**

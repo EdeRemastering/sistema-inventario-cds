@@ -120,6 +120,26 @@ export function MovimientoUpsertDialog({
     }
   }, [create, open, defaultValues?.numero_ticket, setValue]);
 
+  // Inicializar valores por defecto cuando se abre el diálogo
+  useEffect(() => {
+    if (open && defaultValues) {
+      // Inicializar fechas
+      if (defaultValues.fecha_movimiento) {
+        setFechaMovimiento(new Date(defaultValues.fecha_movimiento));
+      }
+      if (defaultValues.fecha_estimada_devolucion) {
+        setFechaDevolucion(new Date(defaultValues.fecha_estimada_devolucion));
+      }
+      // Inicializar firmas
+      if (defaultValues.firma_funcionario_entrega) {
+        setFirmaEntrega(defaultValues.firma_funcionario_entrega);
+      }
+      if (defaultValues.firma_funcionario_recibe) {
+        setFirmaRecibe(defaultValues.firma_funcionario_recibe);
+      }
+    }
+  }, [open, defaultValues]);
+
   // Sincronizar fechas del formulario con el estado local
   useEffect(() => {
     const fechaMov = watch("fecha_movimiento");
