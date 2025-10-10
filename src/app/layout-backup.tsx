@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "../components/providers";
-import { poppins, inter } from "../lib/fonts";
 
 export const metadata: Metadata = {
   title: "Sistema de Inventario CDs",
@@ -18,7 +17,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${poppins.variable} ${inter.variable} font-sans antialiased`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-sans antialiased" style={{ fontFamily: 'Poppins, system-ui, -apple-system, sans-serif' }}>
         <Providers>{children}</Providers>
       </body>
     </html>
