@@ -25,10 +25,10 @@ const schema = z.object({
   orden_numero: z.string().optional(),
   fecha_movimiento: z.string().min(1, "Fecha requerida"),
   dependencia_entrega: z.string().min(1, "Requerido"),
-  funcionario_entrega: z.string().optional(),
+  firma_funcionario_entrega: z.string().optional(),
   cargo_funcionario_entrega: z.string().optional(),
   dependencia_recibe: z.string().min(1, "Requerido"),
-  funcionario_recibe: z.string().optional(),
+  firma_funcionario_recibe: z.string().optional(),
   cargo_funcionario_recibe: z.string().optional(),
   motivo: z.string().optional(),
   fecha_estimada_devolucion: z.string().min(1, "Requerido"),
@@ -139,16 +139,12 @@ export function MovimientoUpsertDialog({
       if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
       formData.append("fecha_movimiento", data.fecha_movimiento);
       formData.append("dependencia_entrega", data.dependencia_entrega);
-      if (data.funcionario_entrega)
-        formData.append("funcionario_entrega", data.funcionario_entrega);
       if (data.cargo_funcionario_entrega)
         formData.append(
           "cargo_funcionario_entrega",
           data.cargo_funcionario_entrega
         );
       formData.append("dependencia_recibe", data.dependencia_recibe);
-      if (data.funcionario_recibe)
-        formData.append("funcionario_recibe", data.funcionario_recibe);
       if (data.cargo_funcionario_recibe)
         formData.append(
           "cargo_funcionario_recibe",
@@ -388,18 +384,18 @@ export function MovimientoUpsertDialog({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-2">
                   <SignaturePadComponent
-                    label="Firma de Entrega"
+                    label="Firma de Funcionario que Entrega"
                     onSignatureChange={setFirmaEntrega}
-                    defaultValue={defaultValues?.firma_entrega}
+                    defaultValue={defaultValues?.firma_funcionario_entrega}
                     required={create}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <SignaturePadComponent
-                    label="Firma de Recibo"
+                    label="Firma de Funcionario que Recibe"
                     onSignatureChange={setFirmaRecibe}
-                    defaultValue={defaultValues?.firma_recibe}
+                    defaultValue={defaultValues?.firma_funcionario_recibe}
                     required={create}
                   />
                 </div>

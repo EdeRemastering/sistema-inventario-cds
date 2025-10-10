@@ -8,9 +8,9 @@ export type TicketGuardado = {
   marca_modelo: string | null;
   cantidad: number;
   dependencia_entrega: string | null;
-  funcionario_entrega: string | null;
+  firma_funcionario_entrega: string | null;
   dependencia_recibe: string | null;
-  funcionario_recibe: string | null;
+  firma_funcionario_recibe: string | null;
   motivo: string | null;
   orden_numero: string | null;
   fecha_guardado: Date | null;

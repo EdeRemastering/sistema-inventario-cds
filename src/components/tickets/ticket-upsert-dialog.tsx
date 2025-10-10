@@ -15,6 +15,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { SignaturePadComponent } from "../ui/signature-pad";
 
 const schema = z.object({
   numero_ticket: z.string().min(1, "Número requerido"),
@@ -25,9 +26,9 @@ const schema = z.object({
   marca_modelo: z.string().optional(),
   cantidad: z.string().min(1, "Cantidad requerida"),
   dependencia_entrega: z.string().optional(),
-  funcionario_entrega: z.string().optional(),
+  firma_funcionario_entrega: z.string().optional(),
   dependencia_recibe: z.string().optional(),
-  funcionario_recibe: z.string().optional(),
+  firma_funcionario_recibe: z.string().optional(),
   motivo: z.string().optional(),
   orden_numero: z.string().optional(),
 });
@@ -48,6 +49,8 @@ export function TicketUpsertDialog({
   hiddenFields,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
+  const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
 
   const {
     register,
@@ -80,14 +83,15 @@ export function TicketUpsertDialog({
       formData.append("cantidad", data.cantidad);
       if (data.dependencia_entrega)
         formData.append("dependencia_entrega", data.dependencia_entrega);
-      if (data.funcionario_entrega)
-        formData.append("funcionario_entrega", data.funcionario_entrega);
       if (data.dependencia_recibe)
         formData.append("dependencia_recibe", data.dependencia_recibe);
-      if (data.funcionario_recibe)
-        formData.append("funcionario_recibe", data.funcionario_recibe);
       if (data.motivo) formData.append("motivo", data.motivo);
       if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
+
+      // Agregar firmas digitales
+      if (firmaEntrega)
+        formData.append("firma_funcionario_entrega", firmaEntrega);
+      if (firmaRecibe) formData.append("firma_funcionario_recibe", firmaRecibe);
 
       // Agregar campos ocultos
       if (hiddenFields) {
@@ -107,6 +111,8 @@ export function TicketUpsertDialog({
       });
 
       reset();
+      setFirmaEntrega(null);
+      setFirmaRecibe(null);
       setOpen(false);
     } catch (error) {
       console.error("Error:", error);
@@ -255,23 +261,6 @@ export function TicketUpsertDialog({
               )}
             </div>
 
-            {/* Funcionario de Entrega */}
-            <div className="grid gap-1">
-              <Label htmlFor="funcionario_entrega">
-                Funcionario de Entrega
-              </Label>
-              <Input
-                id="funcionario_entrega"
-                type="text"
-                {...register("funcionario_entrega")}
-              />
-              {errors.funcionario_entrega && (
-                <p className="text-red-500 text-sm">
-                  {errors.funcionario_entrega.message}
-                </p>
-              )}
-            </div>
-
             {/* Dependencia que Recibe */}
             <div className="grid gap-1">
               <Label htmlFor="dependencia_recibe">Dependencia que Recibe</Label>
@@ -287,21 +276,6 @@ export function TicketUpsertDialog({
               )}
             </div>
 
-            {/* Funcionario que Recibe */}
-            <div className="grid gap-1">
-              <Label htmlFor="funcionario_recibe">Funcionario que Recibe</Label>
-              <Input
-                id="funcionario_recibe"
-                type="text"
-                {...register("funcionario_recibe")}
-              />
-              {errors.funcionario_recibe && (
-                <p className="text-red-500 text-sm">
-                  {errors.funcionario_recibe.message}
-                </p>
-              )}
-            </div>
-
             {/* Motivo */}
             <div className="grid gap-1">
               <Label htmlFor="motivo">Motivo</Label>
@@ -309,6 +283,32 @@ export function TicketUpsertDialog({
               {errors.motivo && (
                 <p className="text-red-500 text-sm">{errors.motivo.message}</p>
               )}
+            </div>
+
+            {/* Firmas Digitales */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Firmas Digitales
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <SignaturePadComponent
+                    label="Firma de Funcionario que Entrega"
+                    onSignatureChange={setFirmaEntrega}
+                    defaultValue={defaultValues?.firma_funcionario_entrega}
+                    required={create}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <SignaturePadComponent
+                    label="Firma de Funcionario que Recibe"
+                    onSignatureChange={setFirmaRecibe}
+                    defaultValue={defaultValues?.firma_funcionario_recibe}
+                    required={create}
+                  />
+                </div>
+              </div>
             </div>
 
             <DialogFooter>

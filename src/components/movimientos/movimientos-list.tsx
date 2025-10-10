@@ -7,6 +7,7 @@ import { EmptyState } from "../ui/empty-state";
 import { useSearch } from "../../hooks/use-search";
 import { MovimientoUpsertDialog } from "./movimiento-upsert-dialog";
 import { DeleteButton } from "../delete-button";
+import { SignatureDisplay } from "../ui/signature-display";
 import type { Movimiento } from "../../modules/movimientos/types";
 import type { Elemento } from "../../modules/elementos/types";
 
@@ -32,9 +33,7 @@ export function MovimientosList({
         "numero_ticket",
         "orden_numero",
         "dependencia_entrega",
-        "funcionario_entrega",
         "dependencia_recibe",
-        "funcionario_recibe",
         "motivo",
       ],
     });
@@ -81,12 +80,24 @@ export function MovimientosList({
                   key={movimiento.id}
                   className="flex items-center justify-between gap-3 rounded border p-3"
                 >
-                  <div className="text-sm">
+                  <div className="text-sm flex-1">
                     <div className="font-medium">
                       {movimiento.numero_ticket}
                     </div>
                     <div className="text-muted-foreground">
-                      Cantidad: {movimiento.cantidad}
+                      Cantidad: {movimiento.cantidad} | {movimiento.dependencia_entrega} → {movimiento.dependencia_recibe}
+                    </div>
+                    <div className="flex gap-4 mt-2">
+                      <SignatureDisplay 
+                        signatureUrl={movimiento.firma_funcionario_entrega}
+                        label="Firma Entrega"
+                        className="text-xs"
+                      />
+                      <SignatureDisplay 
+                        signatureUrl={movimiento.firma_funcionario_recibe}
+                        label="Firma Recibe"
+                        className="text-xs"
+                      />
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
@@ -102,12 +113,12 @@ export function MovimientosList({
                           .toISOString()
                           .slice(0, 16),
                         dependencia_entrega: movimiento.dependencia_entrega,
-                        funcionario_entrega:
-                          movimiento.funcionario_entrega ?? "",
+                        firma_funcionario_entrega:
+                          movimiento.firma_funcionario_entrega ?? "",
                         cargo_funcionario_entrega:
                           movimiento.cargo_funcionario_entrega ?? "",
                         dependencia_recibe: movimiento.dependencia_recibe,
-                        funcionario_recibe: movimiento.funcionario_recibe ?? "",
+                        firma_funcionario_recibe: movimiento.firma_funcionario_recibe ?? "",
                         cargo_funcionario_recibe:
                           movimiento.cargo_funcionario_recibe ?? "",
                         motivo: movimiento.motivo,
