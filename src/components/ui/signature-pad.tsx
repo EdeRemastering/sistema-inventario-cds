@@ -70,52 +70,66 @@ export function SignaturePadComponent({
         {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
 
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
-        <SignaturePad
-          ref={signatureRef}
-          canvasProps={{
-            width: 400,
-            height: 150,
-            className: "border rounded-lg bg-white",
-          }}
-          onBegin={handleBegin}
-          onEnd={handleEnd}
-        />
-      </div>
-
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleClear}
-          disabled={isEmpty}
-        >
-          <Trash2 className="h-4 w-4 mr-1" />
-          Limpiar
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleSave}
-          disabled={isEmpty}
-        >
-          <Download className="h-4 w-4 mr-1" />
-          Guardar
-        </Button>
-      </div>
-
-      {signatureData && (
-        <div className="mt-2">
-          <p className="text-xs text-muted-foreground">Firma guardada ✓</p>
+      <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+        <div className="w-full max-w-full overflow-hidden">
+          <SignaturePad
+            ref={signatureRef}
+            canvasProps={{
+              width: 400,
+              height: 150,
+              className: "border rounded-lg bg-white shadow-sm max-w-full h-auto",
+            }}
+            onBegin={handleBegin}
+            onEnd={handleEnd}
+          />
         </div>
-      )}
+        {isEmpty && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <p className="text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded border">Firma aquí</p>
+          </div>
+        )}
+      </div>
 
-      {required && isEmpty && (
-        <p className="text-xs text-red-500">La firma es requerida</p>
-      )}
+      <div className="flex gap-2 justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleClear}
+            disabled={isEmpty}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Limpiar
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSave}
+            disabled={isEmpty}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Download className="h-4 w-4 mr-1" />
+            Guardar
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {signatureData && (
+            <div className="flex items-center gap-1 text-green-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-xs font-medium">Firma guardada</span>
+            </div>
+          )}
+          
+          {required && isEmpty && (
+            <span className="text-xs text-red-500 font-medium">Firma requerida</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -113,10 +113,10 @@ model movimientos {
   orden_numero             String         @db.VarChar(50)
   fecha_movimiento         DateTime       @db.DateTime(0)
   dependencia_entrega      String         @db.VarChar(200)
-  funcionario_entrega      String         @db.VarChar(200)
+  funcionario_entrega      String?        @db.VarChar(200)
   cargo_funcionario_entrega String?       @db.VarChar(200)
   dependencia_recibe       String         @db.VarChar(200)
-  funcionario_recibe       String         @db.VarChar(200)
+  funcionario_recibe       String?        @db.VarChar(200)
   cargo_funcionario_recibe String?        @db.VarChar(200)
   motivo                   String         @db.Text
   fecha_estimada_devolucion DateTime      @db.Date

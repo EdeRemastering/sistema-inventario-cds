@@ -24,8 +24,8 @@ const devolucionSchema = z.object({
   numero_ticket: z.string().min(1, "Número de ticket requerido"),
   fecha_real_devolucion: z.string().min(1, "Fecha de devolución requerida"),
   observaciones_devolucion: z.string().optional(),
-  devuelto_por: z.string().min(1, "Nombre del que devuelve requerido"),
-  recibido_por: z.string().min(1, "Nombre del que recibe requerido"),
+  devuelto_por: z.string().optional(),
+  recibido_por: z.string().optional(),
 });
 
 type DevolucionFormData = z.infer<typeof devolucionSchema>;
@@ -134,8 +134,8 @@ export function DevolucionDialog({ onDevolver }: Props) {
         "observaciones_devolucion",
         data.observaciones_devolucion || ""
       );
-      formData.append("devuelto_por", data.devuelto_por);
-      formData.append("recibido_por", data.recibido_por);
+      formData.append("devuelto_por", data.devuelto_por || "");
+      formData.append("recibido_por", data.recibido_por || "");
 
       // Firmas digitales
       if (firmaDevuelve) formData.append("firma_devuelve", firmaDevuelve);
@@ -170,7 +170,7 @@ export function DevolucionDialog({ onDevolver }: Props) {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Devolución</DialogTitle>
           </DialogHeader>
@@ -281,35 +281,6 @@ export function DevolucionDialog({ onDevolver }: Props) {
                   )}
                 </div>
 
-                {/* Personas */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-1">
-                    <Label htmlFor="devuelto_por">Devuelto por</Label>
-                    <Input
-                      id="devuelto_por"
-                      type="text"
-                      {...register("devuelto_por")}
-                    />
-                    {errors.devuelto_por && (
-                      <p className="text-red-500 text-sm">
-                        {errors.devuelto_por.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid gap-1">
-                    <Label htmlFor="recibido_por">Recibido por</Label>
-                    <Input
-                      id="recibido_por"
-                      type="text"
-                      {...register("recibido_por")}
-                    />
-                    {errors.recibido_por && (
-                      <p className="text-red-500 text-sm">
-                        {errors.recibido_por.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
 
                 {/* Observaciones */}
                 <div className="grid gap-1">
@@ -330,18 +301,27 @@ export function DevolucionDialog({ onDevolver }: Props) {
                 </div>
 
                 {/* Firmas Digitales */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <SignaturePadComponent
-                    label="Firma de Quien Devuelve"
-                    onSignatureChange={setFirmaDevuelve}
-                    required
-                  />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Firmas Digitales
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <SignaturePadComponent
+                        label="Firma de Quien Devuelve"
+                        onSignatureChange={setFirmaDevuelve}
+                        required
+                      />
+                    </div>
 
-                  <SignaturePadComponent
-                    label="Firma de Quien Recibe"
-                    onSignatureChange={setFirmaRecibe}
-                    required
-                  />
+                    <div className="space-y-2">
+                      <SignaturePadComponent
+                        label="Firma de Quien Recibe"
+                        onSignatureChange={setFirmaRecibe}
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}

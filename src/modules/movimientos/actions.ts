@@ -31,6 +31,8 @@ export async function actionCreateMovimiento(formData: FormData) {
     firma_recibe_devolucion: null,
     devuelto_por: null,
     recibido_por: null,
+    funcionario_entrega: parsed.data.funcionario_entrega || null,
+    funcionario_recibe: parsed.data.funcionario_recibe || null,
     ...parsed.data,
   });
   

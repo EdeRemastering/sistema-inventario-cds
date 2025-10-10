@@ -25,10 +25,10 @@ const schema = z.object({
   orden_numero: z.string().optional(),
   fecha_movimiento: z.string().min(1, "Fecha requerida"),
   dependencia_entrega: z.string().min(1, "Requerido"),
-  funcionario_entrega: z.string().min(1, "Requerido"),
+  funcionario_entrega: z.string().optional(),
   cargo_funcionario_entrega: z.string().optional(),
   dependencia_recibe: z.string().min(1, "Requerido"),
-  funcionario_recibe: z.string().min(1, "Requerido"),
+  funcionario_recibe: z.string().optional(),
   cargo_funcionario_recibe: z.string().optional(),
   motivo: z.string().optional(),
   fecha_estimada_devolucion: z.string().min(1, "Requerido"),
@@ -139,14 +139,16 @@ export function MovimientoUpsertDialog({
       if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
       formData.append("fecha_movimiento", data.fecha_movimiento);
       formData.append("dependencia_entrega", data.dependencia_entrega);
-      formData.append("funcionario_entrega", data.funcionario_entrega);
+      if (data.funcionario_entrega)
+        formData.append("funcionario_entrega", data.funcionario_entrega);
       if (data.cargo_funcionario_entrega)
         formData.append(
           "cargo_funcionario_entrega",
           data.cargo_funcionario_entrega
         );
       formData.append("dependencia_recibe", data.dependencia_recibe);
-      formData.append("funcionario_recibe", data.funcionario_recibe);
+      if (data.funcionario_recibe)
+        formData.append("funcionario_recibe", data.funcionario_recibe);
       if (data.cargo_funcionario_recibe)
         formData.append(
           "cargo_funcionario_recibe",
@@ -203,11 +205,11 @@ export function MovimientoUpsertDialog({
     <>
       <Button onClick={() => setOpen(true)}>{btnText}</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Elemento */}
             <div className="grid gap-1">
               <Label htmlFor="elemento_id">Elemento</Label>
@@ -300,97 +302,35 @@ export function MovimientoUpsertDialog({
               </div>
             </div>
 
-            {/* Dependencia de Entrega */}
-            <div className="grid gap-1">
-              <Label htmlFor="dependencia_entrega">
-                Dependencia de Entrega
-              </Label>
-              <Input
-                id="dependencia_entrega"
-                type="text"
-                {...register("dependencia_entrega")}
-              />
-              {errors.dependencia_entrega && (
-                <p className="text-red-500 text-sm">
-                  {errors.dependencia_entrega.message}
-                </p>
-              )}
-            </div>
-
-            {/* Funcionario de Entrega */}
+            {/* Dependencias */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <Label htmlFor="funcionario_entrega">
-                  Funcionario de Entrega
+                <Label htmlFor="dependencia_entrega">
+                  Dependencia de Entrega
                 </Label>
                 <Input
-                  id="funcionario_entrega"
+                  id="dependencia_entrega"
                   type="text"
-                  {...register("funcionario_entrega")}
+                  {...register("dependencia_entrega")}
                 />
-                {errors.funcionario_entrega && (
+                {errors.dependencia_entrega && (
                   <p className="text-red-500 text-sm">
-                    {errors.funcionario_entrega.message}
+                    {errors.dependencia_entrega.message}
                   </p>
                 )}
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="cargo_funcionario_entrega">Cargo</Label>
-                <Input
-                  id="cargo_funcionario_entrega"
-                  type="text"
-                  {...register("cargo_funcionario_entrega")}
-                />
-                {errors.cargo_funcionario_entrega && (
-                  <p className="text-red-500 text-sm">
-                    {errors.cargo_funcionario_entrega.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Dependencia que Recibe */}
-            <div className="grid gap-1">
-              <Label htmlFor="dependencia_recibe">Dependencia que Recibe</Label>
-              <Input
-                id="dependencia_recibe"
-                type="text"
-                {...register("dependencia_recibe")}
-              />
-              {errors.dependencia_recibe && (
-                <p className="text-red-500 text-sm">
-                  {errors.dependencia_recibe.message}
-                </p>
-              )}
-            </div>
-
-            {/* Funcionario que Recibe */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1">
-                <Label htmlFor="funcionario_recibe">
-                  Funcionario que Recibe
+                <Label htmlFor="dependencia_recibe">
+                  Dependencia que Recibe
                 </Label>
                 <Input
-                  id="funcionario_recibe"
+                  id="dependencia_recibe"
                   type="text"
-                  {...register("funcionario_recibe")}
+                  {...register("dependencia_recibe")}
                 />
-                {errors.funcionario_recibe && (
+                {errors.dependencia_recibe && (
                   <p className="text-red-500 text-sm">
-                    {errors.funcionario_recibe.message}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="cargo_funcionario_recibe">Cargo</Label>
-                <Input
-                  id="cargo_funcionario_recibe"
-                  type="text"
-                  {...register("cargo_funcionario_recibe")}
-                />
-                {errors.cargo_funcionario_recibe && (
-                  <p className="text-red-500 text-sm">
-                    {errors.cargo_funcionario_recibe.message}
+                    {errors.dependencia_recibe.message}
                   </p>
                 )}
               </div>
@@ -441,20 +381,29 @@ export function MovimientoUpsertDialog({
             </div>
 
             {/* Firmas Digitales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SignaturePadComponent
-                label="Firma de Entrega"
-                onSignatureChange={setFirmaEntrega}
-                defaultValue={defaultValues?.firma_entrega}
-                required={create}
-              />
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Firmas Digitales
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <SignaturePadComponent
+                    label="Firma de Entrega"
+                    onSignatureChange={setFirmaEntrega}
+                    defaultValue={defaultValues?.firma_entrega}
+                    required={create}
+                  />
+                </div>
 
-              <SignaturePadComponent
-                label="Firma de Recibo"
-                onSignatureChange={setFirmaRecibe}
-                defaultValue={defaultValues?.firma_recibe}
-                required={create}
-              />
+                <div className="space-y-2">
+                  <SignaturePadComponent
+                    label="Firma de Recibo"
+                    onSignatureChange={setFirmaRecibe}
+                    defaultValue={defaultValues?.firma_recibe}
+                    required={create}
+                  />
+                </div>
+              </div>
             </div>
 
             <DialogFooter>

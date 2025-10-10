@@ -82,7 +82,9 @@ export function MovimientosList({
                   className="flex items-center justify-between gap-3 rounded border p-3"
                 >
                   <div className="text-sm">
-                    <div className="font-medium">{movimiento.numero_ticket}</div>
+                    <div className="font-medium">
+                      {movimiento.numero_ticket}
+                    </div>
                     <div className="text-muted-foreground">
                       Cantidad: {movimiento.cantidad}
                     </div>
@@ -100,11 +102,12 @@ export function MovimientosList({
                           .toISOString()
                           .slice(0, 16),
                         dependencia_entrega: movimiento.dependencia_entrega,
-                        funcionario_entrega: movimiento.funcionario_entrega,
+                        funcionario_entrega:
+                          movimiento.funcionario_entrega ?? "",
                         cargo_funcionario_entrega:
                           movimiento.cargo_funcionario_entrega ?? "",
                         dependencia_recibe: movimiento.dependencia_recibe,
-                        funcionario_recibe: movimiento.funcionario_recibe,
+                        funcionario_recibe: movimiento.funcionario_recibe ?? "",
                         cargo_funcionario_recibe:
                           movimiento.cargo_funcionario_recibe ?? "",
                         motivo: movimiento.motivo,
@@ -114,7 +117,8 @@ export function MovimientosList({
                           .toISOString()
                           .slice(0, 10),
                         numero_ticket: movimiento.numero_ticket,
-                        observaciones_entrega: movimiento.observaciones_entrega ?? "",
+                        observaciones_entrega:
+                          movimiento.observaciones_entrega ?? "",
                       }}
                       hiddenFields={{ id: movimiento.id }}
                     />

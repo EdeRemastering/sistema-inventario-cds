@@ -3,8 +3,7 @@ import {
   actionCreateReporte,
   actionDeleteReporte,
 } from "../../../modules/reportes_generados/actions";
-import { ReportesList } from "../../../components/reportes/reportes-list";
-import { ReporteGenerator } from "../../../components/reportes/reporte-generator";
+import { ReportesPageClient } from "../../../components/reportes/reportes-page-client";
 import { ReportesSkeleton } from "../../../components/skeletons/reportes";
 import { Suspense } from "react";
 
@@ -20,21 +19,12 @@ async function ReportesContent() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ReporteGenerator
-          onGenerate={(tipo, datos) => {
-            // Aquí se manejaría la descarga del reporte
-            console.log("Generando reporte:", tipo, datos);
-          }}
-        />
-
-        <ReportesList
-          reportes={reportes}
-          onCreateReporte={actionCreateReporte}
-          onUpdateReporte={actionCreateReporte} // Usando la misma acción para crear/actualizar
-          onDeleteReporte={actionDeleteReporte}
-        />
-      </div>
+      <ReportesPageClient
+        reportes={reportes}
+        onCreateReporte={actionCreateReporte}
+        onUpdateReporte={actionCreateReporte} // Usando la misma acción para crear/actualizar
+        onDeleteReporte={actionDeleteReporte}
+      />
     </div>
   );
 }

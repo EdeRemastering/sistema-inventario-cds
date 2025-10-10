@@ -5,10 +5,10 @@ export type Movimiento = {
   orden_numero: string;
   fecha_movimiento: Date;
   dependencia_entrega: string;
-  funcionario_entrega: string;
+  funcionario_entrega: string | null;
   cargo_funcionario_entrega: string | null;
   dependencia_recibe: string;
-  funcionario_recibe: string;
+  funcionario_recibe: string | null;
   cargo_funcionario_recibe: string | null;
   motivo: string;
   fecha_estimada_devolucion: Date;
