@@ -288,9 +288,7 @@ export function MovimientosList({
                         elemento_id: String(movimiento.elemento_id),
                         cantidad: String(movimiento.cantidad),
                         orden_numero: movimiento.orden_numero,
-                        fecha_movimiento: new Date(movimiento.fecha_movimiento)
-                          .toISOString()
-                          .slice(0, 16),
+                        fecha_movimiento: new Date(movimiento.fecha_movimiento),
                         dependencia_entrega: movimiento.dependencia_entrega,
                         firma_funcionario_entrega:
                           movimiento.firma_funcionario_entrega ?? "",
@@ -304,9 +302,7 @@ export function MovimientosList({
                         motivo: movimiento.motivo,
                         fecha_estimada_devolucion: new Date(
                           movimiento.fecha_estimada_devolucion
-                        )
-                          .toISOString()
-                          .slice(0, 10),
+                        ),
                         numero_ticket: movimiento.numero_ticket,
                         observaciones_entrega:
                           movimiento.observaciones_entrega ?? "",

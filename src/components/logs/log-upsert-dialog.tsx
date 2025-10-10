@@ -54,6 +54,8 @@ export function LogUpsertDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LogFormData>({
     resolver: zodResolver(schema),

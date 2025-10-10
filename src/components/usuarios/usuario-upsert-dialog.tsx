@@ -76,6 +76,8 @@ export function UsuarioUpsertDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<UsuarioFormData>({
     resolver: zodResolver(create ? createSchema : updateSchema),
@@ -182,7 +184,9 @@ export function UsuarioUpsertDialog({
               <Label htmlFor="rol">Rol</Label>
               <Select
                 value={watch("rol")}
-                onValueChange={(value) => setValue("rol", value)}
+                onValueChange={(value) =>
+                  setValue("rol", value as "administrador" | "usuario")
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar rol" />

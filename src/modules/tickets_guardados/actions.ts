@@ -96,7 +96,6 @@ export async function actionUpdateTicket(formData: FormData) {
   // Obtener el ticket actual para acceder a las firmas existentes
   const ticketActual = await prisma.tickets_guardados.findUnique({
     where: { id: parsed.data.id },
-    // @ts-expect-error - Temporal hasta que se regenere Prisma
     select: { firma_funcionario_entrega: true, firma_funcionario_recibe: true }
   }) as TicketWithSignatures | null;
 
@@ -132,7 +131,6 @@ export async function actionDeleteTicket(id: number) {
   // Obtener el ticket para acceder a las firmas antes de eliminarlo
   const ticket = await prisma.tickets_guardados.findUnique({
     where: { id },
-    // @ts-expect-error - Temporal hasta que se regenere Prisma
     select: { firma_funcionario_entrega: true, firma_funcionario_recibe: true }
   }) as TicketWithSignatures | null;
 
@@ -184,7 +182,6 @@ export async function actionMarkTicketAsReturned(id: number) {
           orden_numero: ticket.orden_numero || "",
           fecha_movimiento: new Date(),
           dependencia_entrega: ticket.dependencia_recibe || "",
-          // @ts-expect-error - Temporal hasta que se regenere Prisma
           firma_funcionario_entrega: ticket.firma_funcionario_recibe,
           cargo_funcionario_entrega: "",
           dependencia_recibe: ticket.dependencia_entrega || "",

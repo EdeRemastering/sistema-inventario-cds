@@ -145,7 +145,9 @@ export function CategoriaUpsertDialog({
               <Label htmlFor="estado">Estado</Label>
               <Select
                 value={watch("estado")}
-                onValueChange={(value) => setValue("estado", value)}
+                onValueChange={(value) =>
+                  setValue("estado", value as "activo" | "inactivo")
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />

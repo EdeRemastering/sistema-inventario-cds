@@ -266,17 +266,17 @@ export async function getEstadosData() {
       }
     }),
     
-    // Fuera de servicio: elementos con estado específico
+    // Fuera de servicio: elementos con estado específico (usando 'I' para inactivo)
     prisma.elementos.count({
       where: {
-        estado_funcional: 'MALO'
+        estado_funcional: 'I'
       }
     }),
     
-    // En mantenimiento: elementos con estado específico
+    // En mantenimiento: elementos con estado específico (usando 'R' para reparación)
     prisma.elementos.count({
       where: {
-        estado_funcional: 'EN_REPARACION'
+        estado_funcional: 'R'
       }
     })
   ]);

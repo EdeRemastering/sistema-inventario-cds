@@ -29,9 +29,21 @@ export type Movimiento = {
   firma_recibe_devolucion: string | null;
   devuelto_por: string | null;
   recibido_por: string | null;
+  elemento?: {
+    id: number;
+    serie: string;
+    marca?: string | null;
+    modelo?: string | null;
+    categoria?: {
+      nombre: string;
+    };
+    subcategoria?: {
+      nombre: string;
+    } | null;
+  };
 };
 
-export type CreateMovimientoInput = Omit<Movimiento, "id" | "creado_en">;
+export type CreateMovimientoInput = Omit<Movimiento, "id" | "creado_en" | "elemento">;
 export type UpdateMovimientoInput = Partial<CreateMovimientoInput> & { id?: number };
 
 

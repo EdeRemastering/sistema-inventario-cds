@@ -61,6 +61,7 @@ export function ElementoUpsertDialog({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ElementoFormData>({
     resolver: zodResolver(schema),
@@ -133,7 +134,6 @@ export function ElementoUpsertDialog({
                 value={watch("categoria_id")}
                 onValueChange={(value) => {
                   setValue("categoria_id", value);
-                  setSelectedCategoriaId(value);
                   setValue("subcategoria_id", ""); // Reset subcategoría
                 }}
               >
