@@ -15,12 +15,15 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { DateTimePicker } from "../ui/date-time-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
 
 const schema = z.object({
   numero_ticket: z.string().min(1, "Número requerido"),
-  fecha_salida: z.string().min(1, "Fecha salida requerida"),
-  fecha_estimada_devolucion: z.string().optional(),
+  fecha_salida: z.date({
+    message: "Fecha de salida requerida",
+  }),
+  fecha_estimada_devolucion: z.date().optional(),
   elemento: z.string().optional(),
   serie: z.string().optional(),
   marca_modelo: z.string().optional(),
@@ -73,11 +76,11 @@ export function TicketUpsertDialog({
 
       // Agregar todos los campos del formulario
       formData.append("numero_ticket", data.numero_ticket);
-      formData.append("fecha_salida", data.fecha_salida);
+      formData.append("fecha_salida", data.fecha_salida.toISOString());
       if (data.fecha_estimada_devolucion)
         formData.append(
           "fecha_estimada_devolucion",
-          data.fecha_estimada_devolucion
+          data.fecha_estimada_devolucion.toISOString()
         );
       if (data.elemento) formData.append("elemento", data.elemento);
       if (data.serie) formData.append("serie", data.serie);
@@ -157,11 +160,15 @@ export function TicketUpsertDialog({
             {/* Fechas */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <Label htmlFor="fecha_salida">Fecha de Salida</Label>
-                <Input
-                  id="fecha_salida"
-                  type="datetime-local"
-                  {...register("fecha_salida")}
+                <Label>Fecha de Salida</Label>
+                <DateTimePicker
+                  value={watch("fecha_salida")}
+                  onChange={(date) => {
+                    if (date) {
+                      setValue("fecha_salida", date);
+                    }
+                  }}
+                  placeholder="Seleccionar fecha y hora"
                 />
                 {errors.fecha_salida && (
                   <p className="text-red-500 text-sm">
@@ -170,13 +177,15 @@ export function TicketUpsertDialog({
                 )}
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="fecha_estimada_devolucion">
-                  Fecha Estimada de Devolución
-                </Label>
-                <Input
-                  id="fecha_estimada_devolucion"
-                  type="date"
-                  {...register("fecha_estimada_devolucion")}
+                <Label>Fecha Estimada de Devolución</Label>
+                <DateTimePicker
+                  value={watch("fecha_estimada_devolucion")}
+                  onChange={(date) => {
+                    if (date) {
+                      setValue("fecha_estimada_devolucion", date);
+                    }
+                  }}
+                  placeholder="Seleccionar fecha y hora"
                 />
                 {errors.fecha_estimada_devolucion && (
                   <p className="text-red-500 text-sm">

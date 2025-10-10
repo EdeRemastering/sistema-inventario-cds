@@ -82,7 +82,7 @@ export async function actionGenerateReporte(formData: FormData) {
             'Total Subcategorías': cat.total_subcategorias,
             'Creado': cat.creado_en.toLocaleDateString()
           }));
-          exportToExcel(excelData, `categorias_${new Date().toISOString().split('T')[0]}.csv`);
+          exportToExcel(excelData, `categorias_${new Date().toISOString().split('T')[0]}.xlsx`);
           return { success: true, message: "Reporte de categorías exportado exitosamente" };
         }
         // Para PDF de categorías, usaríamos un generador específico
@@ -101,7 +101,7 @@ export async function actionGenerateReporte(formData: FormData) {
             'Categoría': obs.elemento_categoria,
             'Creado': obs.creado_en.toLocaleDateString()
           }));
-          exportToExcel(excelData, `observaciones_${fechaInicioDate ? fechaInicioDate.toISOString().split('T')[0] : 'todos'}.csv`);
+          exportToExcel(excelData, `observaciones_${fechaInicioDate ? fechaInicioDate.toISOString().split('T')[0] : 'todos'}.xlsx`);
           return { success: true, message: "Reporte de observaciones exportado exitosamente" };
         }
         return { success: false, message: "Formato PDF para observaciones no implementado aún" };
@@ -124,7 +124,7 @@ export async function actionGenerateReporte(formData: FormData) {
             'Orden Número': ticket.orden_numero,
             'Usuario Guardado': ticket.usuario_guardado
           }));
-          exportToExcel(excelData, `tickets_${fechaInicioDate ? fechaInicioDate.toISOString().split('T')[0] : 'todos'}.csv`);
+          exportToExcel(excelData, `tickets_${fechaInicioDate ? fechaInicioDate.toISOString().split('T')[0] : 'todos'}.xlsx`);
           return { success: true, message: "Reporte de tickets exportado exitosamente" };
         }
         return { success: false, message: "Formato PDF para tickets no implementado aún" };

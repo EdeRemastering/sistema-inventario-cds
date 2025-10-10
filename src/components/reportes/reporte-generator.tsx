@@ -14,19 +14,15 @@ import {
 } from "../ui/select";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import {
-  generateInventarioReport,
-  generateMovimientosReport,
-  generatePrestamosActivosReport,
-  exportInventarioToExcel,
-  exportMovimientosToExcel,
-  exportPrestamosActivosToExcel,
-  type InventarioReporteData,
-  type MovimientosReporteData,
-  type PrestamosActivosReporteData,
-} from "../../lib/report-generator";
+import { actionGenerateReporte } from "../../modules/reportes/actions";
 
-type ReporteType = "inventario" | "movimientos" | "prestamos-activos";
+type ReporteType =
+  | "inventario"
+  | "movimientos"
+  | "prestamos-activos"
+  | "categorias"
+  | "observaciones"
+  | "tickets";
 
 type ReporteGeneratorProps = {
   onGenerate: (tipo: string, datos: string) => void;
@@ -38,87 +34,34 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
   const [fechaFin, setFechaFin] = useState("");
   const [generando, setGenerando] = useState(false);
 
-  const handleGenerar = async () => {
+  const handleGenerar = async (formato: "pdf" | "excel") => {
     setGenerando(true);
 
     try {
-      let reporteData: string;
+      const formData = new FormData();
+      formData.append("tipo_reporte", tipoReporte);
+      formData.append("formato", formato);
 
-      switch (tipoReporte) {
-        case "inventario":
-          // Aquí harías la llamada a la API para obtener los datos del inventario
-          const inventarioData: InventarioReporteData = {
-            elementos: [], // Datos reales vendrían de la API
-          };
-          reporteData = await generateInventarioReport(inventarioData);
-          break;
-
-        case "movimientos":
-          // Aquí harías la llamada a la API para obtener los movimientos
-          const movimientosData: MovimientosReporteData = {
-            movimientos: [], // Datos reales vendrían de la API
-          };
-          reporteData = await generateMovimientosReport(movimientosData);
-          break;
-
-        case "prestamos-activos":
-          // Aquí harías la llamada a la API para obtener los préstamos activos
-          const prestamosData: PrestamosActivosReporteData = {
-            prestamos: [], // Datos reales vendrían de la API
-          };
-          reporteData = await generatePrestamosActivosReport(prestamosData);
-          break;
-
-        default:
-          throw new Error("Tipo de reporte no válido");
+      if (fechaInicio) {
+        formData.append("fecha_inicio", fechaInicio);
+      }
+      if (fechaFin) {
+        formData.append("fecha_fin", fechaFin);
       }
 
-      onGenerate(tipoReporte, reporteData);
-      toast.success("Reporte generado exitosamente");
+      const result = await actionGenerateReporte(formData);
+
+      if (result.success) {
+        toast.success(result.message);
+        if (formato === "pdf") {
+          onGenerate(tipoReporte, "reporte_generado");
+        }
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       console.error("Error generando reporte:", error);
       toast.error("Error al generar el reporte");
-    } finally {
-      setGenerando(false);
-    }
-  };
-
-  const handleExportExcel = async () => {
-    setGenerando(true);
-
-    try {
-      let result: string;
-
-      switch (tipoReporte) {
-        case "inventario":
-          const inventarioData: InventarioReporteData = {
-            elementos: [], // Datos reales vendrían de la API
-          };
-          result = exportInventarioToExcel(inventarioData);
-          break;
-
-        case "movimientos":
-          const movimientosData: MovimientosReporteData = {
-            movimientos: [], // Datos reales vendrían de la API
-          };
-          result = exportMovimientosToExcel(movimientosData);
-          break;
-
-        case "prestamos-activos":
-          const prestamosData: PrestamosActivosReporteData = {
-            prestamos: [], // Datos reales vendrían de la API
-          };
-          result = exportPrestamosActivosToExcel(prestamosData);
-          break;
-
-        default:
-          throw new Error("Tipo de reporte no válido");
-      }
-
-      toast.success(result);
-    } catch (error) {
-      console.error("Error exportando a Excel:", error);
-      toast.error("Error al exportar a Excel");
     } finally {
       setGenerando(false);
     }
@@ -158,12 +101,19 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
               <SelectItem value="prestamos-activos">
                 Préstamos Activos
               </SelectItem>
+              <SelectItem value="categorias">
+                Categorías y Estadísticas
+              </SelectItem>
+              <SelectItem value="observaciones">Observaciones</SelectItem>
+              <SelectItem value="tickets">Tickets Guardados</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Filtros de Fecha (solo para algunos reportes) */}
-        {tipoReporte !== "inventario" && (
+        {/* Filtros de Fecha (para reportes que lo requieren) */}
+        {(tipoReporte === "movimientos" ||
+          tipoReporte === "observaciones" ||
+          tipoReporte === "tickets") && (
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="fecha-inicio">Fecha Inicio</Label>
@@ -189,7 +139,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
         {/* Botones de Acción */}
         <div className="flex gap-2">
           <Button
-            onClick={handleGenerar}
+            onClick={() => handleGenerar("pdf")}
             disabled={generando}
             className="flex-1"
           >
@@ -204,7 +154,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
           </Button>
 
           <Button
-            onClick={handleExportExcel}
+            onClick={() => handleGenerar("excel")}
             disabled={generando}
             variant="outline"
             className="flex-1"
@@ -239,6 +189,12 @@ function getReporteDescription(tipo: ReporteType): string {
       return "Historial de todos los movimientos de entrada y salida";
     case "prestamos-activos":
       return "Elementos actualmente en préstamo que no han sido devueltos";
+    case "categorias":
+      return "Listado de categorías con estadísticas de elementos y subcategorías";
+    case "observaciones":
+      return "Historial de observaciones realizadas a los elementos";
+    case "tickets":
+      return "Registro de tickets de préstamo guardados en el sistema";
     default:
       return "";
   }
@@ -252,6 +208,12 @@ function getReporteIncludes(tipo: ReporteType): string {
       return "Ticket, fecha, tipo, elemento, funcionarios, fechas de devolución";
     case "prestamos-activos":
       return "Ticket, elemento, funcionario, fecha de préstamo, fecha estimada de devolución";
+    case "categorias":
+      return "Nombre, descripción, estado, total elementos, total subcategorías";
+    case "observaciones":
+      return "Fecha, descripción, elemento, serie, marca, modelo, categoría";
+    case "tickets":
+      return "Ticket, fechas, elemento, dependencias, funcionarios, motivo";
     default:
       return "";
   }

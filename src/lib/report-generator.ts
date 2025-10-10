@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import * as XLSX from 'xlsx';
 
 // Extender jsPDF para incluir autoTable
 declare module "jspdf" {
@@ -319,30 +320,25 @@ export async function generatePrestamosActivosReport(data: PrestamosActivosRepor
 }
 
 /**
- * Exporta datos a Excel usando CSV (compatible con Excel)
+ * Exporta datos a Excel usando la librería xlsx
  */
-export function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.csv'): void {
+export function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx'): void {
   if (data.length === 0) {
     console.warn('No hay datos para exportar');
     return;
   }
 
-  const csvContent = [
-    Object.keys(data[0] || {}).join(','),
-    ...data.map(row => Object.values(row).map(value => 
-      typeof value === 'string' && value.includes(',') ? `"${value}"` : value
-    ).join(','))
-  ].join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // Crear un nuevo workbook
+  const workbook = XLSX.utils.book_new();
+  
+  // Crear una hoja de trabajo desde los datos
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  
+  // Agregar la hoja al workbook
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
+  
+  // Generar el archivo Excel y descargarlo
+  XLSX.writeFile(workbook, filename);
 }
 
 /**
@@ -362,23 +358,7 @@ export function exportInventarioToExcel(data: InventarioReporteData): string {
     'Subcategoría': elemento.subcategoria?.nombre || 'N/A'
   }));
 
-  // En una implementación real, aquí usarías la librería xlsx
-  // Por ahora simulamos la descarga
-  const csvContent = [
-    Object.keys(excelData[0] || {}).join(','),
-    ...excelData.map(row => Object.values(row).join(','))
-  ].join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'inventario_completo.csv');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
+  exportToExcel(excelData, `inventario_completo_${new Date().toISOString().split('T')[0]}.xlsx`);
   return 'Inventario exportado exitosamente';
 }
 
@@ -401,21 +381,7 @@ export function exportMovimientosToExcel(data: MovimientosReporteData): string {
     'Fecha Real Devolución': movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
   }));
 
-  const csvContent = [
-    Object.keys(excelData[0] || {}).join(','),
-    ...excelData.map(row => Object.values(row).join(','))
-  ].join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'movimientos.csv');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
+  exportToExcel(excelData, `movimientos_${new Date().toISOString().split('T')[0]}.xlsx`);
   return 'Movimientos exportados exitosamente';
 }
 
@@ -435,20 +401,6 @@ export function exportPrestamosActivosToExcel(data: PrestamosActivosReporteData)
     'Estado': prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
   }));
 
-  const csvContent = [
-    Object.keys(excelData[0] || {}).join(','),
-    ...excelData.map(row => Object.values(row).join(','))
-  ].join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'prestamos_activos.csv');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
+  exportToExcel(excelData, `prestamos_activos_${new Date().toISOString().split('T')[0]}.xlsx`);
   return 'Préstamos activos exportados exitosamente';
 }

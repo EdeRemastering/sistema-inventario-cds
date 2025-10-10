@@ -22,13 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Calendar } from "../ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { DateTimePicker } from "../ui/date-time-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
-import { CalendarIcon, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { cn } from "../../lib/utils";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";
 
@@ -39,7 +34,6 @@ const schema = z.object({
   fecha_movimiento: z.date({
     message: "Fecha de movimiento requerida",
   }),
-  hora_movimiento: z.string().optional(),
   dependencia_entrega: z.string().min(1, "Requerido"),
   firma_funcionario_entrega: z.string().optional(),
   cargo_funcionario_entrega: z.string().optional(),
@@ -370,47 +364,16 @@ export function MovimientoUpsertDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-1">
                 <Label>Fecha de Movimiento</Label>
-                <div className="space-y-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !fechaMovimiento && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {fechaMovimiento
-                          ? format(fechaMovimiento, "PPP", { locale: es })
-                          : "Seleccionar fecha"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={fechaMovimiento}
-                        onSelect={(date) => {
-                          if (date) {
-                            setFechaMovimiento(date);
-                            setValue("fecha_movimiento", date);
-                          }
-                        }}
-                        initialFocus
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="time"
-                      {...register("hora_movimiento")}
-                      className="flex-1"
-                      placeholder="HH:MM"
-                    />
-                  </div>
-                </div>
+                <DateTimePicker
+                  value={fechaMovimiento}
+                  onChange={(date) => {
+                    if (date) {
+                      setFechaMovimiento(date);
+                      setValue("fecha_movimiento", date);
+                    }
+                  }}
+                  placeholder="Seleccionar fecha y hora"
+                />
                 {errors.fecha_movimiento && (
                   <p className="text-red-500 text-sm">
                     {errors.fecha_movimiento.message}
@@ -419,37 +382,16 @@ export function MovimientoUpsertDialog({
               </div>
               <div className="grid gap-1">
                 <Label>Fecha Estimada de Devolución</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !fechaDevolucion && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {fechaDevolucion
-                        ? format(fechaDevolucion, "PPP", { locale: es })
-                        : "Seleccionar fecha"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={fechaDevolucion}
-                      onSelect={(date) => {
-                        if (date) {
-                          setFechaDevolucion(date);
-                          setValue("fecha_estimada_devolucion", date);
-                        }
-                      }}
-                      initialFocus
-                      locale={es}
-                      disabled={(date) => date < new Date()}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <DateTimePicker
+                  value={fechaDevolucion}
+                  onChange={(date) => {
+                    if (date) {
+                      setFechaDevolucion(date);
+                      setValue("fecha_estimada_devolucion", date);
+                    }
+                  }}
+                  placeholder="Seleccionar fecha y hora"
+                />
                 {errors.fecha_estimada_devolucion && (
                   <p className="text-red-500 text-sm">
                     {errors.fecha_estimada_devolucion.message}
