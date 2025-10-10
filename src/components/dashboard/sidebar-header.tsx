@@ -1,6 +1,7 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { CDSLogo } from "../ui/cds-logo";
 
 export function SidebarHeader() {
   return (
@@ -8,6 +9,13 @@ export function SidebarHeader() {
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <div className="h-4 w-px bg-sidebar-border" />
+        {/* <div className="ml-2">
+          <CDSLogo
+            size="sm"
+            showText={true}
+            textClassName="font-semibold text-lg text-foreground"
+          />
+        </div> */}
       </div>
     </header>
   );

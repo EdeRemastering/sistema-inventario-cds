@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CDSLogo } from "@/components/ui/cds-logo";
 import { Label } from "@/components/ui/label";
 
 function LoginForm() {
@@ -59,16 +60,8 @@ function LoginForm() {
         <div className="relative w-full rounded-2xl border bg-card/60 p-8 backdrop-blur supports-[backdrop-filter]:bg-card/50 shadow-xl sm:p-10">
           <div className="absolute inset-x-0 -top-px mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-          <div className="mx-auto mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-inset ring-primary/20">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="size-6 text-primary"
-              aria-hidden
-            >
-              <path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
+          <div className="mx-auto mb-6 inline-flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-inset ring-primary/20">
+            <CDSLogo size="lg" showText={false} />
           </div>
 
           <h1 className="bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent sm:text-3xl">

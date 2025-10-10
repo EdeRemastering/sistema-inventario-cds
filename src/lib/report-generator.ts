@@ -75,9 +75,15 @@ export type PrestamosActivosReporteData = {
 export function generateGenericReport(data: ReporteData): string {
   const doc = new jsPDF();
   
+  // Logo CDS (simulado con texto)
+  doc.setFontSize(16);
+  doc.setTextColor(66, 139, 202);
+  doc.text("CDS", 20, 20);
+  
   // Título
   doc.setFontSize(20);
-  doc.text(data.titulo, 20, 30);
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.titulo, 20, 35);
   
   // Fecha
   doc.setFontSize(12);
@@ -91,7 +97,7 @@ export function generateGenericReport(data: ReporteData): string {
   doc.autoTable({
     head: [data.columnas],
     body: tableData,
-    startY: 60,
+    startY: 65,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [66, 139, 202] },
   });
@@ -105,9 +111,15 @@ export function generateGenericReport(data: ReporteData): string {
 export function generateInventarioReport(data: InventarioReporteData): string {
   const doc = new jsPDF();
   
+  // Logo CDS
+  doc.setFontSize(16);
+  doc.setTextColor(66, 139, 202);
+  doc.text("CDS", 20, 20);
+  
   // Título
   doc.setFontSize(20);
-  doc.text("INVENTARIO COMPLETO", 20, 30);
+  doc.setTextColor(0, 0, 0);
+  doc.text("INVENTARIO COMPLETO", 20, 35);
   
   // Fecha
   doc.setFontSize(12);
@@ -131,7 +143,7 @@ export function generateInventarioReport(data: InventarioReporteData): string {
   doc.autoTable({
     head: [['ID', 'Serie', 'Marca', 'Modelo', 'Cantidad', 'Ubicación', 'Estado Funcional', 'Estado Físico', 'Categoría', 'Subcategoría']],
     body: tableData,
-    startY: 70,
+    startY: 75,
     styles: { fontSize: 7 },
     headStyles: { fillColor: [66, 139, 202] },
     columnStyles: {
@@ -157,9 +169,15 @@ export function generateInventarioReport(data: InventarioReporteData): string {
 export function generateMovimientosReport(data: MovimientosReporteData): string {
   const doc = new jsPDF();
   
+  // Logo CDS
+  doc.setFontSize(16);
+  doc.setTextColor(66, 139, 202);
+  doc.text("CDS", 20, 20);
+  
   // Título
   doc.setFontSize(20);
-  doc.text("REPORTE DE MOVIMIENTOS", 20, 30);
+  doc.setTextColor(0, 0, 0);
+  doc.text("REPORTE DE MOVIMIENTOS", 20, 35);
   
   // Fecha
   doc.setFontSize(12);
@@ -184,7 +202,7 @@ export function generateMovimientosReport(data: MovimientosReporteData): string 
   doc.autoTable({
     head: [['Ticket', 'Fecha', 'Tipo', 'Elemento', 'Cantidad', 'Dependencia Entrega', 'Funcionario Entrega', 'Dependencia Recibe', 'Funcionario Recibe', 'Fecha Est. Devolución', 'Fecha Real Devolución']],
     body: tableData,
-    startY: 70,
+    startY: 75,
     styles: { fontSize: 6 },
     headStyles: { fillColor: [66, 139, 202] },
     columnStyles: {
@@ -211,9 +229,15 @@ export function generateMovimientosReport(data: MovimientosReporteData): string 
 export function generatePrestamosActivosReport(data: PrestamosActivosReporteData): string {
   const doc = new jsPDF();
   
+  // Logo CDS
+  doc.setFontSize(16);
+  doc.setTextColor(66, 139, 202);
+  doc.text("CDS", 20, 20);
+  
   // Título
   doc.setFontSize(20);
-  doc.text("PRÉSTAMOS ACTIVOS", 20, 30);
+  doc.setTextColor(0, 0, 0);
+  doc.text("PRÉSTAMOS ACTIVOS", 20, 35);
   
   // Fecha
   doc.setFontSize(12);
@@ -235,7 +259,7 @@ export function generatePrestamosActivosReport(data: PrestamosActivosReporteData
   doc.autoTable({
     head: [['Ticket', 'Fecha', 'Elemento', 'Cantidad', 'Dependencia', 'Funcionario', 'Fecha Est. Devolución', 'Estado']],
     body: tableData,
-    startY: 70,
+    startY: 75,
     styles: { fontSize: 7 },
     headStyles: { fillColor: [66, 139, 202] },
     columnStyles: {

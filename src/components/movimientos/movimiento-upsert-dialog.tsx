@@ -113,7 +113,11 @@ export function MovimientoUpsertDialog({
             toast.error(result.message || "Stock insuficiente");
           }
         }
-      );
+      ).catch((error) => {
+        console.error("Error validando stock:", error);
+        setStockInfo(null);
+        toast.error("Error al validar stock");
+      });
     }
   }, [selectedElementoId, cantidad]);
 

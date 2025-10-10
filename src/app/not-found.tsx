@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "../components/ui/button";
+import { CDSLogo } from "../components/ui/cds-logo";
 
 export default function NotFound() {
   return (
@@ -14,9 +15,15 @@ export default function NotFound() {
       <div className="mx-auto grid max-w-3xl place-items-center px-6 py-16 text-center sm:py-24">
         <div className="relative w-full rounded-2xl border bg-card/60 p-8 backdrop-blur supports-[backdrop-filter]:bg-card/50 shadow-xl sm:p-12">
           <div className="absolute inset-x-0 -top-px mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-          <h1 className="bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent sm:text-4xl">
-            Página no encontrada
-          </h1>
+
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <CDSLogo size="xl" showText={false} />
+            <div>
+              <h1 className="bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent sm:text-4xl">
+                Página no encontrada
+              </h1>
+            </div>
+          </div>
 
           <p className="mx-auto mt-3 max-w-prose text-balance text-muted-foreground">
             La ruta que intentas visitar no existe o fue movida. Verifica el

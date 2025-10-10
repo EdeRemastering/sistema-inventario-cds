@@ -30,6 +30,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "../ui/theme-toggle";
+import { CDSLogo } from "../ui/cds-logo";
 
 type NavItem = {
   href: string;
@@ -62,8 +63,11 @@ export function DashboardSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
-          <div className="text-lg font-semibold text-sidebar-foreground">
-            Sistema CDs
+          <div className="flex items-center gap-3">
+            <CDSLogo size="md" showText={true} />
+            {/* <div className="text-lg font-semibold text-sidebar-foreground">
+              Sistema CDs
+            </div> */}
           </div>
           <ThemeToggle />
         </div>

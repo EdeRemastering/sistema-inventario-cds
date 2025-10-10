@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { CDSLogo } from "../components/ui/cds-logo";
 import {
   Shield,
   ClipboardList,
@@ -15,9 +16,14 @@ export default function Home() {
     <div className="min-h-dvh bg-gradient-to-b from-background to-muted/40">
       <section className="container mx-auto px-6 py-16 md:py-24">
         <div className="mx-auto max-w-5xl text-center">
-          <span className="inline-block rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
-            Sistema Inventario CDS
-          </span>
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <CDSLogo size="xl" showText={false} />
+            <div>
+              <span className="inline-block rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
+                Sistema Inventario CDS
+              </span>
+            </div>
+          </div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
             Gestiona tu inventario con precisión y trazabilidad
           </h1>
