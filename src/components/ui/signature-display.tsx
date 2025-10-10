@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Eye, X } from "lucide-react";
 import { Button } from "./button";
 import {
@@ -63,9 +64,11 @@ export function SignatureDisplay({
             </DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-4">
-            <img
+            <Image
               src={signatureUrl}
               alt={label}
+              width={400}
+              height={200}
               className="max-w-full h-auto border rounded-lg shadow-sm"
               style={{ maxHeight: "300px" }}
             />

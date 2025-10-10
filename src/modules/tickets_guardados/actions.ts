@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { formDataToObject } from "../../utils/form";
-import { ticketCreateSchema, ticketUpdateSchema, ticketDeleteSchema } from "./validations";
+import { ticketCreateSchema, ticketUpdateSchema } from "./validations";
 import { createTicket, updateTicket, deleteTicket } from "./services";
 import { saveSignature, isValidSignature, deleteSignature } from "../../lib/signature-storage";
 import { prisma } from "../../lib/prisma";

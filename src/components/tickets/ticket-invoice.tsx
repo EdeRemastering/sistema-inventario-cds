@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { FileText, Download, Eye, X } from "lucide-react";
+import { FileText, Download, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { SignatureDisplay } from "../ui/signature-display";
 import { jsPDF } from "jspdf";
@@ -257,11 +257,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
             x,
             10,
             finalWidth,
-            sourceHeight * (finalWidth / imgWidth),
-            0,
-            sourceY,
-            imgWidth,
-            sourceHeight
+            sourceHeight * (finalWidth / imgWidth)
           );
         }
       }
@@ -425,7 +421,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-hidden">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center justify-between">
+            <DialogTitle className="flex items-center justify-around">
               <span>Factura de Ticket</span>
               <div className="flex gap-2">
                 <Button
@@ -437,13 +433,6 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                 >
                   <Download className="h-4 w-4 mr-2" />
                   {isGenerating ? "Generando..." : "Exportar PDF"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPreview(false)}
-                >
-                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </DialogTitle>
@@ -468,7 +457,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
               </div>
 
               {/* Ticket Info */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+              <div className="flex flex-col gap-8 mb-8">
                 <Card className="border-l-4 border-l-blue-600">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -574,10 +563,8 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     )}
                   </CardContent>
                 </Card>
-              </div>
 
-              {/* Dependencies and Signatures */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+                {/* Dependencies and Signatures */}
                 <Card className="border-l-4 border-l-orange-600">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import QRCode from "qrcode";
+import Image from "next/image";
 import { QrCode, Download, Printer, Eye } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -199,9 +200,11 @@ export function ElementoQRGenerator({ elemento }: Props) {
           <div className="space-y-4">
             <div className="flex justify-center">
               <div className="border-2 border-gray-300 p-4 rounded-lg bg-white">
-                <img
+                <Image
                   src={qrCodeDataURL}
                   alt="Código QR del elemento"
+                  width={200}
+                  height={200}
                   className="max-w-full h-auto"
                 />
               </div>

@@ -34,7 +34,7 @@ export function MovimientosFilters({
 }: MovimientosFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleFilterChange = (key: keyof MovimientoFilters, value: any) => {
+  const handleFilterChange = (key: keyof MovimientoFilters, value: string | Date | null | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value,
@@ -104,7 +104,7 @@ export function MovimientosFilters({
                 id="tipo"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={filters.tipo}
-                onChange={(e) => handleFilterChange("tipo", e.target.value as any)}
+                onChange={(e) => handleFilterChange("tipo", e.target.value)}
               >
                 <option value="TODOS">Todos los tipos</option>
                 <option value="SALIDA">Solo Salidas</option>

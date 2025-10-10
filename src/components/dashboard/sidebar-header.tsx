@@ -1,7 +1,6 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { CDSLogo } from "../ui/cds-logo";
 
 export function SidebarHeader() {
   return (

@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 export const ticketsSeed = [
   {
+    id: 1,
     numero_ticket: "TICKET-2024-000001",
     fecha_salida: new Date("2024-01-15T10:30:00"),
     fecha_estimada_devolucion: new Date("2024-02-15"),
@@ -18,6 +19,7 @@ export const ticketsSeed = [
     usuario_guardado: "admin",
   },
   {
+    id: 2,
     numero_ticket: "TICKET-2024-000002",
     fecha_salida: new Date("2024-01-20T14:15:00"),
     fecha_estimada_devolucion: new Date("2024-01-30"),
@@ -34,6 +36,7 @@ export const ticketsSeed = [
     usuario_guardado: "admin",
   },
   {
+    id: 3,
     numero_ticket: "TICKET-2024-000003",
     fecha_salida: new Date("2024-02-01T09:00:00"),
     fecha_estimada_devolucion: new Date("2024-02-28"),
@@ -50,6 +53,7 @@ export const ticketsSeed = [
     usuario_guardado: "admin",
   },
   {
+    id: 4,
     numero_ticket: "TICKET-2024-000004",
     fecha_salida: new Date("2024-02-10T16:45:00"),
     fecha_estimada_devolucion: new Date("2024-03-10"),
@@ -66,6 +70,7 @@ export const ticketsSeed = [
     usuario_guardado: "admin",
   },
   {
+    id: 5,
     numero_ticket: "TICKET-2024-000005",
     fecha_salida: new Date("2024-02-15T11:20:00"),
     fecha_estimada_devolucion: new Date("2024-02-20"),
@@ -88,7 +93,7 @@ export async function seedTickets(prisma: PrismaClient) {
 
   for (const ticket of ticketsSeed) {
     await prisma.tickets_guardados.upsert({
-      where: { numero_ticket: ticket.numero_ticket },
+      where: { id: ticket.id },
       update: ticket,
       create: ticket,
     });
