@@ -22,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Calendar } from "../ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { SignaturePadComponent } from "../ui/signature-pad";
+import { CalendarIcon, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "../../lib/utils";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";
 
@@ -30,7 +36,10 @@ const schema = z.object({
   elemento_id: z.string().min(1, "Selecciona elemento"),
   cantidad: z.string().min(1, "Cantidad requerida"),
   orden_numero: z.string().optional(),
-  fecha_movimiento: z.string().min(1, "Fecha requerida"),
+  fecha_movimiento: z.date({
+    message: "Fecha de movimiento requerida",
+  }),
+  hora_movimiento: z.string().optional(),
   dependencia_entrega: z.string().min(1, "Requerido"),
   firma_funcionario_entrega: z.string().optional(),
   cargo_funcionario_entrega: z.string().optional(),
@@ -38,7 +47,9 @@ const schema = z.object({
   firma_funcionario_recibe: z.string().optional(),
   cargo_funcionario_recibe: z.string().optional(),
   motivo: z.string().optional(),
-  fecha_estimada_devolucion: z.string().min(1, "Requerido"),
+  fecha_estimada_devolucion: z.date({
+    message: "Fecha estimada de devolución requerida",
+  }),
   numero_ticket: z.string().optional(),
   observaciones_entrega: z.string().optional(),
 });
@@ -73,6 +84,8 @@ export function MovimientoUpsertDialog({
   const [open, setOpen] = useState(false);
   const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
   const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
+  const [fechaMovimiento, setFechaMovimiento] = useState<Date | undefined>();
+  const [fechaDevolucion, setFechaDevolucion] = useState<Date | undefined>();
   const [stockInfo, setStockInfo] = useState<{
     available: number;
     total: number;
@@ -89,6 +102,8 @@ export function MovimientoUpsertDialog({
     resolver: zodResolver(schema),
     defaultValues: {
       cantidad: "1",
+      fecha_movimiento: new Date(),
+      fecha_estimada_devolucion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días desde hoy
       ...defaultValues,
     } as MovimientoFormData,
   });
@@ -104,6 +119,14 @@ export function MovimientoUpsertDialog({
       });
     }
   }, [create, open, defaultValues?.numero_ticket, setValue]);
+
+  // Sincronizar fechas del formulario con el estado local
+  useEffect(() => {
+    const fechaMov = watch("fecha_movimiento");
+    const fechaDev = watch("fecha_estimada_devolucion");
+    if (fechaMov) setFechaMovimiento(fechaMov);
+    if (fechaDev) setFechaDevolucion(fechaDev);
+  }, [watch]);
 
   // Validar stock cuando cambie el elemento o cantidad
   useEffect(() => {
@@ -176,11 +199,22 @@ export function MovimientoUpsertDialog({
 
       const formData = new FormData();
 
+      // Combinar fecha y hora para fecha_movimiento
+      let fechaMovimientoCompleta = data.fecha_movimiento;
+      if (data.hora_movimiento) {
+        const [hours, minutes] = data.hora_movimiento.split(":");
+        fechaMovimientoCompleta = new Date(data.fecha_movimiento);
+        fechaMovimientoCompleta.setHours(parseInt(hours), parseInt(minutes));
+      }
+
       // Agregar todos los campos del formulario
       formData.append("elemento_id", data.elemento_id);
       formData.append("cantidad", data.cantidad);
       if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
-      formData.append("fecha_movimiento", data.fecha_movimiento);
+      formData.append(
+        "fecha_movimiento",
+        fechaMovimientoCompleta.toISOString()
+      );
       formData.append("dependencia_entrega", data.dependencia_entrega);
       if (data.cargo_funcionario_entrega)
         formData.append(
@@ -196,7 +230,7 @@ export function MovimientoUpsertDialog({
       if (data.motivo) formData.append("motivo", data.motivo);
       formData.append(
         "fecha_estimada_devolucion",
-        data.fecha_estimada_devolucion
+        data.fecha_estimada_devolucion.toISOString()
       );
       if (data.numero_ticket)
         formData.append("numero_ticket", data.numero_ticket);
@@ -229,6 +263,8 @@ export function MovimientoUpsertDialog({
       reset();
       setFirmaEntrega(null);
       setFirmaRecibe(null);
+      setFechaMovimiento(undefined);
+      setFechaDevolucion(undefined);
       setStockInfo(null);
       setOpen(false);
     } catch (error) {
@@ -311,14 +347,50 @@ export function MovimientoUpsertDialog({
             </div>
 
             {/* Fechas */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <Label htmlFor="fecha_movimiento">Fecha de Movimiento</Label>
-                <Input
-                  id="fecha_movimiento"
-                  type="datetime-local"
-                  {...register("fecha_movimiento")}
-                />
+                <Label>Fecha de Movimiento</Label>
+                <div className="space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !fechaMovimiento && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {fechaMovimiento
+                          ? format(fechaMovimiento, "PPP", { locale: es })
+                          : "Seleccionar fecha"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={fechaMovimiento}
+                        onSelect={(date) => {
+                          if (date) {
+                            setFechaMovimiento(date);
+                            setValue("fecha_movimiento", date);
+                          }
+                        }}
+                        initialFocus
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="time"
+                      {...register("hora_movimiento")}
+                      className="flex-1"
+                      placeholder="HH:MM"
+                    />
+                  </div>
+                </div>
                 {errors.fecha_movimiento && (
                   <p className="text-red-500 text-sm">
                     {errors.fecha_movimiento.message}
@@ -326,14 +398,38 @@ export function MovimientoUpsertDialog({
                 )}
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="fecha_estimada_devolucion">
-                  Fecha Estimada de Devolución
-                </Label>
-                <Input
-                  id="fecha_estimada_devolucion"
-                  type="date"
-                  {...register("fecha_estimada_devolucion")}
-                />
+                <Label>Fecha Estimada de Devolución</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !fechaDevolucion && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {fechaDevolucion
+                        ? format(fechaDevolucion, "PPP", { locale: es })
+                        : "Seleccionar fecha"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={fechaDevolucion}
+                      onSelect={(date) => {
+                        if (date) {
+                          setFechaDevolucion(date);
+                          setValue("fecha_estimada_devolucion", date);
+                        }
+                      }}
+                      initialFocus
+                      locale={es}
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.fecha_estimada_devolucion && (
                   <p className="text-red-500 text-sm">
                     {errors.fecha_estimada_devolucion.message}

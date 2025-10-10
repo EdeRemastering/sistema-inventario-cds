@@ -3,7 +3,6 @@ export type TicketGuardado = {
   numero_ticket: string;
   fecha_salida: Date;
   fecha_estimada_devolucion: Date | null;
-  fecha_real_devolucion: Date | null;
   elemento: string | null;
   serie: string | null;
   marca_modelo: string | null;

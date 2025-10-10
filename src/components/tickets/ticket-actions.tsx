@@ -21,7 +21,12 @@ export function TicketActions({
   onDeleteTicket,
   onMarkAsReturned,
 }: TicketActionsProps) {
-  const isDelivered = !!ticket.fecha_real_devolucion;
+  // Los tickets_guardados no tienen fecha_real_devolucion,
+  // verificamos si fue marcado como devuelto por el motivo
+  const isDelivered =
+    ticket.motivo?.includes("devuelto") ||
+    ticket.motivo?.includes("completado") ||
+    false;
 
   const getStatusColor = () => {
     if (isDelivered) return "text-primary";
