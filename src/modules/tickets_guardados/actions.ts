@@ -124,4 +124,86 @@ export async function actionDeleteTicket(id: number) {
   revalidatePath("/tickets");
 }
 
+/**
+ * Marca un ticket como devuelto
+ */
+export async function actionMarkTicketAsReturned(id: number) {
+  try {
+    await prisma.tickets_guardados.update({
+      where: { id },
+      data: {
+        fecha_real_devolucion: new Date(),
+      },
+    });
+
+    // Crear movimiento de devolución
+    const ticket = await prisma.tickets_guardados.findUnique({
+      where: { id },
+      include: {
+        elemento: true,
+      },
+    });
+
+    if (ticket && ticket.elemento) {
+      await prisma.movimientos.create({
+        data: {
+          elemento_id: ticket.elemento.id,
+          cantidad: ticket.cantidad,
+          orden_numero: ticket.orden_numero || "",
+          fecha_movimiento: new Date(),
+          dependencia_entrega: ticket.dependencia_recibe || "",
+          firma_funcionario_entrega: ticket.firma_funcionario_recibe,
+          cargo_funcionario_entrega: "",
+          dependencia_recibe: ticket.dependencia_entrega || "",
+          firma_funcionario_recibe: ticket.firma_funcionario_entrega,
+          cargo_funcionario_recibe: "",
+          motivo: `Devolución de ticket ${ticket.numero_ticket}`,
+          fecha_estimada_devolucion: new Date(),
+          fecha_real_devolucion: new Date(),
+          observaciones_entrega: "Devolución completada",
+          observaciones_devolucion: "Elemento devuelto en buen estado",
+          tipo: "DEVOLUCION",
+          codigo_equipo: "",
+          serial_equipo: ticket.serie || "",
+          hora_entrega: new Date(),
+          hora_devolucion: new Date(),
+          numero_ticket: `DEV-${ticket.numero_ticket}`,
+          firma_entrega: ticket.firma_funcionario_recibe,
+          firma_recibe: ticket.firma_funcionario_entrega,
+          firma_devuelve: ticket.firma_funcionario_recibe,
+          firma_recibe_devolucion: ticket.firma_funcionario_entrega,
+          devuelto_por: "Sistema",
+          recibido_por: "Sistema",
+        },
+      });
+    }
+
+    revalidatePath("/tickets");
+    revalidatePath("/movimientos");
+  } catch (error) {
+    console.error("Error marcando ticket como devuelto:", error);
+    throw new Error("Error al marcar ticket como devuelto");
+  }
+}
+
+/**
+ * Marca un ticket como completado
+ */
+export async function actionMarkTicketAsCompleted(id: number) {
+  try {
+    await prisma.tickets_guardados.update({
+      where: { id },
+      data: {
+        fecha_real_devolucion: new Date(),
+        motivo: "Ticket completado por el sistema",
+      },
+    });
+
+    revalidatePath("/tickets");
+  } catch (error) {
+    console.error("Error completando ticket:", error);
+    throw new Error("Error al completar ticket");
+  }
+}
+
 

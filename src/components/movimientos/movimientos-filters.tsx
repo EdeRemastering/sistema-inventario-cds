@@ -19,6 +19,14 @@ export type MovimientoFilters = {
   fechaDesde: Date | null;
   fechaHasta: Date | null;
   tipo: "TODOS" | "SALIDA" | "DEVOLUCION";
+  // Nuevos filtros para historial completo
+  elementoSerie: string;
+  elementoNombre: string;
+  funcionarioEntrega: string;
+  funcionarioRecibe: string;
+  estado: "TODOS" | "ACTIVO" | "DEVUELTO" | "VENCIDO";
+  ordenNumero: string;
+  motivo: string;
 };
 
 type MovimientosFiltersProps = {
@@ -34,20 +42,30 @@ export function MovimientosFilters({
 }: MovimientosFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleFilterChange = (key: keyof MovimientoFilters, value: string | Date | null | undefined) => {
+  const handleFilterChange = (
+    key: keyof MovimientoFilters,
+    value: string | Date | null | undefined
+  ) => {
     onFiltersChange({
       ...filters,
       [key]: value,
     });
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     filters.numeroTicket ||
     filters.dependenciaEntrega ||
     filters.dependenciaRecibe ||
     filters.fechaDesde ||
     filters.fechaHasta ||
-    filters.tipo !== "TODOS";
+    filters.tipo !== "TODOS" ||
+    filters.elementoSerie ||
+    filters.elementoNombre ||
+    filters.funcionarioEntrega ||
+    filters.funcionarioRecibe ||
+    filters.estado !== "TODOS" ||
+    filters.ordenNumero ||
+    filters.motivo;
 
   const clearFilters = () => {
     onClearFilters();
@@ -95,7 +113,9 @@ export function MovimientosFilters({
                 id="numeroTicket"
                 placeholder="Ej: TICKET-2024-000001"
                 value={filters.numeroTicket}
-                onChange={(e) => handleFilterChange("numeroTicket", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("numeroTicket", e.target.value)
+                }
               />
             </div>
             <div className="space-y-2">
@@ -121,7 +141,9 @@ export function MovimientosFilters({
                 id="dependenciaEntrega"
                 placeholder="Ej: Departamento de TI"
                 value={filters.dependenciaEntrega}
-                onChange={(e) => handleFilterChange("dependenciaEntrega", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("dependenciaEntrega", e.target.value)
+                }
               />
             </div>
             <div className="space-y-2">
@@ -130,7 +152,9 @@ export function MovimientosFilters({
                 id="dependenciaRecibe"
                 placeholder="Ej: Gerencia General"
                 value={filters.dependenciaRecibe}
-                onChange={(e) => handleFilterChange("dependenciaRecibe", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("dependenciaRecibe", e.target.value)
+                }
               />
             </div>
           </div>
@@ -149,11 +173,9 @@ export function MovimientosFilters({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.fechaDesde ? (
-                      format(filters.fechaDesde, "PPP", { locale: es })
-                    ) : (
-                      "Seleccionar fecha"
-                    )}
+                    {filters.fechaDesde
+                      ? format(filters.fechaDesde, "PPP", { locale: es })
+                      : "Seleccionar fecha"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -179,11 +201,9 @@ export function MovimientosFilters({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.fechaHasta ? (
-                      format(filters.fechaHasta, "PPP", { locale: es })
-                    ) : (
-                      "Seleccionar fecha"
-                    )}
+                    {filters.fechaHasta
+                      ? format(filters.fechaHasta, "PPP", { locale: es })
+                      : "Seleccionar fecha"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -197,6 +217,100 @@ export function MovimientosFilters({
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+
+          {/* Fila 3: Información del Elemento */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="elementoSerie">Serie del Elemento</Label>
+              <Input
+                id="elementoSerie"
+                placeholder="Ej: LAP001"
+                value={filters.elementoSerie}
+                onChange={(e) =>
+                  handleFilterChange("elementoSerie", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="elementoNombre">Nombre del Elemento</Label>
+              <Input
+                id="elementoNombre"
+                placeholder="Ej: Laptop Dell"
+                value={filters.elementoNombre}
+                onChange={(e) =>
+                  handleFilterChange("elementoNombre", e.target.value)
+                }
+              />
+            </div>
+          </div>
+
+          {/* Fila 4: Funcionarios */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="funcionarioEntrega">
+                Funcionario que Entrega
+              </Label>
+              <Input
+                id="funcionarioEntrega"
+                placeholder="Nombre del funcionario"
+                value={filters.funcionarioEntrega}
+                onChange={(e) =>
+                  handleFilterChange("funcionarioEntrega", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="funcionarioRecibe">Funcionario que Recibe</Label>
+              <Input
+                id="funcionarioRecibe"
+                placeholder="Nombre del funcionario"
+                value={filters.funcionarioRecibe}
+                onChange={(e) =>
+                  handleFilterChange("funcionarioRecibe", e.target.value)
+                }
+              />
+            </div>
+          </div>
+
+          {/* Fila 5: Estado y Orden */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado del Préstamo</Label>
+              <select
+                id="estado"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={filters.estado}
+                onChange={(e) => handleFilterChange("estado", e.target.value)}
+              >
+                <option value="TODOS">Todos los estados</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="DEVUELTO">Devuelto</option>
+                <option value="VENCIDO">Vencido</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ordenNumero">Número de Orden</Label>
+              <Input
+                id="ordenNumero"
+                placeholder="Ej: ORD-2024-001"
+                value={filters.ordenNumero}
+                onChange={(e) =>
+                  handleFilterChange("ordenNumero", e.target.value)
+                }
+              />
+            </div>
+          </div>
+
+          {/* Fila 6: Motivo */}
+          <div className="space-y-2">
+            <Label htmlFor="motivo">Motivo del Préstamo</Label>
+            <Input
+              id="motivo"
+              placeholder="Buscar por motivo del préstamo"
+              value={filters.motivo}
+              onChange={(e) => handleFilterChange("motivo", e.target.value)}
+            />
           </div>
 
           {/* Botón de búsqueda */}

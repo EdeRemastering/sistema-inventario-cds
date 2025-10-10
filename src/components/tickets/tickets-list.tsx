@@ -9,6 +9,7 @@ import { TicketUpsertDialog } from "./ticket-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import { TicketInvoice } from "./ticket-invoice";
 import { SignatureDisplay } from "../ui/signature-display";
+import { TicketActions } from "./ticket-actions";
 import type { TicketGuardado } from "../../modules/tickets_guardados/types";
 
 type TicketsListProps = {
@@ -16,6 +17,8 @@ type TicketsListProps = {
   onCreateTicket: (formData: FormData) => Promise<void>;
   onUpdateTicket: (formData: FormData) => Promise<void>;
   onDeleteTicket: (id: number) => Promise<void>;
+  onMarkAsReturned?: (id: number) => Promise<void>;
+  onMarkAsCompleted?: (id: number) => Promise<void>;
 };
 
 export function TicketsList({
@@ -23,6 +26,8 @@ export function TicketsList({
   onCreateTicket,
   onUpdateTicket,
   onDeleteTicket,
+  onMarkAsReturned,
+  onMarkAsCompleted,
 }: TicketsListProps) {
   const { searchQuery, filteredData, handleSearch, hasResults, hasData } =
     useSearch({
@@ -95,44 +100,14 @@ export function TicketsList({
                       />
                     </div>
                   </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <TicketUpsertDialog
-                      create={false}
-                      serverAction={onUpdateTicket}
-                      defaultValues={{
-                        numero_ticket: ticket.numero_ticket,
-                        fecha_salida: new Date(ticket.fecha_salida)
-                          .toISOString()
-                          .slice(0, 16),
-                        fecha_estimada_devolucion:
-                          ticket.fecha_estimada_devolucion
-                            ? new Date(ticket.fecha_estimada_devolucion)
-                                .toISOString()
-                                .slice(0, 16)
-                            : "",
-                        elemento: ticket.elemento ?? "",
-                        serie: ticket.serie ?? "",
-                        marca_modelo: ticket.marca_modelo ?? "",
-                        cantidad: String(ticket.cantidad),
-                        dependencia_entrega: ticket.dependencia_entrega ?? "",
-                        firma_funcionario_entrega:
-                          ticket.firma_funcionario_entrega ?? "",
-                        dependencia_recibe: ticket.dependencia_recibe ?? "",
-                        firma_funcionario_recibe:
-                          ticket.firma_funcionario_recibe ?? "",
-                        motivo: ticket.motivo ?? "",
-                        orden_numero: ticket.orden_numero ?? "",
-                      }}
-                      hiddenFields={{ id: ticket.id }}
+                  <div className="ml-auto">
+                    <TicketActions
+                      ticket={ticket}
+                      onUpdateTicket={onUpdateTicket}
+                      onDeleteTicket={onDeleteTicket}
+                      onMarkAsReturned={onMarkAsReturned}
+                      onMarkAsCompleted={onMarkAsCompleted}
                     />
-                    <TicketInvoice ticket={ticket} />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteTicket(ticket.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
                   </div>
                 </div>
               ))}

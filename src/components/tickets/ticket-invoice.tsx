@@ -273,114 +273,166 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         const pdf = new jsPDF("p", "mm", "a4");
         let y = 20;
 
-        // Logo CDS (simulado con texto)
-        pdf.setFontSize(16);
-        pdf.setTextColor(66, 139, 202);
+        // Header con marco y logo
+        pdf.setFillColor(66, 139, 202); // Azul CDS
+        pdf.rect(10, 10, 190, 35, "F"); // Marco azul
+        
+        // Logo CDS (simulado con texto en el marco)
+        pdf.setFontSize(24);
+        pdf.setTextColor(255, 255, 255); // Blanco
         pdf.setFont("helvetica", "bold");
-        pdf.text("CDS", 105, y, { align: "center" });
+        pdf.text("CDS", 20, 25);
+        
+        // Título principal
+        pdf.setFontSize(18);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text("SISTEMA DE INVENTARIO", 35, 25);
+        pdf.setFontSize(16);
+        pdf.text("COMPROBANTE DE PRÉSTAMO", 35, 32);
+        
+        // Número de ticket en el header
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(ticket.numero_ticket, 160, 32, { align: "right" });
+        
+        y = 55;
+
+        // Información del ticket en recuadro
+        pdf.setFillColor(245, 245, 245); // Gris claro
+        pdf.rect(15, y - 5, 180, 45, "F"); // Fondo del recuadro
+        pdf.setDrawColor(66, 139, 202); // Borde azul
+        pdf.setLineWidth(1);
+        pdf.rect(15, y - 5, 180, 45, "S"); // Borde del recuadro
+        
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(66, 139, 202); // Azul CDS
+        pdf.text("INFORMACIÓN DEL TICKET", 20, y);
         y += 8;
 
-        // Título
-        pdf.setFontSize(20);
+        pdf.setFontSize(10);
+        pdf.setFont("helvetica", "normal");
         pdf.setTextColor(0, 0, 0);
-        pdf.text("SISTEMA DE INVENTARIO CDS", 105, y, { align: "center" });
-        y += 10;
-
-        pdf.setFontSize(16);
-        pdf.text("COMPROBANTE DE PRÉSTAMO", 105, y, { align: "center" });
-        y += 20;
-
-        // Información del ticket
-        pdf.setFontSize(12);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("INFORMACIÓN DEL TICKET", 20, y);
-        y += 10;
-
-        pdf.setFont("helvetica", "normal");
-        pdf.text(`Número: ${ticket.numero_ticket}`, 20, y);
-        y += 7;
-        pdf.text(`Fecha de Salida: ${formatDate(ticket.fecha_salida)}`, 20, y);
-        y += 7;
-        pdf.text(
-          `Fecha Estimada Devolución: ${formatDate(
-            ticket.fecha_estimada_devolucion
-          )}`,
-          20,
-          y
-        );
-        y += 7;
+        
+        // Información en dos columnas
+        pdf.text(`Fecha de Salida:`, 20, y);
+        pdf.text(`${formatDate(ticket.fecha_salida)}`, 65, y);
+        
+        pdf.text(`Fecha Est. Devolución:`, 110, y);
+        pdf.text(`${formatDate(ticket.fecha_estimada_devolucion)}`, 155, y);
+        y += 6;
+        
         if (ticket.orden_numero) {
-          pdf.text(`Orden Número: ${ticket.orden_numero}`, 20, y);
-          y += 7;
+          pdf.text(`Orden Número:`, 20, y);
+          pdf.text(`${ticket.orden_numero}`, 65, y);
         }
-        y += 10;
+        
+        y += 15;
 
-        // Información del elemento
+        // Información del elemento en recuadro
+        pdf.setFillColor(245, 245, 245); // Gris claro
+        pdf.rect(15, y - 5, 180, 50, "F"); // Fondo del recuadro
+        pdf.setDrawColor(34, 197, 94); // Verde
+        pdf.setLineWidth(1);
+        pdf.rect(15, y - 5, 180, 50, "S"); // Borde del recuadro
+        
+        pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(34, 197, 94); // Verde
         pdf.text("INFORMACIÓN DEL ELEMENTO", 20, y);
-        y += 10;
+        y += 8;
 
+        pdf.setFontSize(10);
         pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(0, 0, 0);
+        
         if (ticket.elemento) {
-          pdf.text(`Elemento: ${ticket.elemento}`, 20, y);
-          y += 7;
+          pdf.text(`Elemento:`, 20, y);
+          pdf.text(`${ticket.elemento}`, 65, y);
+          y += 6;
         }
+        
         if (ticket.serie) {
-          pdf.text(`Serie: ${ticket.serie}`, 20, y);
-          y += 7;
+          pdf.text(`Serie:`, 20, y);
+          pdf.text(`${ticket.serie}`, 65, y);
         }
+        
         if (ticket.marca_modelo) {
-          pdf.text(`Marca/Modelo: ${ticket.marca_modelo}`, 20, y);
-          y += 7;
+          pdf.text(`Marca/Modelo:`, 110, y);
+          pdf.text(`${ticket.marca_modelo}`, 155, y);
         }
-        pdf.text(`Cantidad: ${ticket.cantidad}`, 20, y);
+        y += 6;
+        
+        pdf.text(`Cantidad:`, 20, y);
+        pdf.text(`${ticket.cantidad}`, 65, y);
+        
         y += 15;
 
-        // Dependencias
+        // Dependencias en recuadro
+        pdf.setFillColor(245, 245, 245); // Gris claro
+        pdf.rect(15, y - 5, 180, 40, "F"); // Fondo del recuadro
+        pdf.setDrawColor(251, 146, 60); // Naranja
+        pdf.setLineWidth(1);
+        pdf.rect(15, y - 5, 180, 40, "S"); // Borde del recuadro
+        
+        pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(251, 146, 60); // Naranja
         pdf.text("DEPENDENCIAS", 20, y);
-        y += 10;
+        y += 8;
 
+        pdf.setFontSize(10);
         pdf.setFont("helvetica", "normal");
-        pdf.text(
-          `Dependencia de Entrega: ${
-            ticket.dependencia_entrega || "No especificado"
-          }`,
-          20,
-          y
-        );
-        y += 7;
-        pdf.text(
-          `Dependencia que Recibe: ${
-            ticket.dependencia_recibe || "No especificado"
-          }`,
-          20,
-          y
-        );
+        pdf.setTextColor(0, 0, 0);
+        
+        pdf.text(`Dependencia de Entrega:`, 20, y);
+        pdf.text(`${ticket.dependencia_entrega || "No especificado"}`, 20, y + 6);
+        y += 12;
+        
+        pdf.text(`Dependencia que Recibe:`, 20, y);
+        pdf.text(`${ticket.dependencia_recibe || "No especificado"}`, 20, y + 6);
         y += 15;
 
-        // Motivo
+        // Motivo en recuadro
         if (ticket.motivo) {
+          pdf.setFillColor(245, 245, 245); // Gris claro
+          pdf.rect(15, y - 5, 180, 35, "F"); // Fondo del recuadro
+          pdf.setDrawColor(168, 85, 247); // Púrpura
+          pdf.setLineWidth(1);
+          pdf.rect(15, y - 5, 180, 35, "S"); // Borde del recuadro
+          
+          pdf.setFontSize(14);
           pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(168, 85, 247); // Púrpura
           pdf.text("MOTIVO DEL PRÉSTAMO", 20, y);
-          y += 10;
+          y += 8;
 
+          pdf.setFontSize(10);
           pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(0, 0, 0);
           const motivoLines = pdf.splitTextToSize(ticket.motivo, 170);
           pdf.text(motivoLines, 20, y);
-          y += motivoLines.length * 7;
+          y += motivoLines.length * 4 + 10;
         }
 
-        // Footer
-        y += 20;
-        pdf.setFontSize(10);
-        pdf.text(`Fecha de Generación: ${formatDate(new Date())}`, 20, y);
+        // Footer con marco
+        y += 10;
+        pdf.setFillColor(66, 139, 202); // Azul CDS
+        pdf.rect(10, y, 190, 20, "F"); // Marco azul footer
+        
+        pdf.setFontSize(9);
+        pdf.setTextColor(255, 255, 255); // Blanco
+        pdf.setFont("helvetica", "normal");
+        
+        pdf.text(`Fecha de Generación: ${formatDate(new Date())}`, 20, y + 6);
         if (ticket.usuario_guardado) {
-          pdf.text(`Generado por: ${ticket.usuario_guardado}`, 20, y + 7);
+          pdf.text(`Generado por: ${ticket.usuario_guardado}`, 20, y + 12);
         }
 
-        pdf.text("Sistema de Inventario CDS", 170, y, { align: "right" });
-        pdf.text("Comprobante de Préstamo", 170, y + 7, { align: "right" });
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Sistema de Inventario CDS", 170, y + 6, { align: "right" });
+        pdf.setFont("helvetica", "normal");
+        pdf.text("Comprobante de Préstamo", 170, y + 12, { align: "right" });
 
         pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
       } catch (fallbackError) {
