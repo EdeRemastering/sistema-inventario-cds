@@ -329,23 +329,11 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       }
 
       pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
+      toast.success("PDF generado exitosamente");
     } catch (error) {
       console.error("Error generando PDF:", error);
 
-      // Mostrar error específico al usuario
-      if (error instanceof Error) {
-        if (error.message.includes("Unable to find element in cloned iframe")) {
-          toast.error(
-            "Error al generar PDF: Problema con elementos del documento. Intentando método alternativo..."
-          );
-        } else {
-          toast.error(`Error al generar PDF: ${error.message}`);
-        }
-      } else {
-        toast.error("Error desconocido al generar PDF");
-      }
-
-      // Intentar método alternativo simple
+      // Intentar método alternativo simple sin mostrar error al usuario aún
       try {
         console.log("Intentando método alternativo...");
 
@@ -564,11 +552,26 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         pdf.text("Comprobante de Préstamo", 175, y + 12, { align: "right" });
 
         pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
+
+        // Mostrar mensaje de éxito si el método alternativo funcionó
+        toast.success("PDF generado exitosamente con método alternativo");
       } catch (fallbackError) {
         console.error("Error en método alternativo:", fallbackError);
-        alert(
-          "Error al generar el PDF. Por favor, intenta de nuevo o contacta al administrador."
-        );
+
+        // Solo mostrar error si ambos métodos fallan
+        if (error instanceof Error) {
+          if (
+            error.message.includes("Unable to find element in cloned iframe")
+          ) {
+            toast.error(
+              "Error al generar PDF: Problema con elementos del documento. El método alternativo también falló."
+            );
+          } else {
+            toast.error(`Error al generar PDF: ${error.message}`);
+          }
+        } else {
+          toast.error("Error desconocido al generar PDF");
+        }
       }
     } finally {
       setIsGenerating(false);

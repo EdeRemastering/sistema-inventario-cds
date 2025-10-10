@@ -159,15 +159,16 @@ export function ElementoUpsertDialog({
             <div className="grid gap-1">
               <Label htmlFor="subcategoria_id">Subcategoría</Label>
               <Select
-                value={watch("subcategoria_id")}
-                onValueChange={(value) => setValue("subcategoria_id", value)}
+                value={watch("subcategoria_id") || undefined}
+                onValueChange={(value) =>
+                  setValue("subcategoria_id", value || "")
+                }
                 disabled={!selectedCategoriaId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona subcategoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin subcategoría</SelectItem>
                   {filteredSubcategorias.map((s) => (
                     <SelectItem key={s.id} value={s.id.toString()}>
                       {s.nombre}
