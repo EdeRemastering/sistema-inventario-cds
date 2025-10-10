@@ -2,14 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Eye, X } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Button } from "./button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "./dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 
 type SignatureDisplayProps = {
   signatureUrl?: string | null;
@@ -17,10 +12,10 @@ type SignatureDisplayProps = {
   className?: string;
 };
 
-export function SignatureDisplay({ 
-  signatureUrl, 
-  label = "Firma", 
-  className = "" 
+export function SignatureDisplay({
+  signatureUrl,
+  label = "Firma",
+  className = "",
 }: SignatureDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -41,7 +36,7 @@ export function SignatureDisplay({
           variant="outline"
           size="sm"
           onClick={() => setIsOpen(true)}
-          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          className="text-primary hover:text-primary/80 hover:bg-primary/10"
         >
           <Eye className="h-4 w-4 mr-1" />
           Ver Firma
@@ -51,17 +46,7 @@ export function SignatureDisplay({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              {label}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
+            <DialogTitle>{label}</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-4">
             <Image

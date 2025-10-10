@@ -15,6 +15,13 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const schema = z.object({
   elemento_id: z.string().min(1, "Selecciona elemento"),
@@ -52,6 +59,8 @@ export function ObservacionUpsertDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ObservacionFormData>({
     resolver: zodResolver(schema),
@@ -111,20 +120,21 @@ export function ObservacionUpsertDialog({
             {/* Elemento */}
             <div className="grid gap-1">
               <Label htmlFor="elemento_id">Elemento</Label>
-              <select
-                id="elemento_id"
-                {...register("elemento_id")}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
+                value={watch("elemento_id")}
+                onValueChange={(value) => setValue("elemento_id", value)}
               >
-                <option value="" disabled>
-                  Selecciona elemento
-                </option>
-                {elementos.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.serie} - {e.marca} {e.modelo}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona elemento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {elementos.map((e) => (
+                    <SelectItem key={e.id} value={e.id.toString()}>
+                      {e.serie} - {e.marca} {e.modelo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.elemento_id && (
                 <p className="text-red-500 text-sm">
                   {errors.elemento_id.message}

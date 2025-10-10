@@ -15,6 +15,13 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const createSchema = z.object({
   username: z
@@ -173,14 +180,18 @@ export function UsuarioUpsertDialog({
             </div>
             <div className="grid gap-1">
               <Label htmlFor="rol">Rol</Label>
-              <select
-                id="rol"
-                {...register("rol")}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
+                value={watch("rol")}
+                onValueChange={(value) => setValue("rol", value)}
               >
-                <option value="usuario">Usuario</option>
-                <option value="administrador">Administrador</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="usuario">Usuario</SelectItem>
+                  <SelectItem value="administrador">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
               {errors.rol && (
                 <p className="text-red-500 text-sm">{errors.rol.message}</p>
               )}

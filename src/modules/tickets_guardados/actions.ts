@@ -125,7 +125,7 @@ export async function actionDeleteTicket(id: number) {
 }
 
 /**
- * Marca un ticket como devuelto
+ * Marca un ticket como entregado
  */
 export async function actionMarkTicketAsReturned(id: number) {
   try {

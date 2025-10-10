@@ -10,6 +10,40 @@ import { SignatureDisplay } from "../ui/signature-display";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { CDSLogo } from "../ui/cds-logo";
+import { toast } from "sonner";
+
+/**
+ * Función auxiliar para cargar la imagen del logo CDS
+ */
+async function loadCDSLogo(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Redimensionar la imagen con calidad máxima (sin comprimir)
+      const maxWidth = 100;
+      const maxHeight = 100;
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      if (ctx) {
+        // Mejorar la calidad del renderizado
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png", 1.0)); // Máxima calidad PNG
+      } else {
+        reject(new Error("No se pudo crear el contexto del canvas"));
+      }
+    };
+    img.onerror = () => reject(new Error("Error al cargar la imagen del logo"));
+    img.src = "/cds-logo.png";
+  });
+}
 
 type TicketInvoiceProps = {
   ticket: {
@@ -45,10 +79,16 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       }
 
       // Esperar un momento para que se renderice completamente
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Crear una versión simplificada del contenido para PDF
       const simplifiedElement = invoiceElement.cloneNode(true) as HTMLElement;
+
+      // Remover elementos problemáticos que pueden causar el error del iframe
+      const problematicElements = simplifiedElement.querySelectorAll(
+        "iframe, embed, object, video, audio, canvas, svg, script, style"
+      );
+      problematicElements.forEach((el) => el.remove());
 
       // Limpiar completamente todos los estilos problemáticos
       const cleanElementStyles = (element: HTMLElement) => {
@@ -199,19 +239,45 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         height: invoiceElement.scrollHeight,
         foreignObjectRendering: false,
         removeContainer: true,
-        imageTimeout: 0,
+        imageTimeout: 10000,
+        ignoreElements: (element) => {
+          // Ignorar elementos que pueden causar problemas
+          const tagName = element.tagName?.toLowerCase();
+          const problematicTags = [
+            "iframe",
+            "embed",
+            "object",
+            "video",
+            "audio",
+            "canvas",
+            "svg",
+            "script",
+            "style",
+          ];
+          return problematicTags.includes(tagName);
+        },
         onclone: (clonedDoc) => {
-          // Asegurar que no hay estilos problemáticos
-          const allElements = clonedDoc.querySelectorAll("*");
-          allElements.forEach((el) => {
-            const element = el as HTMLElement;
-            if (element.style) {
-              // Forzar colores básicos
-              element.style.color = element.style.color || "#000000";
-              element.style.backgroundColor =
-                element.style.backgroundColor || "transparent";
-            }
-          });
+          try {
+            // Remover elementos problemáticos del documento clonado
+            const problematicElements = clonedDoc.querySelectorAll(
+              "iframe, embed, object, video, audio, canvas, svg, script, style"
+            );
+            problematicElements.forEach((el) => el.remove());
+
+            // Asegurar que no hay estilos problemáticos
+            const allElements = clonedDoc.querySelectorAll("*");
+            allElements.forEach((el) => {
+              const element = el as HTMLElement;
+              if (element.style) {
+                // Forzar colores básicos
+                element.style.color = element.style.color || "#000000";
+                element.style.backgroundColor =
+                  element.style.backgroundColor || "transparent";
+              }
+            });
+          } catch (cloneError) {
+            console.warn("Error en onclone:", cloneError);
+          }
         },
       });
 
@@ -266,6 +332,19 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
     } catch (error) {
       console.error("Error generando PDF:", error);
 
+      // Mostrar error específico al usuario
+      if (error instanceof Error) {
+        if (error.message.includes("Unable to find element in cloned iframe")) {
+          toast.error(
+            "Error al generar PDF: Problema con elementos del documento. Intentando método alternativo..."
+          );
+        } else {
+          toast.error(`Error al generar PDF: ${error.message}`);
+        }
+      } else {
+        toast.error("Error desconocido al generar PDF");
+      }
+
       // Intentar método alternativo simple
       try {
         console.log("Intentando método alternativo...");
@@ -273,138 +352,187 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         const pdf = new jsPDF("p", "mm", "a4");
         let y = 20;
 
-        // Header con marco y logo
-        pdf.setFillColor(66, 139, 202); // Azul CDS
-        pdf.rect(10, 10, 190, 35, "F"); // Marco azul
-        
-        // Logo CDS (simulado con texto en el marco)
-        pdf.setFontSize(24);
-        pdf.setTextColor(255, 255, 255); // Blanco
-        pdf.setFont("helvetica", "bold");
-        pdf.text("CDS", 20, 25);
-        
-        // Título principal
-        pdf.setFontSize(18);
-        pdf.setTextColor(255, 255, 255);
-        pdf.text("SISTEMA DE INVENTARIO", 35, 25);
+        // Marco unificado para todo el documento
+        pdf.setDrawColor(0, 0, 0); // Negro
+        pdf.setLineWidth(0.3);
+
+        // Calcular la altura total del documento
+        let totalHeight = 40; // Header
+        totalHeight += 45; // Info ticket
+        totalHeight += 15; // Espacio
+        totalHeight += 50; // Info elemento
+        totalHeight += 15; // Espacio
+        totalHeight += 40; // Dependencias
+        totalHeight += 15; // Espacio
+        if (ticket.motivo) {
+          totalHeight += 35; // Motivo
+          totalHeight += 10; // Espacio
+        }
+        totalHeight += 20; // Footer
+        totalHeight += 20; // Espacio final
+
+        // Dibujar el marco unificado
+        pdf.rect(15, 10, 180, totalHeight, "S");
+
+        // Logo CDS (imagen real)
+        try {
+          const logoDataUrl = await loadCDSLogo();
+          pdf.addImage(logoDataUrl, "PNG", 20, 18, 25, 25);
+        } catch (error) {
+          console.warn(
+            "No se pudo cargar el logo, usando texto como fallback:",
+            error
+          );
+          // Fallback a texto si no se puede cargar la imagen
+          pdf.setFontSize(28);
+          pdf.setTextColor(0, 0, 0); // Negro
+          pdf.setFont("helvetica", "bold");
+          pdf.text("CDS", 25, 28);
+        }
+
+        // Título principal (alineado verticalmente con el centro del logo)
         pdf.setFontSize(16);
-        pdf.text("COMPROBANTE DE PRÉSTAMO", 35, 32);
-        
-        // Número de ticket en el header
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("SISTEMA DE INVENTARIO", 70, 25);
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "normal");
-        pdf.text(ticket.numero_ticket, 160, 32, { align: "right" });
-        
+        pdf.text("COMPROBANTE DE PRÉSTAMO", 70, 32);
+
+        // Número de ticket debajo del título (alineado verticalmente)
+        pdf.setFontSize(12);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`Ticket: ${ticket.numero_ticket}`, 70, 39);
+
         y = 55;
 
-        // Información del ticket en recuadro
-        pdf.setFillColor(245, 245, 245); // Gris claro
-        pdf.rect(15, y - 5, 180, 45, "F"); // Fondo del recuadro
-        pdf.setDrawColor(66, 139, 202); // Borde azul
-        pdf.setLineWidth(1);
-        pdf.rect(15, y - 5, 180, 45, "S"); // Borde del recuadro
-        
+        // Información del ticket - sin borde individual (marco unificado)
+        // Línea separadora horizontal
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y - 5, 185, y - 5);
+
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(66, 139, 202); // Azul CDS
+        pdf.setTextColor(0, 0, 0); // Negro
         pdf.text("INFORMACIÓN DEL TICKET", 20, y);
+
+        // Línea separadora debajo del título
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y + 2, 185, y + 2);
         y += 8;
 
         pdf.setFontSize(10);
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(0, 0, 0);
-        
-        // Información en dos columnas
+
+        // Fecha de salida
         pdf.text(`Fecha de Salida:`, 20, y);
         pdf.text(`${formatDate(ticket.fecha_salida)}`, 65, y);
-        
-        pdf.text(`Fecha Est. Devolución:`, 110, y);
-        pdf.text(`${formatDate(ticket.fecha_estimada_devolucion)}`, 155, y);
         y += 6;
-        
+
+        // Fecha de devolución debajo de la fecha de salida
+        pdf.text(`Fecha Est. Devolución:`, 20, y);
+        pdf.text(`${formatDate(ticket.fecha_estimada_devolucion)}`, 65, y);
+        y += 6;
+
         if (ticket.orden_numero) {
           pdf.text(`Orden Número:`, 20, y);
           pdf.text(`${ticket.orden_numero}`, 65, y);
+          y += 6;
         }
-        
+
         y += 15;
 
-        // Información del elemento en recuadro
-        pdf.setFillColor(245, 245, 245); // Gris claro
-        pdf.rect(15, y - 5, 180, 50, "F"); // Fondo del recuadro
-        pdf.setDrawColor(34, 197, 94); // Verde
-        pdf.setLineWidth(1);
-        pdf.rect(15, y - 5, 180, 50, "S"); // Borde del recuadro
-        
+        // Información del elemento - sin borde individual (marco unificado)
+        // Línea separadora horizontal
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y - 5, 185, y - 5);
+
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(34, 197, 94); // Verde
+        pdf.setTextColor(0, 0, 0); // Negro
         pdf.text("INFORMACIÓN DEL ELEMENTO", 20, y);
+
+        // Línea separadora debajo del título
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y + 2, 185, y + 2);
         y += 8;
 
         pdf.setFontSize(10);
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(0, 0, 0);
-        
+
         if (ticket.elemento) {
           pdf.text(`Elemento:`, 20, y);
           pdf.text(`${ticket.elemento}`, 65, y);
           y += 6;
         }
-        
+
         if (ticket.serie) {
           pdf.text(`Serie:`, 20, y);
           pdf.text(`${ticket.serie}`, 65, y);
         }
-        
+
         if (ticket.marca_modelo) {
           pdf.text(`Marca/Modelo:`, 110, y);
           pdf.text(`${ticket.marca_modelo}`, 155, y);
         }
         y += 6;
-        
+
         pdf.text(`Cantidad:`, 20, y);
         pdf.text(`${ticket.cantidad}`, 65, y);
-        
+
         y += 15;
 
-        // Dependencias en recuadro
-        pdf.setFillColor(245, 245, 245); // Gris claro
-        pdf.rect(15, y - 5, 180, 40, "F"); // Fondo del recuadro
-        pdf.setDrawColor(251, 146, 60); // Naranja
-        pdf.setLineWidth(1);
-        pdf.rect(15, y - 5, 180, 40, "S"); // Borde del recuadro
-        
+        // Dependencias - sin borde individual (marco unificado)
+        // Línea separadora horizontal
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y - 5, 185, y - 5);
+
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(251, 146, 60); // Naranja
+        pdf.setTextColor(0, 0, 0); // Negro
         pdf.text("DEPENDENCIAS", 20, y);
+
+        // Línea separadora debajo del título
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y + 2, 185, y + 2);
         y += 8;
 
         pdf.setFontSize(10);
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(0, 0, 0);
-        
+
         pdf.text(`Dependencia de Entrega:`, 20, y);
-        pdf.text(`${ticket.dependencia_entrega || "No especificado"}`, 20, y + 6);
+        pdf.text(
+          `${ticket.dependencia_entrega || "No especificado"}`,
+          20,
+          y + 6
+        );
         y += 12;
-        
+
         pdf.text(`Dependencia que Recibe:`, 20, y);
-        pdf.text(`${ticket.dependencia_recibe || "No especificado"}`, 20, y + 6);
+        pdf.text(
+          `${ticket.dependencia_recibe || "No especificado"}`,
+          20,
+          y + 6
+        );
         y += 15;
 
-        // Motivo en recuadro
+        // Motivo - sin borde individual (marco unificado)
         if (ticket.motivo) {
-          pdf.setFillColor(245, 245, 245); // Gris claro
-          pdf.rect(15, y - 5, 180, 35, "F"); // Fondo del recuadro
-          pdf.setDrawColor(168, 85, 247); // Púrpura
-          pdf.setLineWidth(1);
-          pdf.rect(15, y - 5, 180, 35, "S"); // Borde del recuadro
-          
+          // Línea separadora horizontal
+          pdf.setLineWidth(0.15);
+          pdf.line(20, y - 5, 185, y - 5);
+
           pdf.setFontSize(14);
           pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(168, 85, 247); // Púrpura
+          pdf.setTextColor(0, 0, 0); // Negro
           pdf.text("MOTIVO DEL PRÉSTAMO", 20, y);
+
+          // Línea separadora debajo del título
+          pdf.setLineWidth(0.5);
+          pdf.line(20, y + 2, 185, y + 2);
           y += 8;
 
           pdf.setFontSize(10);
@@ -415,24 +543,25 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
           y += motivoLines.length * 4 + 10;
         }
 
-        // Footer con marco
+        // Footer - sin borde individual (marco unificado)
         y += 10;
-        pdf.setFillColor(66, 139, 202); // Azul CDS
-        pdf.rect(10, y, 190, 20, "F"); // Marco azul footer
-        
+        // Línea separadora horizontal antes del footer
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y - 5, 185, y - 5);
+
         pdf.setFontSize(9);
-        pdf.setTextColor(255, 255, 255); // Blanco
+        pdf.setTextColor(0, 0, 0); // Negro
         pdf.setFont("helvetica", "normal");
-        
-        pdf.text(`Fecha de Generación: ${formatDate(new Date())}`, 20, y + 6);
+
+        pdf.text(`Fecha de Generación: ${formatDate(new Date())}`, 25, y + 6);
         if (ticket.usuario_guardado) {
-          pdf.text(`Generado por: ${ticket.usuario_guardado}`, 20, y + 12);
+          pdf.text(`Generado por: ${ticket.usuario_guardado}`, 25, y + 12);
         }
 
         pdf.setFont("helvetica", "bold");
-        pdf.text("Sistema de Inventario CDS", 170, y + 6, { align: "right" });
+        pdf.text("Sistema de Inventario CDS", 175, y + 6, { align: "right" });
         pdf.setFont("helvetica", "normal");
-        pdf.text("Comprobante de Préstamo", 170, y + 12, { align: "right" });
+        pdf.text("Comprobante de Préstamo", 175, y + 12, { align: "right" });
 
         pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
       } catch (fallbackError) {
@@ -464,7 +593,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         variant="outline"
         size="sm"
         onClick={() => setShowPreview(true)}
-        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        className="text-primary hover:text-primary/80 hover:bg-primary/10"
       >
         <FileText className="h-4 w-4 mr-2" />
         Ver Factura
@@ -492,29 +621,33 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
 
           <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
             <div id="ticket-invoice-content" className="bg-white p-8 w-full">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="flex items-center justify-center gap-4 mb-4">
+              {/* Header Profesional */}
+              <div className="p-6 mb-8">
+                <div className="flex items-center justify-center gap-6 mb-4">
                   <CDSLogo size="xl" showText={false} />
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                  <div className="text-center">
+                    <h1 className="text-3xl font-bold text-black mb-2">
                       SISTEMA DE INVENTARIO CDS
                     </h1>
-                    <h2 className="text-xl font-semibold text-gray-600">
+                    <h2 className="text-xl font-semibold text-black">
                       COMPROBANTE DE PRÉSTAMO
                     </h2>
                   </div>
                 </div>
-                <div className="w-32 h-1 bg-blue-600 mx-auto mt-4"></div>
+                <div className="pt-4">
+                  <p className="text-center font-bold text-lg">
+                    Ticket: {ticket.numero_ticket}
+                  </p>
+                </div>
               </div>
 
               {/* Ticket Info */}
               <div className="flex flex-col gap-8 mb-8">
-                <Card className="border-l-4 border-l-blue-600">
+                <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                      Información del Ticket
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <FileText className="h-5 w-5 text-black" />
+                      INFORMACIÓN DEL TICKET
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -541,7 +674,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-sm text-gray-600">
                           Fecha de Salida:
@@ -562,11 +695,11 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                   </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-green-600">
+                <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-green-600" />
-                      Información del Elemento
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <Eye className="h-5 w-5 text-black" />
+                      INFORMACIÓN DEL ELEMENTO
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -617,11 +750,11 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                 </Card>
 
                 {/* Dependencies and Signatures */}
-                <Card className="border-l-4 border-l-orange-600">
+                <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <span className="text-orange-600">📤</span>
-                      Dependencia de Entrega
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <span className="text-black">📤</span>
+                      DEPENDENCIA DE ENTREGA
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -648,11 +781,11 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                   </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-purple-600">
+                <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <span className="text-purple-600">📥</span>
-                      Dependencia que Recibe
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <span className="text-black">📥</span>
+                      DEPENDENCIA QUE RECIBE
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -684,8 +817,8 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
               {ticket.motivo && (
                 <Card className="mb-8">
                   <CardHeader>
-                    <CardTitle className="text-lg">
-                      Motivo del Préstamo
+                    <CardTitle className="text-lg text-black">
+                      MOTIVO DEL PRÉSTAMO
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -697,8 +830,8 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
               )}
 
               {/* Footer */}
-              <div className="border-t pt-6 mt-8">
-                <div className="grid grid-cols-2 gap-8 text-sm text-gray-600">
+              <div className="p-4 mt-8">
+                <div className="grid grid-cols-2 gap-8 text-sm text-black">
                   <div>
                     <p>
                       <strong>Fecha de Generación:</strong>{" "}

@@ -1,20 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "../ui/button";
-import {
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Eye,
-  Edit,
-  Trash2,
-  FileText,
-  Download,
-} from "lucide-react";
-import { toast } from "sonner";
+import { CheckCircle, Clock, Edit } from "lucide-react";
 import { TicketInvoice } from "./ticket-invoice";
+import { TicketUpsertDialog } from "./ticket-upsert-dialog";
 import { DeleteButton } from "../delete-button";
+import { StatusChangeButton } from "../status-change-button";
 import type { TicketGuardado } from "../../modules/tickets_guardados/types";
 
 type TicketActionsProps = {
@@ -22,7 +13,6 @@ type TicketActionsProps = {
   onUpdateTicket: (formData: FormData) => Promise<void>;
   onDeleteTicket: (id: number) => Promise<void>;
   onMarkAsReturned?: (id: number) => Promise<void>;
-  onMarkAsCompleted?: (id: number) => Promise<void>;
 };
 
 export function TicketActions({
@@ -30,51 +20,27 @@ export function TicketActions({
   onUpdateTicket,
   onDeleteTicket,
   onMarkAsReturned,
-  onMarkAsCompleted,
 }: TicketActionsProps) {
-  const [showInvoice, setShowInvoice] = useState(false);
-
-  const isReturned = !!ticket.fecha_real_devolucion;
-  const isOverdue =
-    new Date() > new Date(ticket.fecha_estimada_devolucion) && !isReturned;
+  const isDelivered = !!ticket.fecha_real_devolucion;
 
   const getStatusColor = () => {
-    if (isReturned) return "text-green-600";
-    if (isOverdue) return "text-red-600";
-    return "text-blue-600";
+    if (isDelivered) return "text-primary";
+    return "text-secondary-foreground";
   };
 
   const getStatusIcon = () => {
-    if (isReturned) return <CheckCircle className="h-4 w-4" />;
-    if (isOverdue) return <AlertTriangle className="h-4 w-4" />;
+    if (isDelivered) return <CheckCircle className="h-4 w-4" />;
     return <Clock className="h-4 w-4" />;
   };
 
   const getStatusText = () => {
-    if (isReturned) return "Devuelto";
-    if (isOverdue) return "Vencido";
+    if (isDelivered) return "Entregado";
     return "Activo";
   };
 
-  const handleMarkAsReturned = async () => {
+  const handleMarkAsDelivered = async () => {
     if (onMarkAsReturned) {
-      try {
-        await onMarkAsReturned(ticket.id);
-        toast.success("Ticket marcado como devuelto");
-      } catch (error) {
-        toast.error("Error al marcar como devuelto");
-      }
-    }
-  };
-
-  const handleMarkAsCompleted = async () => {
-    if (onMarkAsCompleted) {
-      try {
-        await onMarkAsCompleted(ticket.id);
-        toast.success("Ticket completado");
-      } catch (error) {
-        toast.error("Error al completar ticket");
-      }
+      await onMarkAsReturned(ticket.id);
     }
   };
 
@@ -89,50 +55,56 @@ export function TicketActions({
       {/* Acciones */}
       <div className="flex items-center gap-1">
         {/* Ver factura */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowInvoice(true)}
-          className="h-8 w-8 p-0"
-          title="Ver factura"
-        >
-          <FileText className="h-4 w-4" />
-        </Button>
+        <TicketInvoice ticket={ticket} />
 
         {/* Editar */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title="Editar ticket"
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
+        <TicketUpsertDialog
+          create={false}
+          serverAction={onUpdateTicket}
+          defaultValues={{
+            numero_ticket: ticket.numero_ticket,
+            fecha_salida: new Date(ticket.fecha_salida)
+              .toISOString()
+              .slice(0, 16),
+            fecha_estimada_devolucion: ticket.fecha_estimada_devolucion
+              ? new Date(ticket.fecha_estimada_devolucion)
+                  .toISOString()
+                  .slice(0, 16)
+              : "",
+            elemento: ticket.elemento ?? "",
+            serie: ticket.serie ?? "",
+            marca_modelo: ticket.marca_modelo ?? "",
+            cantidad: String(ticket.cantidad),
+            dependencia_entrega: ticket.dependencia_entrega ?? "",
+            firma_funcionario_entrega: ticket.firma_funcionario_entrega ?? "",
+            dependencia_recibe: ticket.dependencia_recibe ?? "",
+            firma_funcionario_recibe: ticket.firma_funcionario_recibe ?? "",
+            motivo: ticket.motivo ?? "",
+            orden_numero: ticket.orden_numero ?? "",
+          }}
+          hiddenFields={{ id: ticket.id }}
+          trigger={
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          }
+        />
 
-        {/* Marcar como devuelto */}
-        {!isReturned && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleMarkAsReturned}
-            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-            title="Marcar como devuelto"
-          >
-            <CheckCircle className="h-4 w-4" />
-          </Button>
-        )}
-
-        {/* Completar ticket */}
-        {!isReturned && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleMarkAsCompleted}
-            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            title="Completar ticket"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+        {/* Marcar como entregado */}
+        {!isDelivered && (
+          <StatusChangeButton
+            onConfirm={handleMarkAsDelivered}
+            buttonText="Marcar como Entregado"
+            title="Marcar como Entregado"
+            description={`¿Estás seguro de que quieres marcar el ticket ${ticket.numero_ticket} como entregado? Esta acción actualizará el estado del ticket y creará un movimiento de devolución.`}
+            icon={<CheckCircle className="h-4 w-4" />}
+            statusType="deliver"
+          />
         )}
 
         {/* Eliminar */}
@@ -142,11 +114,6 @@ export function TicketActions({
           description="¿Estás seguro de que quieres eliminar este ticket? Esta acción no se puede deshacer."
         />
       </div>
-
-      {/* Factura del ticket */}
-      {showInvoice && (
-        <TicketInvoice ticket={ticket} onClose={() => setShowInvoice(false)} />
-      )}
     </div>
   );
 }

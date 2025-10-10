@@ -7,6 +7,13 @@ import { Label } from "../ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { CalendarIcon, Filter, X, Search } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -24,7 +31,7 @@ export type MovimientoFilters = {
   elementoNombre: string;
   funcionarioEntrega: string;
   funcionarioRecibe: string;
-  estado: "TODOS" | "ACTIVO" | "DEVUELTO" | "VENCIDO";
+  estado: "TODOS" | "ACTIVO" | "ENTREGADO";
   ordenNumero: string;
   motivo: string;
 };
@@ -120,16 +127,19 @@ export function MovimientosFilters({
             </div>
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo de Movimiento</Label>
-              <select
-                id="tipo"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
                 value={filters.tipo}
-                onChange={(e) => handleFilterChange("tipo", e.target.value)}
+                onValueChange={(value) => handleFilterChange("tipo", value)}
               >
-                <option value="TODOS">Todos los tipos</option>
-                <option value="SALIDA">Solo Salidas</option>
-                <option value="DEVOLUCION">Solo Devoluciones</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Todos los tipos</SelectItem>
+                  <SelectItem value="SALIDA">Solo Salidas</SelectItem>
+                  <SelectItem value="DEVOLUCION">Solo Devoluciones</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -277,17 +287,19 @@ export function MovimientosFilters({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="estado">Estado del Préstamo</Label>
-              <select
-                id="estado"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
                 value={filters.estado}
-                onChange={(e) => handleFilterChange("estado", e.target.value)}
+                onValueChange={(value) => handleFilterChange("estado", value)}
               >
-                <option value="TODOS">Todos los estados</option>
-                <option value="ACTIVO">Activo</option>
-                <option value="DEVUELTO">Devuelto</option>
-                <option value="VENCIDO">Vencido</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Todos los estados</SelectItem>
+                  <SelectItem value="ACTIVO">Activo</SelectItem>
+                  <SelectItem value="ENTREGADO">Entregado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="ordenNumero">Número de Orden</Label>

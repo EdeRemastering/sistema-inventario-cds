@@ -15,6 +15,13 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const schema = z.object({
   categoria_id: z.string().min(1, "Selecciona categoría"),
@@ -122,20 +129,25 @@ export function ElementoUpsertDialog({
             {/* Categoría */}
             <div className="grid gap-1">
               <Label htmlFor="categoria_id">Categoría</Label>
-              <select
-                id="categoria_id"
-                {...register("categoria_id")}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
+                value={watch("categoria_id")}
+                onValueChange={(value) => {
+                  setValue("categoria_id", value);
+                  setSelectedCategoriaId(value);
+                  setValue("subcategoria_id", ""); // Reset subcategoría
+                }}
               >
-                <option value="" disabled>
-                  Selecciona categoría
-                </option>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={c.id.toString()}>
+                      {c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.categoria_id && (
                 <p className="text-red-500 text-sm">
                   {errors.categoria_id.message}
@@ -146,19 +158,23 @@ export function ElementoUpsertDialog({
             {/* Subcategoría */}
             <div className="grid gap-1">
               <Label htmlFor="subcategoria_id">Subcategoría</Label>
-              <select
-                id="subcategoria_id"
-                {...register("subcategoria_id")}
+              <Select
+                value={watch("subcategoria_id")}
+                onValueChange={(value) => setValue("subcategoria_id", value)}
                 disabled={!selectedCategoriaId}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="">Selecciona subcategoría</option>
-                {filteredSubcategorias.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona subcategoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin subcategoría</SelectItem>
+                  {filteredSubcategorias.map((s) => (
+                    <SelectItem key={s.id} value={s.id.toString()}>
+                      {s.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.subcategoria_id && (
                 <p className="text-red-500 text-sm">
                   {errors.subcategoria_id.message}

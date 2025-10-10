@@ -7,6 +7,7 @@ import { createMovimiento, deleteMovimiento, updateMovimiento } from "./services
 import { logAction } from "../../lib/audit-logger";
 import { saveSignature, isValidSignature, deleteSignature } from "../../lib/signature-storage";
 import { prisma } from "../../lib/prisma";
+import { validateStock } from "../../lib/stock-control";
 
 export async function actionCreateMovimiento(formData: FormData) {
   const parsed = movimientoCreateSchema.safeParse(formDataToObject(formData));
@@ -140,6 +141,21 @@ export async function actionDeleteMovimiento(id: number) {
   });
 
   revalidatePath("/movimientos");
+}
+
+export async function actionValidateStock(elementoId: number, requestedQuantity: number) {
+  try {
+    const result = await validateStock(elementoId, requestedQuantity);
+    return result;
+  } catch (error) {
+    console.error("Error en actionValidateStock:", error);
+    return {
+      isValid: false,
+      availableQuantity: 0,
+      requestedQuantity,
+      message: "Error al validar stock",
+    };
+  }
 }
 
 

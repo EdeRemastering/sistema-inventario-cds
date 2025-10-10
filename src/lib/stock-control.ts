@@ -15,6 +15,25 @@ export async function validateStock(
   requestedQuantity: number
 ): Promise<StockValidationResult> {
   try {
+    // Validar parámetros de entrada
+    if (!elementoId || elementoId <= 0) {
+      return {
+        isValid: false,
+        availableQuantity: 0,
+        requestedQuantity,
+        message: "ID de elemento inválido",
+      };
+    }
+
+    if (!requestedQuantity || requestedQuantity <= 0) {
+      return {
+        isValid: false,
+        availableQuantity: 0,
+        requestedQuantity,
+        message: "Cantidad solicitada inválida",
+      };
+    }
+
     const elemento = await prisma.elementos.findUnique({
       where: { id: elementoId },
       include: {
@@ -36,9 +55,19 @@ export async function validateStock(
       };
     }
 
+    // Validar que el elemento tenga cantidad válida
+    if (elemento.cantidad === null || elemento.cantidad < 0) {
+      return {
+        isValid: false,
+        availableQuantity: 0,
+        requestedQuantity,
+        message: "Cantidad del elemento no válida",
+      };
+    }
+
     // Calcular cantidad prestada (no devuelta)
     const totalPrestado = elemento.movimientos.reduce(
-      (sum, movimiento) => sum + movimiento.cantidad,
+      (sum, movimiento) => sum + (movimiento.cantidad || 0),
       0
     );
 
@@ -61,11 +90,17 @@ export async function validateStock(
     };
   } catch (error) {
     console.error("Error validando stock:", error);
+    
+    // Proporcionar más detalles del error en desarrollo
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Error al validar stock: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      : "Error al validar stock";
+    
     return {
       isValid: false,
       availableQuantity: 0,
       requestedQuantity,
-      message: "Error al validar stock",
+      message: errorMessage,
     };
   }
 }

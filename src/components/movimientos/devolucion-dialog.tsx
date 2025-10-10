@@ -281,7 +281,6 @@ export function DevolucionDialog({ onDevolver }: Props) {
                   )}
                 </div>
 
-
                 {/* Observaciones */}
                 <div className="grid gap-1">
                   <Label htmlFor="observaciones_devolucion">
@@ -305,7 +304,7 @@ export function DevolucionDialog({ onDevolver }: Props) {
                   <h3 className="text-lg font-medium text-gray-900">
                     Firmas Digitales
                   </h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="flex flex-col gap-8">
                     <div className="space-y-2">
                       <SignaturePadComponent
                         label="Firma de Quien Devuelve"

@@ -15,6 +15,13 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const schema = z.object({
   usuario_id: z.string().min(1, "Selecciona usuario"),
@@ -107,20 +114,21 @@ export function LogUpsertDialog({
             {/* Usuario */}
             <div className="grid gap-1">
               <Label htmlFor="usuario_id">Usuario</Label>
-              <select
-                id="usuario_id"
-                {...register("usuario_id")}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
+                value={watch("usuario_id")}
+                onValueChange={(value) => setValue("usuario_id", value)}
               >
-                <option value="" disabled>
-                  Selecciona usuario
-                </option>
-                {usuarios.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {usuarios.map((u) => (
+                    <SelectItem key={u.id} value={u.id.toString()}>
+                      {u.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.usuario_id && (
                 <p className="text-red-500 text-sm">
                   {errors.usuario_id.message}

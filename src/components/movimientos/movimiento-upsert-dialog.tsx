@@ -15,9 +15,16 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { SignaturePadComponent } from "../ui/signature-pad";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
-import { validateStock } from "../../lib/stock-control";
+import { actionValidateStock } from "../../modules/movimientos/actions";
 
 const schema = z.object({
   elemento_id: z.string().min(1, "Selecciona elemento"),
@@ -101,23 +108,45 @@ export function MovimientoUpsertDialog({
   // Validar stock cuando cambie el elemento o cantidad
   useEffect(() => {
     if (selectedElementoId && cantidad) {
-      validateStock(parseInt(selectedElementoId), parseInt(cantidad)).then(
-        (result) => {
+      const elementoId = parseInt(selectedElementoId);
+      const cantidadNum = parseInt(cantidad);
+
+      // Solo validar si los valores son válidos
+      if (
+        isNaN(elementoId) ||
+        isNaN(cantidadNum) ||
+        elementoId <= 0 ||
+        cantidadNum <= 0
+      ) {
+        setStockInfo(null);
+        return;
+      }
+
+      actionValidateStock(elementoId, cantidadNum)
+        .then((result) => {
           if (result.isValid) {
             setStockInfo({
               available: result.availableQuantity,
-              total: result.availableQuantity + parseInt(cantidad),
+              total: result.availableQuantity + cantidadNum,
             });
           } else {
             setStockInfo(null);
-            toast.error(result.message || "Stock insuficiente");
+            // Solo mostrar toast si el error no es de validación básica
+            if (
+              !result.message?.includes("inválido") &&
+              !result.message?.includes("no encontrado")
+            ) {
+              toast.error(result.message || "Stock insuficiente");
+            }
           }
-        }
-      ).catch((error) => {
-        console.error("Error validando stock:", error);
-        setStockInfo(null);
-        toast.error("Error al validar stock");
-      });
+        })
+        .catch((error) => {
+          console.error("Error validando stock:", error);
+          setStockInfo(null);
+          // No mostrar toast de error para evitar spam
+        });
+    } else {
+      setStockInfo(null);
     }
   }, [selectedElementoId, cantidad]);
 
@@ -125,13 +154,23 @@ export function MovimientoUpsertDialog({
     try {
       // Validar stock antes de enviar
       if (selectedElementoId && cantidad) {
-        const stockValidation = await validateStock(
-          parseInt(selectedElementoId),
-          parseInt(cantidad)
-        );
-        if (!stockValidation.isValid) {
-          toast.error(stockValidation.message || "Stock insuficiente");
-          return;
+        const elementoId = parseInt(selectedElementoId);
+        const cantidadNum = parseInt(cantidad);
+
+        if (
+          !isNaN(elementoId) &&
+          !isNaN(cantidadNum) &&
+          elementoId > 0 &&
+          cantidadNum > 0
+        ) {
+          const stockValidation = await actionValidateStock(
+            elementoId,
+            cantidadNum
+          );
+          if (!stockValidation.isValid) {
+            toast.error(stockValidation.message || "Stock insuficiente");
+            return;
+          }
         }
       }
 
@@ -213,20 +252,21 @@ export function MovimientoUpsertDialog({
             {/* Elemento */}
             <div className="grid gap-1">
               <Label htmlFor="elemento_id">Elemento</Label>
-              <select
-                id="elemento_id"
-                {...register("elemento_id")}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
+                value={watch("elemento_id")}
+                onValueChange={(value) => setValue("elemento_id", value)}
               >
-                <option value="" disabled>
-                  Selecciona elemento
-                </option>
-                {elementos.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.serie} - {e.marca} {e.modelo}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona elemento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {elementos.map((e) => (
+                    <SelectItem key={e.id} value={e.id.toString()}>
+                      {e.serie} - {e.marca} {e.modelo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.elemento_id && (
                 <p className="text-red-500 text-sm">
                   {errors.elemento_id.message}
@@ -385,7 +425,7 @@ export function MovimientoUpsertDialog({
               <h3 className="text-lg font-medium text-gray-900">
                 Firmas Digitales
               </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="flex flex-col gap-8">
                 <div className="space-y-2">
                   <SignaturePadComponent
                     label="Firma de Funcionario que Entrega"

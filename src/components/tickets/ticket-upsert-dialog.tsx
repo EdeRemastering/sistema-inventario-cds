@@ -40,6 +40,7 @@ type Props = {
   create?: boolean;
   defaultValues?: Partial<TicketFormData>;
   hiddenFields?: Record<string, string | number>;
+  trigger?: React.ReactNode;
 };
 
 export function TicketUpsertDialog({
@@ -47,6 +48,7 @@ export function TicketUpsertDialog({
   create = true,
   defaultValues,
   hiddenFields,
+  trigger,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
@@ -125,7 +127,11 @@ export function TicketUpsertDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{btnText}</Button>
+      {trigger ? (
+        <div onClick={() => setOpen(true)}>{trigger}</div>
+      ) : (
+        <Button onClick={() => setOpen(true)}>{btnText}</Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -290,7 +296,7 @@ export function TicketUpsertDialog({
               <h3 className="text-lg font-medium text-gray-900">
                 Firmas Digitales
               </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="flex flex-col gap-8">
                 <div className="space-y-2">
                   <SignaturePadComponent
                     label="Firma de Funcionario que Entrega"

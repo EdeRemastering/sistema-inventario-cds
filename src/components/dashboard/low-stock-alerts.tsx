@@ -29,41 +29,22 @@ export function LowStockAlerts() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // En una implementación real, esto vendría de una API
-    // Por ahora simulamos datos
-    setTimeout(() => {
-      setLowStockElements([
-        {
-          id: 1,
-          serie: "LAP001",
-          marca: "Dell",
-          modelo: "Latitude 5520",
-          cantidad: 10,
-          ubicacion: "Oficina Principal",
-          estado_funcional: "B",
-          estado_fisico: "B",
-          categoria: { nombre: "Equipos de Cómputo" },
-          subcategoria: { nombre: "Laptops" },
-          availableStock: 2,
-          totalPrestado: 8,
-        },
-        {
-          id: 2,
-          serie: "MON001",
-          marca: "Samsung",
-          modelo: '24" LED',
-          cantidad: 5,
-          ubicacion: "Almacén",
-          estado_funcional: "B",
-          estado_fisico: "B",
-          categoria: { nombre: "Equipos de Cómputo" },
-          subcategoria: { nombre: "Monitores" },
-          availableStock: 1,
-          totalPrestado: 4,
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+    const loadLowStockElements = async () => {
+      try {
+        // Obtener elementos con stock bajo desde la API
+        const response = await fetch("/api/elementos/low-stock");
+        if (response.ok) {
+          const data = await response.json();
+          setLowStockElements(data);
+        }
+      } catch (error) {
+        console.error("Error cargando elementos con stock bajo:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLowStockElements();
   }, []);
 
   if (loading) {
@@ -71,7 +52,7 @@ export function LowStockAlerts() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
             Alertas de Stock Bajo
           </CardTitle>
         </CardHeader>
@@ -91,13 +72,13 @@ export function LowStockAlerts() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-green-500" />
+            <Package className="h-5 w-5 text-primary" />
             Stock Disponible
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
-            <Package className="h-12 w-12 text-green-500 mx-auto mb-2" />
+            <Package className="h-12 w-12 text-primary mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">
               Todos los elementos tienen stock suficiente
             </p>
@@ -111,7 +92,7 @@ export function LowStockAlerts() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-orange-500" />
+          <AlertTriangle className="h-5 w-5 text-destructive" />
           Alertas de Stock Bajo
           <Badge variant="destructive" className="ml-auto">
             {lowStockElements.length}
@@ -123,11 +104,11 @@ export function LowStockAlerts() {
           {lowStockElements.map((elemento) => (
             <div
               key={elemento.id}
-              className="flex items-center justify-between p-3 border rounded-lg bg-orange-50 border-orange-200"
+              className="flex items-center justify-between p-3 border rounded-lg bg-destructive/10 border-destructive/20"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-orange-600" />
+                  <Package className="h-4 w-4 text-destructive" />
                   <span className="font-medium text-sm">{elemento.serie}</span>
                   <Badge variant="outline" className="text-xs">
                     {elemento.categoria.nombre}
@@ -138,7 +119,7 @@ export function LowStockAlerts() {
                 </p>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-xs">
-                    <span className="font-medium text-orange-600">
+                    <span className="font-medium text-destructive">
                       {elemento.availableStock}
                     </span>{" "}
                     disponibles

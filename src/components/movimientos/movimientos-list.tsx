@@ -160,16 +160,11 @@ export function MovimientosList({
 
       // Filtro por estado
       if (filters.estado !== "TODOS") {
-        const hoy = new Date();
-        const fechaEstimada = new Date(movimiento.fecha_estimada_devolucion);
-
         switch (filters.estado) {
           case "ACTIVO":
             return !movimiento.fecha_real_devolucion;
-          case "DEVUELTO":
+          case "ENTREGADO":
             return !!movimiento.fecha_real_devolucion;
-          case "VENCIDO":
-            return !movimiento.fecha_real_devolucion && fechaEstimada < hoy;
           default:
             return true;
         }

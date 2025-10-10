@@ -18,6 +18,11 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Calendar, TrendingUp, Package, Users } from "lucide-react";
+import {
+  getMovimientosDataAction,
+  getCategoriasDataAction,
+  getEstadosDataAction,
+} from "../../modules/dashboard/actions";
 
 type ChartData = {
   name: string;
@@ -43,45 +48,37 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simular carga de datos - en implementación real vendría de la API
-    setTimeout(() => {
-      setMovimientosData([
-        { name: "Ene", movimientos: 12, prestamos: 8, devoluciones: 4 },
-        { name: "Feb", movimientos: 19, prestamos: 12, devoluciones: 7 },
-        { name: "Mar", movimientos: 15, prestamos: 9, devoluciones: 6 },
-        { name: "Abr", movimientos: 22, prestamos: 14, devoluciones: 8 },
-        { name: "May", movimientos: 18, prestamos: 11, devoluciones: 7 },
-        { name: "Jun", movimientos: 25, prestamos: 16, devoluciones: 9 },
-      ]);
+    const loadData = async () => {
+      try {
+        const [movimientos, categorias, estados] = await Promise.all([
+          getMovimientosDataAction(),
+          getCategoriasDataAction(),
+          getEstadosDataAction(),
+        ]);
 
-      setCategoriasData([
-        { name: "Equipos de Cómputo", elementos: 45, value: 45 },
-        { name: "Muebles", elementos: 32, value: 32 },
-        { name: "Equipos de Oficina", elementos: 28, value: 28 },
-        { name: "Equipos de Laboratorio", elementos: 15, value: 15 },
-        { name: "Otros", elementos: 12, value: 12 },
-      ]);
+        setMovimientosData(movimientos);
+        setCategoriasData(categorias);
+        setEstadosData(estados);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error cargando datos de gráficas:", error);
+        setLoading(false);
+      }
+    };
 
-      setEstadosData([
-        {
-          name: "En Stock",
-          elementos: stats.elementosEnStock,
-          value: stats.elementosEnStock,
-        },
-        {
-          name: "Prestados",
-          elementos: stats.elementosPrestados,
-          value: stats.elementosPrestados,
-        },
-        { name: "Fuera de Servicio", elementos: 5, value: 5 },
-        { name: "En Mantenimiento", elementos: 3, value: 3 },
-      ]);
-
-      setLoading(false);
-    }, 1000);
+    loadData();
   }, [stats]);
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
+  // Usar colores del tema CSS en lugar de colores fijos
+  const getChartColors = () => {
+    return [
+      "hsl(var(--chart-1))",
+      "hsl(var(--chart-2))",
+      "hsl(var(--chart-3))",
+      "hsl(var(--chart-4))",
+      "hsl(var(--chart-5))",
+    ];
+  };
 
   if (loading) {
     return (
@@ -127,24 +124,24 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 type="monotone"
                 dataKey="movimientos"
                 stackId="1"
-                stroke="#8884d8"
-                fill="#8884d8"
+                stroke="hsl(var(--chart-1))"
+                fill="hsl(var(--chart-1))"
                 name="Total Movimientos"
               />
               <Area
                 type="monotone"
                 dataKey="prestamos"
                 stackId="2"
-                stroke="#82ca9d"
-                fill="#82ca9d"
+                stroke="hsl(var(--chart-2))"
+                fill="hsl(var(--chart-2))"
                 name="Préstamos"
               />
               <Area
                 type="monotone"
                 dataKey="devoluciones"
                 stackId="3"
-                stroke="#ffc658"
-                fill="#ffc658"
+                stroke="hsl(var(--chart-3))"
+                fill="hsl(var(--chart-3))"
                 name="Devoluciones"
               />
             </AreaChart>
@@ -172,13 +169,13 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                   `${name} ${((percent as number) * 100).toFixed(0)}%`
                 }
                 outerRadius={80}
-                fill="#8884d8"
+                fill="hsl(var(--chart-1))"
                 dataKey="value"
               >
                 {categoriasData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
+                    fill={getChartColors()[index % getChartColors().length]}
                   />
                 ))}
               </Pie>
@@ -203,7 +200,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="elementos" fill="#8884d8" />
+              <Bar dataKey="elementos" fill="hsl(var(--chart-1))" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -219,48 +216,52 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
               <div>
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-primary">
                   Total Elementos
                 </p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-primary">
                   {stats.totalElementos}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-blue-600" />
+              <Package className="h-8 w-8 text-primary" />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-secondary-foreground/20">
               <div>
-                <p className="text-sm font-medium text-green-900">En Stock</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm font-medium text-secondary-foreground">
+                  En Stock
+                </p>
+                <p className="text-2xl font-bold text-secondary-foreground">
                   {stats.elementosEnStock}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-secondary-foreground" />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-accent rounded-lg border border-accent-foreground/20">
               <div>
-                <p className="text-sm font-medium text-orange-900">Prestados</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm font-medium text-accent-foreground">
+                  Prestados
+                </p>
+                <p className="text-2xl font-bold text-accent-foreground">
                   {stats.elementosPrestados}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-orange-600" />
+              <Calendar className="h-8 w-8 text-accent-foreground" />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-muted-foreground/20">
               <div>
-                <p className="text-sm font-medium text-purple-900">
+                <p className="text-sm font-medium text-muted-foreground">
                   Tickets Pendientes
                 </p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-muted-foreground">
                   {stats.ticketsPendientes}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-purple-600" />
+              <Calendar className="h-8 w-8 text-muted-foreground" />
             </div>
           </div>
         </CardContent>

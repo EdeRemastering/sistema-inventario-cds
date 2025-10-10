@@ -15,6 +15,13 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const schema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -49,6 +56,8 @@ export function CategoriaUpsertDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CategoriaFormData>({
     resolver: zodResolver(schema),
@@ -134,14 +143,18 @@ export function CategoriaUpsertDialog({
             </div>
             <div className="grid gap-1">
               <Label htmlFor="estado">Estado</Label>
-              <select
-                id="estado"
-                {...register("estado")}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              <Select
+                value={watch("estado")}
+                onValueChange={(value) => setValue("estado", value)}
               >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
               {errors.estado && (
                 <p className="text-red-500 text-sm">{errors.estado.message}</p>
               )}

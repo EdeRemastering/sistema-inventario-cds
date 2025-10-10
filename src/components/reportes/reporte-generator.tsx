@@ -50,7 +50,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
           const inventarioData: InventarioReporteData = {
             elementos: [], // Datos reales vendrían de la API
           };
-          reporteData = generateInventarioReport(inventarioData);
+          reporteData = await generateInventarioReport(inventarioData);
           break;
 
         case "movimientos":
@@ -58,7 +58,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
           const movimientosData: MovimientosReporteData = {
             movimientos: [], // Datos reales vendrían de la API
           };
-          reporteData = generateMovimientosReport(movimientosData);
+          reporteData = await generateMovimientosReport(movimientosData);
           break;
 
         case "prestamos-activos":
@@ -66,7 +66,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
           const prestamosData: PrestamosActivosReporteData = {
             prestamos: [], // Datos reales vendrían de la API
           };
-          reporteData = generatePrestamosActivosReport(prestamosData);
+          reporteData = await generatePrestamosActivosReport(prestamosData);
           break;
 
         default:
