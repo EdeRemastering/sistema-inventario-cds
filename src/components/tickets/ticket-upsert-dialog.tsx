@@ -15,7 +15,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { DateTimePicker } from "../ui/date-time-picker";
+import { GenericDateTimePicker } from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
 
 const schema = z.object({
@@ -161,40 +161,29 @@ export function TicketUpsertDialog({
 
             {/* Fechas */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1">
-                <Label>Fecha de Salida</Label>
-                <DateTimePicker
-                  value={watch("fecha_salida")}
-                  onChange={(date) => {
-                    if (date) {
-                      setValue("fecha_salida", date);
-                    }
-                  }}
-                  placeholder="Seleccionar fecha y hora"
-                />
-                {errors.fecha_salida && (
-                  <p className="text-red-500 text-sm">
-                    {errors.fecha_salida.message}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label>Fecha Estimada de Devolución</Label>
-                <DateTimePicker
-                  value={watch("fecha_estimada_devolucion")}
-                  onChange={(date) => {
-                    if (date) {
-                      setValue("fecha_estimada_devolucion", date);
-                    }
-                  }}
-                  placeholder="Seleccionar fecha y hora"
-                />
-                {errors.fecha_estimada_devolucion && (
-                  <p className="text-red-500 text-sm">
-                    {errors.fecha_estimada_devolucion.message}
-                  </p>
-                )}
-              </div>
+              <GenericDateTimePicker
+                label="Fecha de Salida"
+                value={watch("fecha_salida")}
+                onChange={(date) => {
+                  if (date) {
+                    setValue("fecha_salida", date);
+                  }
+                }}
+                placeholder="Seleccionar fecha y hora"
+                error={errors.fecha_salida?.message}
+                required
+              />
+              <GenericDateTimePicker
+                label="Fecha Estimada de Devolución"
+                value={watch("fecha_estimada_devolucion")}
+                onChange={(date) => {
+                  if (date) {
+                    setValue("fecha_estimada_devolucion", date);
+                  }
+                }}
+                placeholder="Seleccionar fecha y hora"
+                error={errors.fecha_estimada_devolucion?.message}
+              />
             </div>
 
             {/* Información del Elemento */}

@@ -14,16 +14,7 @@ import {
 } from "../ui/select";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { actionExportToExcel } from "../../modules/reportes/client-actions";
-import { actionDownloadPDF } from "../../modules/reportes/download-actions";
-
-type ReporteType =
-  | "inventario"
-  | "movimientos"
-  | "prestamos-activos"
-  | "categorias"
-  | "observaciones"
-  | "tickets";
+import { generateReport, type ReporteType } from "../../lib/report-handler";
 
 type ReporteGeneratorProps = {
   onGenerate: (tipo: string, datos: string) => void;
@@ -39,33 +30,18 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
     setGenerando(true);
 
     try {
-      if (formato === "excel") {
-        // Para Excel, usar la acción del cliente
-        const result = await actionExportToExcel(
-          tipoReporte,
-          fechaInicio,
-          fechaFin
-        );
+      const result = await generateReport(
+        tipoReporte,
+        formato,
+        fechaInicio || undefined,
+        fechaFin || undefined
+      );
 
-        if (result.success) {
-          toast.success(result.message);
-        } else {
-          toast.error(result.message);
-        }
+      if (result.success) {
+        toast.success(result.message);
+        onGenerate(tipoReporte, "reporte_generado");
       } else {
-        // Para PDF, descargar directamente
-        const result = await actionDownloadPDF(
-          tipoReporte,
-          fechaInicio,
-          fechaFin
-        );
-
-        if (result.success) {
-          toast.success(result.message);
-          onGenerate(tipoReporte, "reporte_generado");
-        } else {
-          toast.error(result.message);
-        }
+        toast.error(result.message);
       }
     } catch (error) {
       console.error("Error generando reporte:", error);
@@ -74,15 +50,6 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
       setGenerando(false);
     }
   };
-
-  // const descargarReporte = (data: string, filename: string) => {
-  //   const link = document.createElement('a');
-  //   link.href = data;
-  //   link.download = filename;
-  //   document.body.appendChild(link);
-  //   link.click();
-  //   document.body.removeChild(link);
-  // };
 
   return (
     <Card>
