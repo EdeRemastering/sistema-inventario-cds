@@ -170,7 +170,7 @@ export function TicketUpsertDialog({
                   if (date) {
                     // Combinar fecha con hora si existe
                     if (horaSalida) {
-                      const [hours, minutes] = horaSalida.split(':');
+                      const [hours, minutes] = horaSalida.split(":");
                       date.setHours(parseInt(hours), parseInt(minutes));
                     }
                     setValue("fecha_salida", date);
@@ -189,7 +189,7 @@ export function TicketUpsertDialog({
                   if (date) {
                     // Combinar fecha con hora si existe
                     if (horaDevolucion) {
-                      const [hours, minutes] = horaDevolucion.split(':');
+                      const [hours, minutes] = horaDevolucion.split(":");
                       date.setHours(parseInt(hours), parseInt(minutes));
                     }
                     setValue("fecha_estimada_devolucion", date);
