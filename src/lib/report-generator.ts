@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import * as XLSX from 'xlsx';
 
 // Extender jsPDF para incluir autoTable
@@ -11,8 +11,14 @@ declare module "jspdf" {
 
 /**
  * Función auxiliar para cargar la imagen del logo CDS
+ * Solo funciona en el cliente (navegador)
  */
 async function loadCDSLogo(): Promise<string> {
+  // Verificar si estamos en el navegador
+  if (typeof window === 'undefined') {
+    throw new Error('loadCDSLogo solo funciona en el cliente');
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -125,15 +131,22 @@ export type PrestamosActivosReporteData = {
 export async function generateGenericReport(data: ReporteData): Promise<string> {
   const doc = new jsPDF();
   
-  // Agregar logo CDS
-  await addCDSLogoToPDF(doc, 20, 15);
+  // Intentar agregar logo CDS (solo si estamos en el cliente)
+  try {
+    await addCDSLogoToPDF(doc, 20, 15);
+  } catch (error) {
+    // Fallback: usar solo texto
+    doc.setFontSize(16);
+    doc.setTextColor(66, 139, 202);
+    doc.text("CDS", 20, 35);
+  }
   
-  // Título (alineado verticalmente con el centro del logo)
+  // Título
   doc.setFontSize(20);
   doc.setTextColor(0, 0, 0);
   doc.text(data.titulo, 70, 27);
   
-  // Fecha (alineado verticalmente con el centro del logo)
+  // Fecha
   doc.setFontSize(12);
   doc.text(`Fecha: ${data.fecha.toLocaleDateString()}`, 70, 42);
   
@@ -142,7 +155,7 @@ export async function generateGenericReport(data: ReporteData): Promise<string> 
     data.campos.map(campo => item[campo] || '')
   );
   
-  doc.autoTable({
+  autoTable(doc, {
     head: [data.columnas],
     body: tableData,
     startY: 60,
@@ -159,15 +172,22 @@ export async function generateGenericReport(data: ReporteData): Promise<string> 
 export async function generateInventarioReport(data: InventarioReporteData): Promise<string> {
   const doc = new jsPDF();
   
-  // Agregar logo CDS
-  await addCDSLogoToPDF(doc, 20, 15);
+  // Intentar agregar logo CDS (solo si estamos en el cliente)
+  try {
+    await addCDSLogoToPDF(doc, 20, 15);
+  } catch (error) {
+    // Fallback: usar solo texto
+    doc.setFontSize(16);
+    doc.setTextColor(66, 139, 202);
+    doc.text("CDS", 20, 35);
+  }
   
-  // Título (alineado verticalmente con el centro del logo)
+  // Título
   doc.setFontSize(20);
   doc.setTextColor(0, 0, 0);
   doc.text("INVENTARIO COMPLETO", 70, 27);
   
-  // Fecha (alineado verticalmente con el centro del logo)
+  // Fecha
   doc.setFontSize(12);
   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 70, 42);
   doc.text(`Total de elementos: ${data.elementos.length}`, 70, 52);
@@ -186,7 +206,7 @@ export async function generateInventarioReport(data: InventarioReporteData): Pro
     elemento.subcategoria?.nombre || 'N/A'
   ]);
   
-  doc.autoTable({
+  autoTable(doc, {
     head: [['ID', 'Serie', 'Marca', 'Modelo', 'Cantidad', 'Ubicación', 'Estado Funcional', 'Estado Físico', 'Categoría', 'Subcategoría']],
     body: tableData,
     startY: 70,
@@ -215,15 +235,22 @@ export async function generateInventarioReport(data: InventarioReporteData): Pro
 export async function generateMovimientosReport(data: MovimientosReporteData): Promise<string> {
   const doc = new jsPDF();
   
-  // Agregar logo CDS
-  await addCDSLogoToPDF(doc, 20, 15);
+  // Intentar agregar logo CDS (solo si estamos en el cliente)
+  try {
+    await addCDSLogoToPDF(doc, 20, 15);
+  } catch (error) {
+    // Fallback: usar solo texto
+    doc.setFontSize(16);
+    doc.setTextColor(66, 139, 202);
+    doc.text("CDS", 20, 35);
+  }
   
-  // Título (alineado verticalmente con el centro del logo)
+  // Título
   doc.setFontSize(20);
   doc.setTextColor(0, 0, 0);
   doc.text("REPORTE DE MOVIMIENTOS", 70, 27);
   
-  // Fecha (alineado verticalmente con el centro del logo)
+  // Fecha
   doc.setFontSize(12);
   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 70, 42);
   doc.text(`Total de movimientos: ${data.movimientos.length}`, 70, 52);
@@ -243,7 +270,7 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
     movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
   ]);
   
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Ticket', 'Fecha', 'Tipo', 'Elemento', 'Cantidad', 'Dependencia Entrega', 'Funcionario Entrega', 'Dependencia Recibe', 'Funcionario Recibe', 'Fecha Est. Devolución', 'Fecha Real Devolución']],
     body: tableData,
     startY: 70,
@@ -273,15 +300,22 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
 export async function generatePrestamosActivosReport(data: PrestamosActivosReporteData): Promise<string> {
   const doc = new jsPDF();
   
-  // Agregar logo CDS
-  await addCDSLogoToPDF(doc, 20, 15);
+  // Intentar agregar logo CDS (solo si estamos en el cliente)
+  try {
+    await addCDSLogoToPDF(doc, 20, 15);
+  } catch (error) {
+    // Fallback: usar solo texto
+    doc.setFontSize(16);
+    doc.setTextColor(66, 139, 202);
+    doc.text("CDS", 20, 35);
+  }
   
-  // Título (alineado verticalmente con el centro del logo)
+  // Título
   doc.setFontSize(20);
   doc.setTextColor(0, 0, 0);
   doc.text("PRÉSTAMOS ACTIVOS", 70, 27);
   
-  // Fecha (alineado verticalmente con el centro del logo)
+  // Fecha
   doc.setFontSize(12);
   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 70, 42);
   doc.text(`Total de préstamos activos: ${data.prestamos.length}`, 70, 52);
@@ -298,7 +332,7 @@ export async function generatePrestamosActivosReport(data: PrestamosActivosRepor
     prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
   ]);
   
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Ticket', 'Fecha', 'Elemento', 'Cantidad', 'Dependencia', 'Funcionario', 'Fecha Est. Devolución', 'Estado']],
     body: tableData,
     startY: 70,

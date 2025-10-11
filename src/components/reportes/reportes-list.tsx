@@ -5,23 +5,15 @@ import { Card, CardContent, CardHeader } from "../ui/card";
 import { SearchInput } from "../ui/search-input";
 import { EmptyState } from "../ui/empty-state";
 import { useSearch } from "../../hooks/use-search";
-import { ReporteUpsertDialog } from "./reporte-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { ReporteGenerado } from "../../modules/reportes_generados/types";
 
 type ReportesListProps = {
   reportes: ReporteGenerado[];
-  onCreateReporte: (formData: FormData) => Promise<void>;
-  onUpdateReporte: (formData: FormData) => Promise<void>;
   onDeleteReporte: (id: number) => Promise<void>;
 };
 
-export function ReportesList({
-  reportes,
-  onCreateReporte,
-  onUpdateReporte,
-  onDeleteReporte,
-}: ReportesListProps) {
+export function ReportesList({ reportes, onDeleteReporte }: ReportesListProps) {
   const { searchQuery, filteredData, handleSearch, hasResults, hasData } =
     useSearch({
       data: reportes,
@@ -32,7 +24,7 @@ export function ReportesList({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Reportes Generados</h1>
+      <h1 className="text-2xl font-semibold">Historial de Reportes</h1>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
@@ -41,7 +33,7 @@ export function ReportesList({
               onSearch={handleSearch}
               className="max-w-sm"
             />
-            <ReporteUpsertDialog create serverAction={onCreateReporte} />
+            {/* Botón de crear removido - solo historial */}
           </div>
         </CardHeader>
         <CardContent>
@@ -73,15 +65,13 @@ export function ReportesList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <ReporteUpsertDialog
-                      create={false}
-                      serverAction={onUpdateReporte}
-                      defaultValues={{
-                        tipo_reporte: reporte.tipo_reporte,
-                        nombre_archivo: reporte.nombre_archivo,
-                      }}
-                      hiddenFields={{ id: reporte.id }}
-                    />
+                    <div className="text-xs text-muted-foreground">
+                      {reporte.fecha_generacion
+                        ? new Date(
+                            reporte.fecha_generacion
+                          ).toLocaleDateString()
+                        : "Sin fecha"}
+                    </div>
                     <DeleteButton
                       onConfirm={async () => {
                         await onDeleteReporte(reporte.id);

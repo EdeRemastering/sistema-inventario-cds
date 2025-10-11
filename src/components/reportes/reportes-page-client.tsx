@@ -8,17 +8,10 @@ type DeleteAction = (id: number) => Promise<void>;
 
 type Props = {
   reportes: ReporteGenerado[];
-  onCreateReporte: ServerAction;
-  onUpdateReporte: ServerAction;
   onDeleteReporte: DeleteAction;
 };
 
-export function ReportesPageClient({
-  reportes,
-  onCreateReporte,
-  onUpdateReporte,
-  onDeleteReporte,
-}: Props) {
+export function ReportesPageClient({ reportes, onDeleteReporte }: Props) {
   const handleGenerate = (tipo: string, datos: string) => {
     // Aquí se manejaría la descarga del reporte
     console.log("Generando reporte:", tipo, datos);
@@ -28,12 +21,7 @@ export function ReportesPageClient({
     <div className="grid gap-6 lg:grid-cols-2">
       <ReporteGenerator onGenerate={handleGenerate} />
 
-      <ReportesList
-        reportes={reportes}
-        onCreateReporte={onCreateReporte}
-        onUpdateReporte={onUpdateReporte}
-        onDeleteReporte={onDeleteReporte}
-      />
+      <ReportesList reportes={reportes} onDeleteReporte={onDeleteReporte} />
     </div>
   );
 }

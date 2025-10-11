@@ -29,3 +29,4 @@ export type ReporteStats = {
   totalObservaciones: number;
   totalTickets: number;
 };
+

@@ -14,7 +14,8 @@ import {
 } from "../ui/select";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { actionGenerateReporte } from "../../modules/reportes/actions";
+import { actionExportToExcel } from "../../modules/reportes/client-actions";
+import { actionDownloadPDF } from "../../modules/reportes/download-actions";
 
 type ReporteType =
   | "inventario"
@@ -38,26 +39,33 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
     setGenerando(true);
 
     try {
-      const formData = new FormData();
-      formData.append("tipo_reporte", tipoReporte);
-      formData.append("formato", formato);
+      if (formato === "excel") {
+        // Para Excel, usar la acción del cliente
+        const result = await actionExportToExcel(
+          tipoReporte,
+          fechaInicio,
+          fechaFin
+        );
 
-      if (fechaInicio) {
-        formData.append("fecha_inicio", fechaInicio);
-      }
-      if (fechaFin) {
-        formData.append("fecha_fin", fechaFin);
-      }
-
-      const result = await actionGenerateReporte(formData);
-
-      if (result.success) {
-        toast.success(result.message);
-        if (formato === "pdf") {
-          onGenerate(tipoReporte, "reporte_generado");
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.message);
         }
       } else {
-        toast.error(result.message);
+        // Para PDF, descargar directamente
+        const result = await actionDownloadPDF(
+          tipoReporte,
+          fechaInicio,
+          fechaFin
+        );
+
+        if (result.success) {
+          toast.success(result.message);
+          onGenerate(tipoReporte, "reporte_generado");
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (error) {
       console.error("Error generando reporte:", error);

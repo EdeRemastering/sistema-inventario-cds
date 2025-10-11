@@ -136,3 +136,4 @@ Se ha implementado un sistema completo de reportes que permite generar diferente
 ## Conclusión
 
 El sistema de reportes está completamente funcional y permite generar reportes profesionales tanto en PDF como Excel para todos los módulos principales del sistema de inventario. La implementación es robusta, eficiente y fácil de usar, proporcionando una herramienta valiosa para la gestión y análisis de datos del inventario.
+

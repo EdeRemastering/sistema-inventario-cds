@@ -1,8 +1,5 @@
 import { listReportes } from "../../../modules/reportes_generados/services";
-import {
-  actionCreateReporte,
-  actionDeleteReporte,
-} from "../../../modules/reportes_generados/actions";
+import { actionDeleteReporte } from "../../../modules/reportes_generados/actions";
 import { getReporteStats } from "../../../modules/reportes/services";
 import { ReportesPageClient } from "../../../components/reportes/reportes-page-client";
 import { ReporteStats } from "../../../components/reportes/reporte-stats";
@@ -28,8 +25,6 @@ async function ReportesContent() {
 
       <ReportesPageClient
         reportes={reportes}
-        onCreateReporte={actionCreateReporte}
-        onUpdateReporte={actionCreateReporte} // Usando la misma acción para crear/actualizar
         onDeleteReporte={actionDeleteReporte}
       />
     </div>

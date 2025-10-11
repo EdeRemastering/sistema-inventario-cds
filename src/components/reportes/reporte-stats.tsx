@@ -92,3 +92,5 @@ export function ReporteStats({ stats }: ReporteStatsProps) {
     </div>
   );
 }
+
+

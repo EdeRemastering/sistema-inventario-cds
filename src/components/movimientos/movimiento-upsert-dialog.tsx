@@ -22,8 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { DateTimePicker } from "../ui/date-time-picker";
+import { Calendar } from "../ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { SignaturePadComponent } from "../ui/signature-pad";
+import { CalendarIcon, Clock, ChevronDownIcon } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "../../lib/utils";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";
 
@@ -34,6 +39,7 @@ const schema = z.object({
   fecha_movimiento: z.date({
     message: "Fecha de movimiento requerida",
   }),
+  hora_movimiento: z.string().optional(),
   dependencia_entrega: z.string().min(1, "Requerido"),
   firma_funcionario_entrega: z.string().optional(),
   cargo_funcionario_entrega: z.string().optional(),
@@ -361,37 +367,114 @@ export function MovimientoUpsertDialog({
             </div>
 
             {/* Fechas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-1">
-                <Label>Fecha de Movimiento</Label>
-                <DateTimePicker
-                  value={fechaMovimiento}
-                  onChange={(date) => {
-                    if (date) {
-                      setFechaMovimiento(date);
-                      setValue("fecha_movimiento", date);
-                    }
-                  }}
-                  placeholder="Seleccionar fecha y hora"
-                />
-                {errors.fecha_movimiento && (
-                  <p className="text-red-500 text-sm">
-                    {errors.fecha_movimiento.message}
-                  </p>
-                )}
+            <div className="space-y-6">
+              {/* Fecha de Movimiento con Hora */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Fecha y Hora de Movimiento
+                </Label>
+                <div className="flex gap-4 items-end">
+                  <div className="flex flex-col gap-2 flex-1">
+                    <Label
+                      htmlFor="date-picker-movimiento"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Fecha
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          id="date-picker-movimiento"
+                          className="w-full justify-between font-normal h-10"
+                        >
+                          {fechaMovimiento
+                            ? fechaMovimiento.toLocaleDateString()
+                            : "Seleccionar fecha"}
+                          <ChevronDownIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto overflow-hidden p-0"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={fechaMovimiento}
+                          captionLayout="dropdown"
+                          onSelect={(date) => {
+                            if (date) {
+                              setFechaMovimiento(date);
+                              setValue("fecha_movimiento", date);
+                            }
+                          }}
+                          locale={es}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-1">
+                    <Label
+                      htmlFor="time-picker-movimiento"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Hora
+                    </Label>
+                    <Input
+                      type="time"
+                      id="time-picker-movimiento"
+                      step="1"
+                      {...register("hora_movimiento")}
+                      className="h-10 bg-background"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-1">
-                <Label>Fecha Estimada de Devolución</Label>
-                <DateTimePicker
-                  value={fechaDevolucion}
-                  onChange={(date) => {
-                    if (date) {
-                      setFechaDevolucion(date);
-                      setValue("fecha_estimada_devolucion", date);
-                    }
-                  }}
-                  placeholder="Seleccionar fecha y hora"
-                />
+              {errors.fecha_movimiento && (
+                <p className="text-red-500 text-sm">
+                  {errors.fecha_movimiento.message}
+                </p>
+              )}
+              {/* Fecha Estimada de Devolución */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="date-picker-devolucion"
+                  className="text-sm font-medium"
+                >
+                  Fecha Estimada de Devolución
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      id="date-picker-devolucion"
+                      className="w-full justify-between font-normal h-10"
+                    >
+                      {fechaDevolucion
+                        ? fechaDevolucion.toLocaleDateString()
+                        : "Seleccionar fecha"}
+                      <ChevronDownIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="start"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={fechaDevolucion}
+                      captionLayout="dropdown"
+                      onSelect={(date) => {
+                        if (date) {
+                          setFechaDevolucion(date);
+                          setValue("fecha_estimada_devolucion", date);
+                        }
+                      }}
+                      locale={es}
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.fecha_estimada_devolucion && (
                   <p className="text-red-500 text-sm">
                     {errors.fecha_estimada_devolucion.message}

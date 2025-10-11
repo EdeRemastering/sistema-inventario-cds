@@ -61,6 +61,8 @@ export function TicketUpsertDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TicketFormData>({
     resolver: zodResolver(schema),
