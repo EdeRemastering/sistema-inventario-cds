@@ -156,8 +156,7 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
     'Creado': new Date(cat.creado_en).toLocaleDateString()
   }));
   
-  const dataUrl = exportToExcel(excelData, nombreArchivo);
-  downloadFile(dataUrl, nombreArchivo);
+  exportToExcel(excelData, nombreArchivo);
   await saveToHistory('categorias', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de categorías generado exitosamente` };
@@ -183,8 +182,7 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
     'Creado': new Date(obs.creado_en).toLocaleDateString()
   }));
   
-  const dataUrl = exportToExcel(excelData, nombreArchivo);
-  downloadFile(dataUrl, nombreArchivo);
+  exportToExcel(excelData, nombreArchivo);
   await saveToHistory('observaciones', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de observaciones generado exitosamente` };
@@ -215,8 +213,7 @@ export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?:
     'Usuario Guardado': ticket.usuario_guardado
   }));
   
-  const dataUrl = exportToExcel(excelData, nombreArchivo);
-  downloadFile(dataUrl, nombreArchivo);
+  exportToExcel(excelData, nombreArchivo);
   await saveToHistory('tickets', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de tickets generado exitosamente` };
