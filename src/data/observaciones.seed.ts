@@ -1,8 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
 
 export const observacionesSeed: Array<never> = [];
 
-export async function seedObservaciones(_prisma: PrismaClient) {
+export async function seedObservaciones() {
   // No-op: sin datos iniciales
 }
 

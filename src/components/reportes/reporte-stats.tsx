@@ -1,15 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import {
-  FileText,
-  TrendingUp,
-  Clock,
-  Package,
-  Tag,
-  Eye,
-  Ticket,
-} from "lucide-react";
+import { TrendingUp, Clock, Package, Tag, Eye, Ticket } from "lucide-react";
 
 interface ReporteStatsProps {
   stats: {
@@ -92,5 +84,3 @@ export function ReporteStats({ stats }: ReporteStatsProps) {
     </div>
   );
 }
-
-

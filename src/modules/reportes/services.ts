@@ -46,7 +46,7 @@ export async function getMovimientosReporteData(
   fechaInicio?: Date,
   fechaFin?: Date
 ): Promise<MovimientosReporteData> {
-  const whereClause: any = {};
+  const whereClause: { fecha_movimiento?: { gte: Date; lte: Date } } = {};
   
   if (fechaInicio && fechaFin) {
     whereClause.fecha_movimiento = {
@@ -170,7 +170,7 @@ export async function getObservacionesReporteData(
   fechaInicio?: Date,
   fechaFin?: Date
 ) {
-  const whereClause: any = {};
+  const whereClause: { fecha_observacion?: { gte: Date; lte: Date } } = {};
   
   if (fechaInicio && fechaFin) {
     whereClause.fecha_observacion = {
@@ -219,7 +219,7 @@ export async function getTicketsReporteData(
   fechaInicio?: Date,
   fechaFin?: Date
 ) {
-  const whereClause: any = {};
+  const whereClause: { fecha_salida?: { gte: Date; lte: Date } } = {};
   
   if (fechaInicio && fechaFin) {
     whereClause.fecha_salida = {

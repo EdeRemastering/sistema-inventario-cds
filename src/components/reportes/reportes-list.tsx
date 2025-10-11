@@ -52,7 +52,7 @@ export function ReportesList({ reportes, onDeleteReporte }: ReportesListProps) {
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {filteredData.map((reporte) => (
                 <div
                   key={reporte.id}

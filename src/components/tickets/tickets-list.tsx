@@ -6,8 +6,6 @@ import { SearchInput } from "../ui/search-input";
 import { EmptyState } from "../ui/empty-state";
 import { useSearch } from "../../hooks/use-search";
 import { TicketUpsertDialog } from "./ticket-upsert-dialog";
-import { DeleteButton } from "../delete-button";
-import { TicketInvoice } from "./ticket-invoice";
 import { SignatureDisplay } from "../ui/signature-display";
 import { TicketActions } from "./ticket-actions";
 import type { TicketGuardado } from "../../modules/tickets_guardados/types";

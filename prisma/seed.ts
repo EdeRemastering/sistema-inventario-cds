@@ -18,7 +18,7 @@ async function main() {
   await seedElementos(prisma);
   await seedMovimientos(prisma);
   await seedLogs(prisma);
-  await seedObservaciones(prisma);
+  await seedObservaciones();
   await seedReportes(prisma);
   await seedTickets(prisma);
 }

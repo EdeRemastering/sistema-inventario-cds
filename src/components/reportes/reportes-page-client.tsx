@@ -3,7 +3,6 @@
 import { ReporteGenerator } from "./reporte-generator";
 import { ReportesList } from "./reportes-list";
 import type { ReporteGenerado } from "../../modules/reportes_generados/types";
-type ServerAction = (formData: FormData) => Promise<void>;
 type DeleteAction = (id: number) => Promise<void>;
 
 type Props = {

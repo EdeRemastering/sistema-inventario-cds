@@ -146,7 +146,7 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
     return { success: false, message: "PDF no disponible para categorías. Use Excel." };
   }
   
-  const excelData = datos.map((cat: any) => ({
+  const excelData = datos.map((cat: { id: number; nombre: string; descripcion: string | null; estado: string; total_elementos: number; total_subcategorias: number; creado_en: Date }) => ({
     'ID': cat.id,
     'Nombre': cat.nombre,
     'Descripción': cat.descripcion,
@@ -172,7 +172,7 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
     return { success: false, message: "PDF no disponible para observaciones. Use Excel." };
   }
   
-  const excelData = datos.map((obs: any) => ({
+  const excelData = datos.map((obs: { id: number; fecha_observacion: Date; descripcion: string; elemento_serie: string; elemento_marca: string | null; elemento_modelo: string | null; elemento_categoria: string; creado_en: Date }) => ({
     'ID': obs.id,
     'Fecha Observación': new Date(obs.fecha_observacion).toLocaleDateString(),
     'Descripción': obs.descripcion,
@@ -199,7 +199,7 @@ export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?:
     return { success: false, message: "PDF no disponible para tickets. Use Excel." };
   }
   
-  const excelData = datos.map((ticket: any) => ({
+  const excelData = datos.map((ticket: { id: number; numero_ticket: string; fecha_salida: Date; fecha_estimada_devolucion: Date | null; elemento: string | null; serie: string | null; marca_modelo: string | null; cantidad: number; dependencia_entrega: string | null; dependencia_recibe: string | null; motivo: string | null; orden_numero: string | null; usuario_guardado: string | null }) => ({
     'ID': ticket.id,
     'Número Ticket': ticket.numero_ticket,
     'Fecha Salida': new Date(ticket.fecha_salida).toLocaleDateString(),

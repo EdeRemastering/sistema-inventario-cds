@@ -22,10 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import {
-  GenericDatePicker,
-  GenericDateTimePicker,
-} from "../ui/generic-date-picker";
+import { GenericDateTimePicker } from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";

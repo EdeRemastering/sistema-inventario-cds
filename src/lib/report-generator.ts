@@ -134,7 +134,7 @@ export async function generateGenericReport(data: ReporteData): Promise<string> 
   // Intentar agregar logo CDS (solo si estamos en el cliente)
   try {
     await addCDSLogoToPDF(doc, 20, 15);
-  } catch (error) {
+  } catch {
     // Fallback: usar solo texto
     doc.setFontSize(16);
     doc.setTextColor(66, 139, 202);
@@ -175,7 +175,7 @@ export async function generateInventarioReport(data: InventarioReporteData): Pro
   // Intentar agregar logo CDS (solo si estamos en el cliente)
   try {
     await addCDSLogoToPDF(doc, 20, 15);
-  } catch (error) {
+  } catch {
     // Fallback: usar solo texto
     doc.setFontSize(16);
     doc.setTextColor(66, 139, 202);
@@ -238,7 +238,7 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
   // Intentar agregar logo CDS (solo si estamos en el cliente)
   try {
     await addCDSLogoToPDF(doc, 20, 15);
-  } catch (error) {
+  } catch {
     // Fallback: usar solo texto
     doc.setFontSize(16);
     doc.setTextColor(66, 139, 202);
@@ -303,7 +303,7 @@ export async function generatePrestamosActivosReport(data: PrestamosActivosRepor
   // Intentar agregar logo CDS (solo si estamos en el cliente)
   try {
     await addCDSLogoToPDF(doc, 20, 15);
-  } catch (error) {
+  } catch {
     // Fallback: usar solo texto
     doc.setFontSize(16);
     doc.setTextColor(66, 139, 202);

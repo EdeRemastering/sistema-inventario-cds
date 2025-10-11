@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getInventarioReporteData } from '../../../../modules/reportes/services';
 
 export async function GET() {

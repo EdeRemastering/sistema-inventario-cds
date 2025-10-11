@@ -108,10 +108,7 @@ export async function validateStock(
 /**
  * Actualiza el stock después de un préstamo
  */
-export async function updateStockAfterLoan(
-  _elementoId: number,
-  _loanQuantity: number
-): Promise<boolean> {
+export async function updateStockAfterLoan(): Promise<boolean> {
   try {
     // La lógica de stock se maneja a través de los movimientos
     // No necesitamos actualizar directamente la cantidad del elemento

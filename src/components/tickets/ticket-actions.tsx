@@ -21,7 +21,6 @@ export function TicketActions({
   onUpdateTicket,
   onDeleteTicket,
   onMarkAsReturned,
-  onMarkAsCompleted,
 }: TicketActionsProps) {
   // Los tickets_guardados no tienen fecha_real_devolucion,
   // verificamos si fue marcado como devuelto por el motivo
