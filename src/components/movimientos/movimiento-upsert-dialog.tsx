@@ -22,7 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { GenericDatePicker } from "../ui/generic-date-picker";
+import {
+  GenericDatePicker,
+  GenericDateTimePicker,
+} from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";
@@ -79,6 +82,7 @@ export function MovimientoUpsertDialog({
   const [open, setOpen] = useState(false);
   const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
   const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
+  const [horaDevolucion, setHoraDevolucion] = useState<string>("");
   const [fechaMovimiento, setFechaMovimiento] = useState<Date | undefined>();
   const [fechaDevolucion, setFechaDevolucion] = useState<Date | undefined>();
   const [stockInfo, setStockInfo] = useState<{
@@ -362,10 +366,8 @@ export function MovimientoUpsertDialog({
             </div>
 
             {/* Fechas */}
-            <div className="space-y-6">
-              {/* Fecha de Movimiento con Hora */}
-              {/* Fecha y Hora del Movimiento */}
-              <GenericDatePicker
+            <div className="flex flex-col gap-4">
+              <GenericDateTimePicker
                 label="Fecha de Movimiento"
                 value={fechaMovimiento}
                 onChange={(date) => {
@@ -374,40 +376,32 @@ export function MovimientoUpsertDialog({
                     setValue("fecha_movimiento", date);
                   }
                 }}
-                placeholder="Seleccionar fecha"
+                placeholder="Seleccionar fecha y hora"
                 error={errors.fecha_movimiento?.message}
                 required
+                timeValue={watch("hora_movimiento") || ""}
+                onTimeChange={(time) => setValue("hora_movimiento", time)}
               />
 
-              {/* Hora del Movimiento */}
-              <div className="flex flex-col gap-2">
-                <Label
-                  htmlFor="time-picker-movimiento"
-                  className="text-sm font-medium"
-                >
-                  Hora del Movimiento
-                </Label>
-                <Input
-                  type="time"
-                  id="time-picker-movimiento"
-                  step="1"
-                  {...register("hora_movimiento")}
-                  className="h-10 bg-background"
-                />
-              </div>
-              {/* Fecha Estimada de Devolución */}
-              <GenericDatePicker
+              <GenericDateTimePicker
                 label="Fecha Estimada de Devolución"
                 value={fechaDevolucion}
                 onChange={(date) => {
                   if (date) {
+                    // Combinar fecha con hora si existe
+                    if (horaDevolucion) {
+                      const [hours, minutes] = horaDevolucion.split(":");
+                      date.setHours(parseInt(hours), parseInt(minutes));
+                    }
                     setFechaDevolucion(date);
                     setValue("fecha_estimada_devolucion", date);
                   }
                 }}
-                placeholder="Seleccionar fecha"
+                placeholder="Seleccionar fecha y hora"
                 error={errors.fecha_estimada_devolucion?.message}
                 required
+                timeValue={horaDevolucion}
+                onTimeChange={setHoraDevolucion}
               />
             </div>
 

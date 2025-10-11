@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Calendar } from "./calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Button } from "./button";
+import { Input } from "./input";
 import { Label } from "./label";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronDownIcon } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "../../lib/utils";
@@ -20,6 +21,8 @@ interface GenericDatePickerProps {
   includeTime?: boolean;
   className?: string;
   disabled?: boolean;
+  timeValue?: string;
+  onTimeChange?: (time: string) => void;
 }
 
 export function GenericDatePicker({
@@ -32,15 +35,17 @@ export function GenericDatePicker({
   includeTime = false,
   className,
   disabled = false,
+  timeValue,
+  onTimeChange,
 }: GenericDatePickerProps) {
   const [open, setOpen] = useState(false);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      // Si se incluye tiempo, mantener la hora actual
-      if (includeTime && value) {
-        date.setHours(value.getHours());
-        date.setMinutes(value.getMinutes());
+      // Si se incluye tiempo, mantener la hora actual si existe
+      if (includeTime && value && timeValue) {
+        const [hours, minutes] = timeValue.split(":");
+        date.setHours(parseInt(hours), parseInt(minutes));
       }
       onChange(date);
     }
@@ -49,13 +54,87 @@ export function GenericDatePicker({
 
   const formatDisplayValue = (date: Date | undefined) => {
     if (!date) return placeholder;
-
-    if (includeTime) {
-      return format(date, "dd/MM/yyyy HH:mm", { locale: es });
-    }
     return format(date, "dd/MM/yyyy", { locale: es });
   };
 
+  // Si incluye tiempo, mostrar fecha y hora por separado
+  if (includeTime) {
+    return (
+      <div className={cn("grid gap-1", className)}>
+        <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+
+        <div className="flex gap-4">
+          {/* Selector de Fecha */}
+          <div className="flex flex-col gap-3">
+            <Label
+              htmlFor={`${label.toLowerCase().replace(/\s+/g, "-")}-date`}
+              className="px-1 text-sm"
+            >
+              Fecha
+            </Label>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  id={`${label.toLowerCase().replace(/\s+/g, "-")}-date`}
+                  className={cn(
+                    "w-32 justify-between font-normal",
+                    error && "border-red-500 focus-visible:ring-red-500",
+                    disabled && "opacity-50 cursor-not-allowed"
+                  )}
+                  disabled={disabled}
+                >
+                  {value ? value.toLocaleDateString() : "Seleccionar"}
+                  <ChevronDownIcon className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto overflow-hidden p-0"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={value}
+                  onSelect={handleDateSelect}
+                  captionLayout="dropdown"
+                  locale={es}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Selector de Hora */}
+          <div className="flex flex-col gap-3">
+            <Label
+              htmlFor={`${label.toLowerCase().replace(/\s+/g, "-")}-time`}
+              className="px-1 text-sm"
+            >
+              Hora
+            </Label>
+            <Input
+              type="time"
+              id={`${label.toLowerCase().replace(/\s+/g, "-")}-time`}
+              value={timeValue || ""}
+              onChange={(e) => onTimeChange?.(e.target.value)}
+              className={cn(
+                "w-32 bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
+                error && "border-red-500 focus-visible:ring-red-500",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+      </div>
+    );
+  }
+
+  // Selector solo de fecha (comportamiento original)
   return (
     <div className={cn("grid gap-1", className)}>
       <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
@@ -107,6 +186,8 @@ export function GenericDateTimePicker({
   required = false,
   className,
   disabled = false,
+  timeValue,
+  onTimeChange,
 }: Omit<GenericDatePickerProps, "includeTime">) {
   return (
     <GenericDatePicker
@@ -119,6 +200,8 @@ export function GenericDateTimePicker({
       includeTime={true}
       className={className}
       disabled={disabled}
+      timeValue={timeValue}
+      onTimeChange={onTimeChange}
     />
   );
 }

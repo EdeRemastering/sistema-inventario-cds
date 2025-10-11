@@ -56,6 +56,8 @@ export function TicketUpsertDialog({
   const [open, setOpen] = useState(false);
   const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
   const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
+  const [horaSalida, setHoraSalida] = useState<string>("");
+  const [horaDevolucion, setHoraDevolucion] = useState<string>("");
 
   const {
     register,
@@ -160,29 +162,43 @@ export function TicketUpsertDialog({
             </div>
 
             {/* Fechas */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <GenericDateTimePicker
                 label="Fecha de Salida"
                 value={watch("fecha_salida")}
                 onChange={(date) => {
                   if (date) {
+                    // Combinar fecha con hora si existe
+                    if (horaSalida) {
+                      const [hours, minutes] = horaSalida.split(':');
+                      date.setHours(parseInt(hours), parseInt(minutes));
+                    }
                     setValue("fecha_salida", date);
                   }
                 }}
                 placeholder="Seleccionar fecha y hora"
                 error={errors.fecha_salida?.message}
                 required
+                timeValue={horaSalida}
+                onTimeChange={setHoraSalida}
               />
               <GenericDateTimePicker
                 label="Fecha Estimada de Devolución"
                 value={watch("fecha_estimada_devolucion")}
                 onChange={(date) => {
                   if (date) {
+                    // Combinar fecha con hora si existe
+                    if (horaDevolucion) {
+                      const [hours, minutes] = horaDevolucion.split(':');
+                      date.setHours(parseInt(hours), parseInt(minutes));
+                    }
                     setValue("fecha_estimada_devolucion", date);
                   }
                 }}
                 placeholder="Seleccionar fecha y hora"
                 error={errors.fecha_estimada_devolucion?.message}
+                timeValue={horaDevolucion}
+                onTimeChange={setHoraDevolucion}
               />
             </div>
 
