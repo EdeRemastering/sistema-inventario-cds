@@ -19,7 +19,7 @@ import { GenericDateTimePicker } from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
 
 const schema = z.object({
-  numero_ticket: z.string().min(1, "Número requerido"),
+  numero_ticket: z.string().optional(), // Ahora es opcional, se generará automáticamente
   fecha_salida: z.date({
     message: "Fecha de salida requerida",
   }),
@@ -79,7 +79,9 @@ export function TicketUpsertDialog({
       const formData = new FormData();
 
       // Agregar todos los campos del formulario
-      formData.append("numero_ticket", data.numero_ticket);
+      if (data.numero_ticket) {
+        formData.append("numero_ticket", data.numero_ticket);
+      }
       formData.append("fecha_salida", data.fecha_salida.toISOString());
       if (data.fecha_estimada_devolucion)
         formData.append(
@@ -145,21 +147,36 @@ export function TicketUpsertDialog({
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-            {/* Número de Ticket */}
-            <div className="grid gap-1">
-              <Label htmlFor="numero_ticket">Número de Ticket</Label>
-              <Input
-                id="numero_ticket"
-                type="text"
-                placeholder="Ej: TICK-001"
-                {...register("numero_ticket")}
-              />
-              {errors.numero_ticket && (
-                <p className="text-red-500 text-sm">
-                  {errors.numero_ticket.message}
-                </p>
-              )}
-            </div>
+            {/* Número de Ticket - Solo mostrar al editar */}
+            {!create && (
+              <div className="grid gap-1">
+                <Label htmlFor="numero_ticket">Número de Ticket</Label>
+                <Input
+                  id="numero_ticket"
+                  type="text"
+                  placeholder="Ej: TICK-001"
+                  {...register("numero_ticket")}
+                />
+                {errors.numero_ticket && (
+                  <p className="text-red-500 text-sm">
+                    {errors.numero_ticket.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Información para tickets nuevos */}
+            {create && (
+              <div className="grid gap-1">
+                <Label>Información del Ticket</Label>
+                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                  <p className="font-medium">El número de ticket se generará automáticamente</p>
+                  <p className="text-xs mt-1">
+                    Se creará un número único siguiendo el formato: TICKET-YYYY-NNNNNN
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Fechas */}
             <div className="flex flex-col gap-4">
