@@ -71,12 +71,12 @@ export function TicketActions({
             numero_ticket: ticket.numero_ticket,
             fecha_salida: new Date(ticket.fecha_salida)
               .toISOString()
-              .slice(0, 16),
+              .slice(0, 16) as unknown as Date,
             fecha_estimada_devolucion: ticket.fecha_estimada_devolucion
-              ? new Date(ticket.fecha_estimada_devolucion)
+              ? (new Date(ticket.fecha_estimada_devolucion)
                   .toISOString()
-                  .slice(0, 16)
-              : "",
+                  .slice(0, 16) as unknown as Date)
+              : ("" as unknown as Date),
             elemento: ticket.elemento ?? "",
             serie: ticket.serie ?? "",
             marca_modelo: ticket.marca_modelo ?? "",
