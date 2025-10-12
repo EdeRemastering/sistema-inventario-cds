@@ -18,18 +18,7 @@ export async function GET() {
 
     // Calcular stock disponible y prestado para cada elemento
     const elementosConCalculos = await Promise.all(
-      elementosConStockBajo.map(async (elemento: {
-        id: number;
-        cantidad: number;
-        serie: string;
-        marca: string | null;
-        modelo: string | null;
-        ubicacion: string | null;
-        estado_funcional: string;
-        estado_fisico: string;
-        categoria: { nombre: string };
-        subcategoria: { nombre: string } | null;
-      }) => {
+      elementosConStockBajo.map(async (elemento) => {
         // Contar movimientos activos (prestados)
         const totalPrestado = await prisma.movimientos.count({
           where: {
