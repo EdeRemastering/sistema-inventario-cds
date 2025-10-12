@@ -1,6 +1,5 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from 'xlsx';
 
 // Extender jsPDF para incluir autoTable
 declare module "jspdf" {
@@ -58,10 +57,53 @@ async function addCDSLogoToPDF(doc: jsPDF, x: number = 20, y: number = 18): Prom
   } catch (error) {
     console.warn('No se pudo cargar el logo, usando texto como fallback:', error);
     // Fallback a texto si no se puede cargar la imagen
-    doc.setFontSize(16);
-    doc.setTextColor(66, 139, 202);
+    doc.setFontSize(28);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
     doc.text("CDS", x, y + 20);
   }
+}
+
+/**
+ * Función auxiliar para crear la cabecera profesional de los reportes
+ */
+async function addProfessionalHeader(doc: jsPDF, title: string): Promise<number> {
+  // Configurar el marco unificado
+  doc.setDrawColor(0, 0, 0); // Negro
+  doc.setLineWidth(0.3);
+  
+  // Intentar agregar logo CDS (ajustado para orientación horizontal)
+  try {
+    await addCDSLogoToPDF(doc, 20, 18);
+  } catch {
+    // Fallback a texto si no se puede cargar la imagen
+    doc.setFontSize(28);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("CDS", 25, 28);
+  }
+
+  // Título principal (ajustado para orientación horizontal)
+  doc.setFontSize(18);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
+  doc.text("SISTEMA DE INVENTARIO CDS", 70, 25);
+  
+  // Subtítulo del reporte
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "normal");
+  doc.text(title, 70, 32);
+  
+  // Fecha de generación
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 70, 39);
+
+  // Línea separadora (ajustada para orientación horizontal)
+  doc.setLineWidth(0.15);
+  doc.line(20, 48, 270, 48);
+
+  return 55; // Retorna la posición Y donde continuar
 }
 
 export type ReporteData = {
@@ -125,6 +167,50 @@ export type PrestamosActivosReporteData = {
   }>;
 };
 
+export type CategoriasReporteData = {
+  categorias: Array<{
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    estado: string;
+    total_elementos: number;
+    total_subcategorias: number;
+    creado_en: Date;
+  }>;
+};
+
+export type ObservacionesReporteData = {
+  observaciones: Array<{
+    id: number;
+    fecha_observacion: Date;
+    descripcion: string;
+    elemento_serie: string;
+    elemento_marca: string | null;
+    elemento_modelo: string | null;
+    elemento_categoria: string;
+    creado_en: Date;
+  }>;
+};
+
+export type TicketsReporteData = {
+  tickets: Array<{
+    id: number;
+    numero_ticket: string;
+    fecha_salida: Date;
+    fecha_estimada_devolucion: Date | null;
+    elemento: string | null;
+    serie: string | null;
+    marca_modelo: string | null;
+    cantidad: number;
+    dependencia_entrega: string | null;
+    dependencia_recibe: string | null;
+    motivo: string | null;
+    orden_numero: string | null;
+    fecha_guardado: Date | null;
+    usuario_guardado: string | null;
+  }>;
+};
+
 /**
  * Genera un reporte PDF genérico
  */
@@ -170,29 +256,45 @@ export async function generateGenericReport(data: ReporteData): Promise<string> 
  * Genera reporte de inventario completo
  */
 export async function generateInventarioReport(data: InventarioReporteData): Promise<string> {
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape'); // Orientación horizontal
   
-  // Intentar agregar logo CDS (solo si estamos en el cliente)
-  try {
-    await addCDSLogoToPDF(doc, 20, 15);
-  } catch {
-    // Fallback: usar solo texto
-    doc.setFontSize(16);
-    doc.setTextColor(66, 139, 202);
-    doc.text("CDS", 20, 35);
-  }
+  // Calcular la altura total del documento para el marco (ajustada para landscape)
+  let totalHeight = 40; // Header
+  totalHeight += 15; // Espacio
+  totalHeight += 35; // Información del reporte
+  totalHeight += 15; // Espacio
+  totalHeight += Math.max(20, data.elementos.length * 4); // Tabla (mínimo 20, más si hay muchos elementos)
+  totalHeight += 25; // Footer
+  totalHeight += 20; // Espacio final
   
-  // Título
-  doc.setFontSize(20);
+  // Dibujar el marco unificado (ajustado para orientación horizontal)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 10, 260, totalHeight, "S");
+  
+  // Agregar cabecera profesional
+  let y = await addProfessionalHeader(doc, "REPORTE DE INVENTARIO COMPLETO");
+  
+  // Información del reporte
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
-  doc.text("INVENTARIO COMPLETO", 70, 27);
+  doc.text("INFORMACIÓN DEL REPORTE", 20, y);
   
-  // Fecha
-  doc.setFontSize(12);
-  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 70, 42);
-  doc.text(`Total de elementos: ${data.elementos.length}`, 70, 52);
+  // Línea separadora debajo del título (ajustada para landscape)
+  doc.setLineWidth(0.15);
+  doc.line(20, y + 2, 270, y + 2);
+  y += 8;
   
-  // Tabla de elementos
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total de elementos: ${data.elementos.length}`, 20, y);
+  y += 6;
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, y);
+  y += 15;
+  
+  // Tabla de elementos (con columnas ajustadas para que quepan en el recuadro)
   const tableData = data.elementos.map(elemento => [
     elemento.id.toString(),
     elemento.serie,
@@ -207,24 +309,48 @@ export async function generateInventarioReport(data: InventarioReporteData): Pro
   ]);
   
   autoTable(doc, {
-    head: [['ID', 'Serie', 'Marca', 'Modelo', 'Cantidad', 'Ubicación', 'Estado Funcional', 'Estado Físico', 'Categoría', 'Subcategoría']],
+    head: [['ID', 'Serie', 'Marca', 'Modelo', 'Cant.', 'Ubic.', 'Estado\nFuncional', 'Estado\nFísico', 'Categoría', 'Subcat.']],
     body: tableData,
-    startY: 70,
-    styles: { fontSize: 7 },
-    headStyles: { fillColor: [66, 139, 202] },
+    startY: y,
+    margin: { left: 20, right: 20 },
+    styles: { 
+      fontSize: 6,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      cellPadding: 2
+    },
+    headStyles: { 
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: 'bold',
+      cellPadding: 2
+    },
     columnStyles: {
       0: { cellWidth: 15 },
       1: { cellWidth: 25 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 20 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 22 },
       4: { cellWidth: 15 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 20 },
-      7: { cellWidth: 20 },
+      5: { cellWidth: 22 },
+      6: { cellWidth: 22 },
+      7: { cellWidth: 22 },
       8: { cellWidth: 25 },
       9: { cellWidth: 25 }
     }
   });
+  
+  // Footer (ajustado para landscape)
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 50;
+  doc.setLineWidth(0.15);
+  doc.line(20, finalY + 10, 270, finalY + 10);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado por: Sistema de Inventario CDS`, 25, finalY + 20);
+  doc.text(`Reporte de Inventario Completo`, 255, finalY + 20, { align: "right" });
   
   return doc.output('datauristring');
 }
@@ -233,32 +359,48 @@ export async function generateInventarioReport(data: InventarioReporteData): Pro
  * Genera reporte de movimientos
  */
 export async function generateMovimientosReport(data: MovimientosReporteData): Promise<string> {
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape'); // Orientación horizontal
   
-  // Intentar agregar logo CDS (solo si estamos en el cliente)
-  try {
-    await addCDSLogoToPDF(doc, 20, 15);
-  } catch {
-    // Fallback: usar solo texto
-    doc.setFontSize(16);
-    doc.setTextColor(66, 139, 202);
-    doc.text("CDS", 20, 35);
-  }
+  // Calcular la altura total del documento para el marco (ajustada para landscape)
+  let totalHeight = 40; // Header
+  totalHeight += 15; // Espacio
+  totalHeight += 35; // Información del reporte
+  totalHeight += 15; // Espacio
+  totalHeight += Math.max(20, data.movimientos.length * 4); // Tabla (mínimo 20, más si hay muchos movimientos)
+  totalHeight += 25; // Footer
+  totalHeight += 20; // Espacio final
   
-  // Título
-  doc.setFontSize(20);
+  // Dibujar el marco unificado (ajustado para orientación horizontal)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 10, 260, totalHeight, "S");
+  
+  // Agregar cabecera profesional
+  let y = await addProfessionalHeader(doc, "REPORTE DE MOVIMIENTOS");
+  
+  // Información del reporte
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
-  doc.text("REPORTE DE MOVIMIENTOS", 70, 27);
+  doc.text("INFORMACIÓN DEL REPORTE", 20, y);
   
-  // Fecha
-  doc.setFontSize(12);
-  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 70, 42);
-  doc.text(`Total de movimientos: ${data.movimientos.length}`, 70, 52);
+  // Línea separadora debajo del título (ajustada para landscape)
+  doc.setLineWidth(0.15);
+  doc.line(20, y + 2, 270, y + 2);
+  y += 8;
   
-  // Tabla de movimientos
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total de movimientos: ${data.movimientos.length}`, 20, y);
+  y += 6;
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, y);
+  y += 15;
+  
+  // Tabla de movimientos (con columnas ajustadas para que quepan en el recuadro)
   const tableData = data.movimientos.map(movimiento => [
     movimiento.numero_ticket,
-    movimiento.fecha_movimiento.toLocaleDateString(),
+    movimiento.fecha_movimiento.toLocaleDateString('es-ES'),
     movimiento.tipo,
     `${movimiento.elemento.serie} - ${movimiento.elemento.marca} ${movimiento.elemento.modelo}`,
     movimiento.cantidad.toString(),
@@ -266,19 +408,32 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
     movimiento.funcionario_entrega,
     movimiento.dependencia_recibe,
     movimiento.funcionario_recibe,
-    movimiento.fecha_estimada_devolucion.toLocaleDateString(),
-    movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
+    movimiento.fecha_estimada_devolucion.toLocaleDateString('es-ES'),
+    movimiento.fecha_real_devolucion?.toLocaleDateString('es-ES') || 'Pendiente'
   ]);
   
   autoTable(doc, {
-    head: [['Ticket', 'Fecha', 'Tipo', 'Elemento', 'Cantidad', 'Dependencia Entrega', 'Funcionario Entrega', 'Dependencia Recibe', 'Funcionario Recibe', 'Fecha Est. Devolución', 'Fecha Real Devolución']],
+    head: [['Ticket', 'Fecha', 'Tipo', 'Elemento', 'Cant.', 'Dep.\nEntrega', 'Func.\nEntrega', 'Dep.\nRecibe', 'Func.\nRecibe', 'Fecha Est.\nDevol.', 'Fecha Real\nDevol.']],
     body: tableData,
-    startY: 70,
-    styles: { fontSize: 6 },
-    headStyles: { fillColor: [66, 139, 202] },
+    startY: y,
+    margin: { left: 20, right: 20 },
+    styles: { 
+      fontSize: 6,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      cellPadding: 2
+    },
+    headStyles: { 
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: 'bold',
+      cellPadding: 2
+    },
     columnStyles: {
       0: { cellWidth: 20 },
-      1: { cellWidth: 20 },
+      1: { cellWidth: 18 },
       2: { cellWidth: 15 },
       3: { cellWidth: 30 },
       4: { cellWidth: 15 },
@@ -291,6 +446,17 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
     }
   });
   
+  // Footer (ajustado para landscape)
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 50;
+  doc.setLineWidth(0.15);
+  doc.line(20, finalY + 10, 270, finalY + 10);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado por: Sistema de Inventario CDS`, 25, finalY + 20);
+  doc.text(`Reporte de Movimientos`, 255, finalY + 20, { align: "right" });
+  
   return doc.output('datauristring');
 }
 
@@ -298,87 +464,567 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
  * Genera reporte de préstamos activos
  */
 export async function generatePrestamosActivosReport(data: PrestamosActivosReporteData): Promise<string> {
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape'); // Orientación horizontal
   
-  // Intentar agregar logo CDS (solo si estamos en el cliente)
-  try {
-    await addCDSLogoToPDF(doc, 20, 15);
-  } catch {
-    // Fallback: usar solo texto
-    doc.setFontSize(16);
-    doc.setTextColor(66, 139, 202);
-    doc.text("CDS", 20, 35);
-  }
+  // Calcular la altura total del documento para el marco (ajustada para landscape)
+  let totalHeight = 40; // Header
+  totalHeight += 15; // Espacio
+  totalHeight += 35; // Información del reporte
+  totalHeight += 15; // Espacio
+  totalHeight += Math.max(20, data.prestamos.length * 4); // Tabla (mínimo 20, más si hay muchos préstamos)
+  totalHeight += 25; // Footer
+  totalHeight += 20; // Espacio final
   
-  // Título
-  doc.setFontSize(20);
+  // Dibujar el marco unificado (ajustado para orientación horizontal)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 10, 260, totalHeight, "S");
+  
+  // Agregar cabecera profesional
+  let y = await addProfessionalHeader(doc, "REPORTE DE PRÉSTAMOS ACTIVOS");
+  
+  // Información del reporte
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
-  doc.text("PRÉSTAMOS ACTIVOS", 70, 27);
+  doc.text("INFORMACIÓN DEL REPORTE", 20, y);
   
-  // Fecha
-  doc.setFontSize(12);
-  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 70, 42);
-  doc.text(`Total de préstamos activos: ${data.prestamos.length}`, 70, 52);
+  // Línea separadora debajo del título (ajustada para landscape)
+  doc.setLineWidth(0.15);
+  doc.line(20, y + 2, 270, y + 2);
+  y += 8;
   
-  // Tabla de préstamos activos
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total de préstamos activos: ${data.prestamos.length}`, 20, y);
+  y += 6;
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, y);
+  y += 15;
+  
+  // Tabla de préstamos activos (con columnas ajustadas para que quepan en el recuadro)
   const tableData = data.prestamos.map(prestamo => [
     prestamo.numero_ticket,
-    prestamo.fecha_movimiento.toLocaleDateString(),
+    prestamo.fecha_movimiento.toLocaleDateString('es-ES'),
     `${prestamo.elemento.serie} - ${prestamo.elemento.marca} ${prestamo.elemento.modelo}`,
     prestamo.cantidad.toString(),
     prestamo.dependencia_recibe,
     prestamo.funcionario_recibe,
-    prestamo.fecha_estimada_devolucion.toLocaleDateString(),
+    prestamo.fecha_estimada_devolucion.toLocaleDateString('es-ES'),
     prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
   ]);
   
   autoTable(doc, {
-    head: [['Ticket', 'Fecha', 'Elemento', 'Cantidad', 'Dependencia', 'Funcionario', 'Fecha Est. Devolución', 'Estado']],
+    head: [['Ticket', 'Fecha', 'Elemento', 'Cant.', 'Dependencia', 'Funcionario', 'Fecha Est.\nDevolución', 'Estado']],
     body: tableData,
-    startY: 70,
-    styles: { fontSize: 7 },
-    headStyles: { fillColor: [66, 139, 202] },
+    startY: y,
+    margin: { left: 20, right: 20 },
+    styles: { 
+      fontSize: 7,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      cellPadding: 2
+    },
+    headStyles: { 
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+      cellPadding: 2
+    },
     columnStyles: {
-      0: { cellWidth: 20 },
-      1: { cellWidth: 20 },
+      0: { cellWidth: 22 },
+      1: { cellWidth: 22 },
       2: { cellWidth: 35 },
-      3: { cellWidth: 15 },
-      4: { cellWidth: 30 },
-      5: { cellWidth: 30 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 35 },
+      5: { cellWidth: 35 },
       6: { cellWidth: 25 },
       7: { cellWidth: 20 }
     }
   });
   
+  // Footer (ajustado para landscape)
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 50;
+  doc.setLineWidth(0.15);
+  doc.line(20, finalY + 10, 270, finalY + 10);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado por: Sistema de Inventario CDS`, 25, finalY + 20);
+  doc.text(`Reporte de Préstamos Activos`, 255, finalY + 20, { align: "right" });
+  
   return doc.output('datauristring');
 }
 
 /**
- * Exporta datos a Excel usando la librería xlsx
+ * Genera reporte de categorías
  */
-export function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx'): void {
+export async function generateCategoriasReport(data: CategoriasReporteData): Promise<string> {
+  const doc = new jsPDF('landscape'); // Orientación horizontal
+  
+  // Calcular la altura total del documento para el marco (ajustada para landscape)
+  let totalHeight = 40; // Header
+  totalHeight += 15; // Espacio
+  totalHeight += 35; // Información del reporte
+  totalHeight += 15; // Espacio
+  totalHeight += Math.max(20, data.categorias.length * 4); // Tabla (mínimo 20, más si hay muchas categorías)
+  totalHeight += 25; // Footer
+  totalHeight += 20; // Espacio final
+  
+  // Dibujar el marco unificado (ajustado para orientación horizontal)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 10, 260, totalHeight, "S");
+  
+  // Agregar cabecera profesional
+  let y = await addProfessionalHeader(doc, "REPORTE DE CATEGORÍAS");
+  
+  // Información del reporte
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  doc.text("INFORMACIÓN DEL REPORTE", 20, y);
+  
+  // Línea separadora debajo del título (ajustada para landscape)
+  doc.setLineWidth(0.15);
+  doc.line(20, y + 2, 270, y + 2);
+  y += 8;
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total de categorías: ${data.categorias.length}`, 20, y);
+  y += 6;
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, y);
+  y += 15;
+  
+  // Tabla de categorías (con columnas ajustadas para que quepan en el recuadro)
+  const tableData = data.categorias.map(categoria => [
+    categoria.id.toString(),
+    categoria.nombre,
+    categoria.descripcion || 'Sin descripción',
+    categoria.estado,
+    categoria.total_elementos.toString(),
+    categoria.total_subcategorias.toString(),
+    categoria.creado_en.toLocaleDateString('es-ES')
+  ]);
+  
+  autoTable(doc, {
+    head: [['ID', 'Nombre', 'Descripción', 'Estado', 'Total\nElementos', 'Total\nSubcategorías', 'Fecha\nCreación']],
+    body: tableData,
+    startY: y,
+    margin: { left: 20, right: 20 },
+    styles: { 
+      fontSize: 7,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      cellPadding: 2
+    },
+    headStyles: { 
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+      cellPadding: 2
+    },
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 45 },
+      3: { cellWidth: 20 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 25 },
+      6: { cellWidth: 22 }
+    }
+  });
+  
+  // Footer (ajustado para landscape)
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 50;
+  doc.setLineWidth(0.15);
+  doc.line(20, finalY + 10, 270, finalY + 10);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado por: Sistema de Inventario CDS`, 25, finalY + 20);
+  doc.text(`Reporte de Categorías`, 255, finalY + 20, { align: "right" });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Genera reporte de observaciones
+ */
+export async function generateObservacionesReport(data: ObservacionesReporteData): Promise<string> {
+  const doc = new jsPDF('landscape'); // Orientación horizontal
+  
+  // Calcular la altura total del documento para el marco (ajustada para landscape)
+  let totalHeight = 40; // Header
+  totalHeight += 15; // Espacio
+  totalHeight += 35; // Información del reporte
+  totalHeight += 15; // Espacio
+  totalHeight += Math.max(20, data.observaciones.length * 4); // Tabla (mínimo 20, más si hay muchas observaciones)
+  totalHeight += 25; // Footer
+  totalHeight += 20; // Espacio final
+  
+  // Dibujar el marco unificado (ajustado para orientación horizontal)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 10, 260, totalHeight, "S");
+  
+  // Agregar cabecera profesional
+  let y = await addProfessionalHeader(doc, "REPORTE DE OBSERVACIONES");
+  
+  // Información del reporte
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  doc.text("INFORMACIÓN DEL REPORTE", 20, y);
+  
+  // Línea separadora debajo del título (ajustada para landscape)
+  doc.setLineWidth(0.15);
+  doc.line(20, y + 2, 270, y + 2);
+  y += 8;
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total de observaciones: ${data.observaciones.length}`, 20, y);
+  y += 6;
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, y);
+  y += 15;
+  
+  // Tabla de observaciones (con columnas ajustadas para que quepan en el recuadro)
+  const tableData = data.observaciones.map(observacion => [
+    observacion.id.toString(),
+    observacion.fecha_observacion.toLocaleDateString('es-ES'),
+    observacion.elemento_serie,
+    `${observacion.elemento_marca || 'N/A'} ${observacion.elemento_modelo || 'N/A'}`,
+    observacion.elemento_categoria,
+    observacion.descripcion.length > 60 ? observacion.descripcion.substring(0, 60) + '...' : observacion.descripcion,
+    observacion.creado_en.toLocaleDateString('es-ES')
+  ]);
+  
+  autoTable(doc, {
+    head: [['ID', 'Fecha\nObs.', 'Serie', 'Marca/\nModelo', 'Categoría', 'Descripción', 'Fecha\nCreación']],
+    body: tableData,
+    startY: y,
+    margin: { left: 20, right: 20 },
+    styles: { 
+      fontSize: 6,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      cellPadding: 2
+    },
+    headStyles: { 
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: 'bold',
+      cellPadding: 2
+    },
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 18 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 22 },
+      5: { cellWidth: 45 },
+      6: { cellWidth: 18 }
+    }
+  });
+  
+  // Footer (ajustado para landscape)
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 50;
+  doc.setLineWidth(0.15);
+  doc.line(20, finalY + 10, 270, finalY + 10);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado por: Sistema de Inventario CDS`, 25, finalY + 20);
+  doc.text(`Reporte de Observaciones`, 255, finalY + 20, { align: "right" });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Genera reporte de tickets
+ */
+export async function generateTicketsReport(data: TicketsReporteData): Promise<string> {
+  const doc = new jsPDF('landscape'); // Orientación horizontal
+  
+  // Calcular la altura total del documento para el marco (ajustada para landscape)
+  let totalHeight = 40; // Header
+  totalHeight += 15; // Espacio
+  totalHeight += 35; // Información del reporte
+  totalHeight += 15; // Espacio
+  totalHeight += Math.max(20, data.tickets.length * 4); // Tabla (mínimo 20, más si hay muchos tickets)
+  totalHeight += 25; // Footer
+  totalHeight += 20; // Espacio final
+  
+  // Dibujar el marco unificado (ajustado para orientación horizontal)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 10, 260, totalHeight, "S");
+  
+  // Agregar cabecera profesional
+  let y = await addProfessionalHeader(doc, "REPORTE DE TICKETS GUARDADOS");
+  
+  // Información del reporte
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  doc.text("INFORMACIÓN DEL REPORTE", 20, y);
+  
+  // Línea separadora debajo del título (ajustada para landscape)
+  doc.setLineWidth(0.15);
+  doc.line(20, y + 2, 270, y + 2);
+  y += 8;
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total de tickets: ${data.tickets.length}`, 20, y);
+  y += 6;
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, y);
+  y += 15;
+  
+  // Tabla de tickets (con columnas ajustadas para que quepan en el recuadro)
+  const tableData = data.tickets.map(ticket => [
+    ticket.numero_ticket,
+    ticket.fecha_salida.toLocaleDateString('es-ES'),
+    ticket.fecha_estimada_devolucion?.toLocaleDateString('es-ES') || 'No especificado',
+    ticket.elemento || 'N/A',
+    ticket.serie || 'N/A',
+    ticket.cantidad.toString(),
+    ticket.dependencia_entrega || 'N/A',
+    ticket.dependencia_recibe || 'N/A',
+    ticket.usuario_guardado || 'N/A'
+  ]);
+  
+  autoTable(doc, {
+    head: [['Ticket', 'Fecha\nSalida', 'Fecha Est.\nDevolución', 'Elemento', 'Serie', 'Cant.', 'Dep.\nEntrega', 'Dep.\nRecibe', 'Usuario']],
+    body: tableData,
+    startY: y,
+    margin: { left: 20, right: 20 },
+    styles: { 
+      fontSize: 6,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      cellPadding: 2
+    },
+    headStyles: { 
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: 'bold',
+      cellPadding: 2
+    },
+    columnStyles: {
+      0: { cellWidth: 20 },
+      1: { cellWidth: 18 },
+      2: { cellWidth: 18 },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 20 },
+      5: { cellWidth: 15 },
+      6: { cellWidth: 28 },
+      7: { cellWidth: 28 },
+      8: { cellWidth: 20 }
+    }
+  });
+  
+  // Footer (ajustado para landscape)
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 50;
+  doc.setLineWidth(0.15);
+  doc.line(20, finalY + 10, 270, finalY + 10);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generado por: Sistema de Inventario CDS`, 25, finalY + 20);
+  doc.text(`Reporte de Tickets Guardados`, 255, finalY + 20, { align: "right" });
+  
+  return doc.output('datauristring');
+}
+
+/**
+ * Función auxiliar para cargar y convertir imagen a base64
+ */
+async function loadImageAsBase64(imagePath: string): Promise<string> {
+  try {
+    const response = await fetch(imagePath);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        // Remover el prefijo "data:image/png;base64,"
+        const base64Data = base64.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    console.warn('No se pudo cargar el logo, usando texto alternativo');
+    return '';
+  }
+}
+
+/**
+ * Exporta datos a Excel con diseño profesional usando XML
+ */
+export async function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx', reportTitle: string = 'REPORTE'): Promise<void> {
   if (data.length === 0) {
     console.warn('No hay datos para exportar');
     return;
   }
 
-  // Crear un nuevo workbook
-  const workbook = XLSX.utils.book_new();
+  const headers = Object.keys(data[0]);
+  const tableData = data.map(row => headers.map(header => row[header] || 'N/A'));
   
-  // Crear una hoja de trabajo desde los datos
-  const worksheet = XLSX.utils.json_to_sheet(data);
+  // Cargar logo como base64
+  const logoBase64 = await loadImageAsBase64('/cds-logo.png');
   
-  // Agregar la hoja al workbook
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
+  // Crear XML para Excel con estilos y logo
+  const xml = `<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>Reporte CDS</Title>
+  <Author>Sistema Inventario CDS</Author>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="HeaderStyle">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#2E7D32" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="TitleStyle">
+   <Font ss:Bold="1" ss:Size="18"/>
+   <Alignment ss:Horizontal="Left"/>
+  </Style>
+  <Style ss:ID="SubtitleStyle">
+   <Font ss:Bold="1" ss:Size="14"/>
+   <Alignment ss:Horizontal="Left"/>
+  </Style>
+  <Style ss:ID="InfoStyle">
+   <Font ss:Bold="1" ss:Size="12"/>
+   <Alignment ss:Horizontal="Left"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Reporte">
+  <Table ss:DefaultColumnWidth="120" ss:DefaultRowHeight="15">
+   ${logoBase64 ? `
+   <!-- Logo CDS -->
+   <Row>
+    <Cell ss:StyleID="TitleStyle">
+     <Data ss:Type="String">
+      <html:img src="data:image/png;base64,${logoBase64}" width="60" height="60" alt="CDS Logo"/>
+     </Data>
+    </Cell>
+   </Row>
+   ` : `
+   <!-- Logo CDS (texto alternativo) -->
+   <Row>
+    <Cell ss:StyleID="TitleStyle"><Data ss:Type="String">CDS</Data></Cell>
+   </Row>
+   `}
+   <Row></Row>
+   
+   <!-- Título principal -->
+   <Row>
+    <Cell ss:StyleID="TitleStyle"><Data ss:Type="String">SISTEMA DE INVENTARIO CDS</Data></Cell>
+   </Row>
+   
+   <!-- Subtítulo del reporte -->
+   <Row>
+    <Cell ss:StyleID="SubtitleStyle"><Data ss:Type="String">${reportTitle}</Data></Cell>
+   </Row>
+   
+   <!-- Fecha de generación -->
+   <Row>
+    <Cell ss:StyleID="InfoStyle"><Data ss:Type="String">Fecha: ${new Date().toLocaleDateString('es-ES')}</Data></Cell>
+   </Row>
+   <Row></Row>
+   
+   <!-- Información del reporte -->
+   <Row>
+    <Cell ss:StyleID="InfoStyle"><Data ss:Type="String">INFORMACIÓN DEL REPORTE</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="InfoStyle"><Data ss:Type="String">Total de registros: ${data.length}</Data></Cell>
+   </Row>
+   <Row></Row>
+   
+   <!-- Encabezados de tabla -->
+   <Row>
+    ${headers.map(header => `<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">${header}</Data></Cell>`).join('')}
+   </Row>
+   
+   <!-- Datos de la tabla -->
+   ${tableData.map(row => `
+   <Row>
+    ${row.map(cell => `<Cell ss:StyleID="DataStyle"><Data ss:Type="String">${cell}</Data></Cell>`).join('')}
+   </Row>
+   `).join('')}
+  </Table>
   
-  // Generar el archivo Excel y descargarlo
-  XLSX.writeFile(workbook, filename);
+  <!-- Configuración para ocultar cuadrícula -->
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <DisplayGridlines>false</DisplayGridlines>
+   <Selected/>
+   <FreezePanes/>
+   <FrozenNoSplit/>
+   <SplitHorizontal>1</SplitHorizontal>
+   <TopRowBottomPane>1</TopRowBottomPane>
+   <ActivePane>2</ActivePane>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>`;
+
+  // Crear blob y descargar
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
 }
 
 /**
  * Exporta inventario completo a Excel
  */
-export function exportInventarioToExcel(data: InventarioReporteData): string {
+export async function exportInventarioToExcel(data: InventarioReporteData): Promise<string> {
   const excelData = data.elementos.map(elemento => ({
     'ID': elemento.id,
     'Serie': elemento.serie,
@@ -392,14 +1038,14 @@ export function exportInventarioToExcel(data: InventarioReporteData): string {
     'Subcategoría': elemento.subcategoria?.nombre || 'N/A'
   }));
 
-  exportToExcel(excelData, `inventario_completo_${new Date().toISOString().split('T')[0]}.xlsx`);
+  await exportToExcel(excelData, `inventario_completo_${new Date().toISOString().split('T')[0]}.xlsx`, 'REPORTE DE INVENTARIO COMPLETO');
   return 'Inventario exportado exitosamente';
 }
 
 /**
  * Exporta movimientos a Excel
  */
-export function exportMovimientosToExcel(data: MovimientosReporteData): string {
+export async function exportMovimientosToExcel(data: MovimientosReporteData): Promise<string> {
   const excelData = data.movimientos.map(movimiento => ({
     'ID': movimiento.id,
     'Ticket': movimiento.numero_ticket,
@@ -415,14 +1061,14 @@ export function exportMovimientosToExcel(data: MovimientosReporteData): string {
     'Fecha Real Devolución': movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
   }));
 
-  exportToExcel(excelData, `movimientos_${new Date().toISOString().split('T')[0]}.xlsx`);
+  await exportToExcel(excelData, `movimientos_${new Date().toISOString().split('T')[0]}.xlsx`, 'REPORTE DE MOVIMIENTOS');
   return 'Movimientos exportados exitosamente';
 }
 
 /**
  * Exporta préstamos activos a Excel
  */
-export function exportPrestamosActivosToExcel(data: PrestamosActivosReporteData): string {
+export async function exportPrestamosActivosToExcel(data: PrestamosActivosReporteData): Promise<string> {
   const excelData = data.prestamos.map(prestamo => ({
     'ID': prestamo.id,
     'Ticket': prestamo.numero_ticket,
@@ -435,6 +1081,6 @@ export function exportPrestamosActivosToExcel(data: PrestamosActivosReporteData)
     'Estado': prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
   }));
 
-  exportToExcel(excelData, `prestamos_activos_${new Date().toISOString().split('T')[0]}.xlsx`);
+  await exportToExcel(excelData, `prestamos_activos_${new Date().toISOString().split('T')[0]}.xlsx`, 'REPORTE DE PRÉSTAMOS ACTIVOS');
   return 'Préstamos activos exportados exitosamente';
 }

@@ -4,6 +4,9 @@ import {
   generateInventarioReport as generateInventarioPDF, 
   generateMovimientosReport as generateMovimientosPDF, 
   generatePrestamosActivosReport as generatePrestamosPDF,
+  generateCategoriasReport as generateCategoriasPDF,
+  generateObservacionesReport as generateObservacionesPDF,
+  generateTicketsReport as generateTicketsPDF,
   exportInventarioToExcel,
   exportMovimientosToExcel,
   exportPrestamosActivosToExcel,
@@ -91,11 +94,10 @@ export async function generateInventarioReport(tipo: 'pdf' | 'excel', fechaInici
   
   if (tipo === 'pdf') {
     dataUrl = await generateInventarioPDF(datos);
+    downloadFile(dataUrl, nombreArchivo);
   } else {
-    dataUrl = exportInventarioToExcel(datos);
+    await exportInventarioToExcel(datos);
   }
-  
-  downloadFile(dataUrl, nombreArchivo);
   await saveToHistory('inventario', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de inventario generado exitosamente` };
@@ -109,11 +111,10 @@ export async function generateMovimientosReport(tipo: 'pdf' | 'excel', fechaInic
   
   if (tipo === 'pdf') {
     dataUrl = await generateMovimientosPDF(datos);
+    downloadFile(dataUrl, nombreArchivo);
   } else {
-    dataUrl = exportMovimientosToExcel(datos);
+    await exportMovimientosToExcel(datos);
   }
-  
-  downloadFile(dataUrl, nombreArchivo);
   await saveToHistory('movimientos', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de movimientos generado exitosamente` };
@@ -127,11 +128,10 @@ export async function generatePrestamosActivosReport(tipo: 'pdf' | 'excel', fech
   
   if (tipo === 'pdf') {
     dataUrl = await generatePrestamosPDF(datos);
+    downloadFile(dataUrl, nombreArchivo);
   } else {
-    dataUrl = exportPrestamosActivosToExcel(datos);
+    await exportPrestamosActivosToExcel(datos);
   }
-  
-  downloadFile(dataUrl, nombreArchivo);
   await saveToHistory('prestamos-activos', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de préstamos activos generado exitosamente` };
@@ -141,9 +141,20 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
   const datos = await fetchReportData('categorias', fechaInicio, fechaFin);
   const nombreArchivo = generateFileName('categorias', tipo);
   
-  // Solo Excel disponible para categorías
   if (tipo === 'pdf') {
-    return { success: false, message: "PDF no disponible para categorías. Use Excel." };
+    // Generar PDF con el nuevo estilo profesional
+    const pdfDataUrl = await generateCategoriasPDF({ categorias: datos });
+    
+    // Crear enlace de descarga
+    const link = document.createElement('a');
+    link.href = pdfDataUrl;
+    link.download = nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    await saveToHistory('categorias', nombreArchivo, tipo);
+    return { success: true, message: `Reporte de categorías generado exitosamente` };
   }
   
   const excelData = datos.map((cat: { id: number; nombre: string; descripcion: string | null; estado: string; total_elementos: number; total_subcategorias: number; creado_en: Date }) => ({
@@ -156,7 +167,7 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
     'Creado': new Date(cat.creado_en).toLocaleDateString()
   }));
   
-  exportToExcel(excelData, nombreArchivo);
+  await exportToExcel(excelData, nombreArchivo, 'REPORTE DE CATEGORÍAS');
   await saveToHistory('categorias', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de categorías generado exitosamente` };
@@ -166,9 +177,20 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
   const datos = await fetchReportData('observaciones', fechaInicio, fechaFin);
   const nombreArchivo = generateFileName('observaciones', tipo, fechaInicio);
   
-  // Solo Excel disponible para observaciones
   if (tipo === 'pdf') {
-    return { success: false, message: "PDF no disponible para observaciones. Use Excel." };
+    // Generar PDF con el nuevo estilo profesional
+    const pdfDataUrl = await generateObservacionesPDF({ observaciones: datos });
+    
+    // Crear enlace de descarga
+    const link = document.createElement('a');
+    link.href = pdfDataUrl;
+    link.download = nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    await saveToHistory('observaciones', nombreArchivo, tipo);
+    return { success: true, message: `Reporte de observaciones generado exitosamente` };
   }
   
   const excelData = datos.map((obs: { id: number; fecha_observacion: Date; descripcion: string; elemento_serie: string; elemento_marca: string | null; elemento_modelo: string | null; elemento_categoria: string; creado_en: Date }) => ({
@@ -182,7 +204,7 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
     'Creado': new Date(obs.creado_en).toLocaleDateString()
   }));
   
-  exportToExcel(excelData, nombreArchivo);
+  await exportToExcel(excelData, nombreArchivo, 'REPORTE DE OBSERVACIONES');
   await saveToHistory('observaciones', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de observaciones generado exitosamente` };
@@ -192,9 +214,20 @@ export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?:
   const datos = await fetchReportData('tickets', fechaInicio, fechaFin);
   const nombreArchivo = generateFileName('tickets', tipo, fechaInicio);
   
-  // Solo Excel disponible para tickets
   if (tipo === 'pdf') {
-    return { success: false, message: "PDF no disponible para tickets. Use Excel." };
+    // Generar PDF con el nuevo estilo profesional
+    const pdfDataUrl = await generateTicketsPDF({ tickets: datos });
+    
+    // Crear enlace de descarga
+    const link = document.createElement('a');
+    link.href = pdfDataUrl;
+    link.download = nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    await saveToHistory('tickets', nombreArchivo, tipo);
+    return { success: true, message: `Reporte de tickets generado exitosamente` };
   }
   
   const excelData = datos.map((ticket: { id: number; numero_ticket: string; fecha_salida: Date; fecha_estimada_devolucion: Date | null; elemento: string | null; serie: string | null; marca_modelo: string | null; cantidad: number; dependencia_entrega: string | null; dependencia_recibe: string | null; motivo: string | null; orden_numero: string | null; usuario_guardado: string | null }) => ({
@@ -213,7 +246,7 @@ export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?:
     'Usuario Guardado': ticket.usuario_guardado
   }));
   
-  exportToExcel(excelData, nombreArchivo);
+  await exportToExcel(excelData, nombreArchivo, 'REPORTE DE TICKETS GUARDADOS');
   await saveToHistory('tickets', nombreArchivo, tipo);
   
   return { success: true, message: `Reporte de tickets generado exitosamente` };
