@@ -230,13 +230,13 @@ export function MovimientosList({
               onSearch={handleSearch}
               className="w-full sm:max-w-sm"
             />
-            <div className="flex justify-end">
+            {/* <div className="flex justify-end">
               <MovimientoUpsertDialog
                 create
                 serverAction={onCreateMovimiento}
                 elementos={elementos}
               />
-            </div>
+            </div> */}
           </div>
         </CardHeader>
         <CardContent>

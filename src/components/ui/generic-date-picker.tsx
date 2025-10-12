@@ -13,7 +13,7 @@ import { cn } from "../../lib/utils";
 
 interface GenericDatePickerProps {
   label: string;
-  value?: Date;
+  value?: Date | string;
   onChange: (date: Date | undefined) => void;
   placeholder?: string;
   error?: string;
@@ -52,9 +52,10 @@ export function GenericDatePicker({
     setOpen(false);
   };
 
-  const formatDisplayValue = (date: Date | undefined) => {
+  const formatDisplayValue = (date: Date | string | undefined) => {
     if (!date) return placeholder;
-    return format(date, "dd/MM/yyyy", { locale: es });
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return format(dateObj, "dd/MM/yyyy", { locale: es });
   };
 
   // Si incluye tiempo, mostrar fecha y hora por separado
@@ -87,7 +88,11 @@ export function GenericDatePicker({
                   )}
                   disabled={disabled}
                 >
-                  {value ? value.toLocaleDateString() : "Seleccionar"}
+                  {value
+                    ? value instanceof Date
+                      ? value.toLocaleDateString()
+                      : new Date(value).toLocaleDateString()
+                    : "Seleccionar"}
                   <ChevronDownIcon className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
@@ -97,7 +102,13 @@ export function GenericDatePicker({
               >
                 <Calendar
                   mode="single"
-                  selected={value}
+                  selected={
+                    value instanceof Date
+                      ? value
+                      : value
+                      ? new Date(value)
+                      : undefined
+                  }
                   onSelect={handleDateSelect}
                   captionLayout="dropdown"
                   locale={es}
@@ -163,7 +174,13 @@ export function GenericDatePicker({
         <PopoverContent className="w-auto overflow-hidden p-0" align="start">
           <Calendar
             mode="single"
-            selected={value}
+            selected={
+              value instanceof Date
+                ? value
+                : value
+                ? new Date(value)
+                : undefined
+            }
             onSelect={handleDateSelect}
             captionLayout="dropdown"
             locale={es}
