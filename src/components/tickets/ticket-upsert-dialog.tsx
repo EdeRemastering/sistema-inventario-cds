@@ -36,7 +36,6 @@ export function TicketUpsertDialog({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [elementos, setElementos] = useState<Elemento[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchElementos = async () => {
@@ -82,70 +81,67 @@ export function TicketUpsertDialog({
     elementos: { elemento_id: number; cantidad: number }[];
     firmas?: { entrega?: string; recibe?: string };
   }) => {
-    try {
-      setIsLoading(true);
+    // Preparar los datos para enviar a la API
+    const ticketData = {
+      numero_ticket: data.numero_ticket,
+      orden_numero: data.orden_numero,
+      fecha_movimiento: data.fecha_movimiento.toISOString(),
+      dependencia_entrega: data.dependencia_entrega,
+      cargo_funcionario_entrega: data.cargo_funcionario_entrega,
+      dependencia_recibe: data.dependencia_recibe,
+      cargo_funcionario_recibe: data.cargo_funcionario_recibe,
+      motivo: data.motivo,
+      fecha_estimada_devolucion: data.fecha_estimada_devolucion.toISOString(),
+      fecha_real_devolucion: data.fecha_real_devolucion?.toISOString(),
+      observaciones_entrega: data.observaciones_entrega,
+      observaciones_devolucion: data.observaciones_devolucion,
+      firma_recepcion: data.firma_recepcion,
+      tipo: data.tipo,
+      firma_entrega: data.firma_entrega,
+      firma_recibe: data.firma_recibe,
+      hora_entrega: data.hora_entrega?.toISOString(),
+      hora_devolucion: data.hora_devolucion?.toISOString(),
+      firma_devuelve: data.firma_devuelve,
+      firma_recibe_devolucion: data.firma_recibe_devolucion,
+      devuelto_por: data.devuelto_por,
+      recibido_por: data.recibido_por,
+      elementos: data.elementos,
+      firmas: {
+        entrega: data.firmas?.entrega,
+        recibe: data.firmas?.recibe,
+      },
+    };
 
-      // Preparar los datos para enviar a la API
-      const ticketData = {
-        numero_ticket: data.numero_ticket,
-        orden_numero: data.orden_numero,
-        fecha_movimiento: data.fecha_movimiento.toISOString(),
-        dependencia_entrega: data.dependencia_entrega,
-        cargo_funcionario_entrega: data.cargo_funcionario_entrega,
-        dependencia_recibe: data.dependencia_recibe,
-        cargo_funcionario_recibe: data.cargo_funcionario_recibe,
-        motivo: data.motivo,
-        fecha_estimada_devolucion: data.fecha_estimada_devolucion.toISOString(),
-        fecha_real_devolucion: data.fecha_real_devolucion?.toISOString(),
-        observaciones_entrega: data.observaciones_entrega,
-        observaciones_devolucion: data.observaciones_devolucion,
-        firma_recepcion: data.firma_recepcion,
-        tipo: data.tipo || "SALIDA",
-        firma_entrega: data.firma_entrega,
-        firma_recibe: data.firma_recibe,
-        hora_entrega: data.hora_entrega?.toISOString(),
-        hora_devolucion: data.hora_devolucion?.toISOString(),
-        firma_devuelve: data.firma_devuelve,
-        firma_recibe_devolucion: data.firma_recibe_devolucion,
-        devuelto_por: data.devuelto_por,
-        recibido_por: data.recibido_por,
-        elementos: data.elementos,
-        firmas: {
-          entrega: data.firmas?.entrega,
-          recibe: data.firmas?.recibe,
-        },
-      };
-
-      const response = await fetch("/api/tickets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(ticketData),
-      });
-
-      if (response.ok) {
-        toast.success(
-          create
-            ? "Ticket creado exitosamente"
-            : "Ticket actualizado exitosamente"
-        );
-        setOpen(false);
-        window.location.reload(); // Recargar la página para mostrar el nuevo ticket
-      } else {
+    const createTicketPromise = fetch("/api/tickets", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(ticketData),
+    }).then(async (response) => {
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Error al procesar el formulario");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error(
-        error instanceof Error
+      return response.json();
+    });
+
+    toast.promise(createTicketPromise, {
+      loading: create ? "Creando ticket..." : "Actualizando ticket...",
+      success: () => {
+        setOpen(false);
+        window.location.reload();
+        return create
+          ? "Ticket creado exitosamente"
+          : "Ticket actualizado exitosamente";
+      },
+      error: (error) => {
+        console.error("Error:", error);
+        return error instanceof Error
           ? error.message
-          : "Error al procesar el formulario"
-      );
-    } finally {
-      setIsLoading(false);
-    }
+          : "Error al procesar el formulario";
+      },
+    });
   };
 
   const btnText = create ? "Crear Ticket" : "Editar Ticket";
@@ -175,7 +171,6 @@ export function TicketUpsertDialog({
               defaultValues={defaultValues}
               hiddenFields={hiddenFields}
               elementos={elementos}
-              isLoading={isLoading}
             />
           </div>
         </DialogContent>

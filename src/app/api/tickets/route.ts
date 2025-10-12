@@ -39,6 +39,12 @@ export async function POST(request: NextRequest) {
     const ticketData = {
       ...body,
       numero_ticket,
+      // Convertir strings de fecha a objetos Date
+      fecha_movimiento: body.fecha_movimiento ? new Date(body.fecha_movimiento) : undefined,
+      fecha_estimada_devolucion: body.fecha_estimada_devolucion ? new Date(body.fecha_estimada_devolucion) : undefined,
+      fecha_real_devolucion: body.fecha_real_devolucion ? new Date(body.fecha_real_devolucion) : undefined,
+      hora_entrega: body.hora_entrega ? new Date(body.hora_entrega) : undefined,
+      hora_devolucion: body.hora_devolucion ? new Date(body.hora_devolucion) : undefined,
     };
 
     // Validar los datos

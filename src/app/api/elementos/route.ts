@@ -5,8 +5,7 @@ export async function GET() {
   try {
     const elementos = await prisma.elementos.findMany({
       where: {
-        estado_funcional: "B", // Solo elementos en buen estado
-        estado_fisico: "B",
+        estado_funcional: "B"
       },
       include: {
         categoria: {

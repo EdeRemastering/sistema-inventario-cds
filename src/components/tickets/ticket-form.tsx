@@ -428,8 +428,8 @@ export function TicketForm({
                           Información del Elemento Seleccionado
                         </h5>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-white/50 rounded-lg p-3">
+                      <div className="flex flex-wrap gap-2">
+                        <div className="bg-white/50 rounded-lg p-2 basis-[32%] box-border">
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                             Serie
                           </span>
@@ -437,7 +437,7 @@ export function TicketForm({
                             {elementoInfo.serie}
                           </p>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-3">
+                        <div className="bg-white/50 rounded-lg p-3 basis-[31.6%] box-border">
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                             Marca
                           </span>
@@ -445,7 +445,7 @@ export function TicketForm({
                             {elementoInfo.marca || "N/A"}
                           </p>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-3">
+                        <div className="bg-white/50 rounded-lg p-3 basis-[31.6%] box-border">
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                             Modelo
                           </span>
@@ -453,11 +453,11 @@ export function TicketForm({
                             {elementoInfo.modelo || "N/A"}
                           </p>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-3">
+                        <div className="bg-white/50 rounded-lg p-3 flex-shrink-0 basis-full">
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                             Categoría
                           </span>
-                          <p className="font-semibold text-sm mt-1">
+                          <p className="font-semibold  text-sm mt-1">
                             {elementoInfo.categoria.nombre}
                           </p>
                         </div>
@@ -517,6 +517,7 @@ export function TicketForm({
         </Card>
 
         {/* Campos ocultos */}
+        <input type="hidden" {...register("tipo")} />
         {hiddenFields && (
           <>
             {Object.entries(hiddenFields).map(([name, value]) => (
