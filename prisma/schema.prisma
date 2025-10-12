@@ -86,6 +86,7 @@ model elementos {
   subcategoria subcategorias? @relation(fields: [subcategoria_id], references: [id], onDelete: SetNull)
   movimientos  movimientos[]
   observaciones_rel observaciones[]
+  ticket_elementos ticket_elementos[]
 
   @@index([categoria_id], map: "idx_elementos_categoria")
   @@index([subcategoria_id], map: "idx_elementos_subcategoria")
@@ -104,6 +105,56 @@ model logs {
 
   @@index([usuario_id])
   @@map("logs")
+}
+
+model tickets {
+  id                       Int            @id @default(autoincrement())
+  numero_ticket            String         @unique @db.VarChar(100)
+  orden_numero             String         @db.VarChar(50)
+  fecha_movimiento         DateTime       @db.DateTime(0)
+  dependencia_entrega      String         @db.VarChar(200)
+  firma_funcionario_entrega String?       @db.VarChar(500)
+  cargo_funcionario_entrega String?       @db.VarChar(200)
+  dependencia_recibe       String         @db.VarChar(200)
+  firma_funcionario_recibe String?        @db.VarChar(500)
+  cargo_funcionario_recibe String?        @db.VarChar(200)
+  motivo                   String         @db.Text
+  fecha_estimada_devolucion DateTime      @db.Date
+  fecha_real_devolucion    DateTime?      @db.DateTime(0)
+  observaciones_entrega    String?        @db.Text
+  observaciones_devolucion String?        @db.Text
+  firma_recepcion          String?        @db.VarChar(255)
+  tipo                     TipoMovimiento @default(SALIDA)
+  firma_entrega            String?        @db.VarChar(255)
+  firma_recibe             String?        @db.VarChar(255)
+  hora_entrega             DateTime?      @db.Time(0)
+  hora_devolucion          DateTime?      @db.Time(0)
+  creado_en                DateTime       @default(now()) @db.Timestamp(0)
+  firma_devuelve           String?        @db.VarChar(255)
+  firma_recibe_devolucion  String?        @db.VarChar(255)
+  devuelto_por             String?        @db.VarChar(255)
+  recibido_por             String?        @db.VarChar(255)
+
+  ticket_elementos ticket_elementos[]
+
+  @@index([tipo], map: "idx_tickets_tipo")
+  @@index([fecha_movimiento], map: "idx_tickets_fecha")
+  @@map("tickets")
+}
+
+model ticket_elementos {
+  id           Int    @id @default(autoincrement())
+  ticket_id    Int
+  elemento_id  Int
+  cantidad     Int
+
+  ticket   tickets  @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+
+  @@unique([ticket_id, elemento_id], map: "unique_ticket_elemento")
+  @@index([ticket_id], map: "idx_ticket_elementos_ticket")
+  @@index([elemento_id], map: "idx_ticket_elementos_elemento")
+  @@map("ticket_elementos")
 }
 
 model movimientos {

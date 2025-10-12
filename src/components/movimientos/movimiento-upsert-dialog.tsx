@@ -15,21 +15,19 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+// Select components removidos - usando ElementoSearchSelect
 import { GenericDateTimePicker } from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";
+import {
+  ElementoSearchSelect,
+  ElementoOption,
+} from "../ui/elemento-search-select";
 
 const schema = z.object({
-  elemento_id: z.string().min(1, "Selecciona elemento"),
-  cantidad: z.string().min(1, "Cantidad requerida"),
+  elemento_id: z.number().int().positive("Selecciona elemento"),
+  cantidad: z.number().int().positive("Cantidad requerida"),
   orden_numero: z.string().optional(),
   fecha_movimiento: z.date({
     message: "Fecha de movimiento requerida",
@@ -51,12 +49,7 @@ const schema = z.object({
 
 type MovimientoFormData = z.infer<typeof schema>;
 
-type ElementoOption = {
-  id: number;
-  serie: string;
-  marca: string | null;
-  modelo: string | null;
-};
+// Usar el tipo ElementoOption del componente reutilizable
 
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
@@ -97,7 +90,7 @@ export function MovimientoUpsertDialog({
   } = useForm<MovimientoFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      cantidad: "1",
+      cantidad: 1,
       fecha_movimiento: new Date(),
       fecha_estimada_devolucion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días desde hoy
       ...defaultValues,
@@ -147,8 +140,8 @@ export function MovimientoUpsertDialog({
   // Validar stock cuando cambie el elemento o cantidad
   useEffect(() => {
     if (selectedElementoId && cantidad) {
-      const elementoId = parseInt(selectedElementoId);
-      const cantidadNum = parseInt(cantidad);
+      const elementoId = selectedElementoId;
+      const cantidadNum = cantidad;
 
       // Solo validar si los valores son válidos
       if (
@@ -302,29 +295,15 @@ export function MovimientoUpsertDialog({
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Elemento */}
-            <div className="grid gap-1">
-              <Label htmlFor="elemento_id">Elemento</Label>
-              <Select
-                value={watch("elemento_id")}
-                onValueChange={(value) => setValue("elemento_id", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona elemento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {elementos.map((e) => (
-                    <SelectItem key={e.id} value={e.id.toString()}>
-                      {e.serie} - {e.marca} {e.modelo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.elemento_id && (
-                <p className="text-red-500 text-sm">
-                  {errors.elemento_id.message}
-                </p>
-              )}
-            </div>
+            <ElementoSearchSelect
+              elementos={elementos}
+              value={watch("elemento_id")}
+              onValueChange={(value) => setValue("elemento_id", value || 0)}
+              placeholder="Seleccionar elemento"
+              label="Elemento"
+              error={errors.elemento_id?.message}
+              required
+            />
 
             {/* Cantidad y Orden */}
             <div className="grid grid-cols-2 gap-4">
@@ -334,7 +313,7 @@ export function MovimientoUpsertDialog({
                   id="cantidad"
                   type="number"
                   min="1"
-                  {...register("cantidad")}
+                  {...register("cantidad", { valueAsNumber: true })}
                 />
                 {errors.cantidad && (
                   <p className="text-red-500 text-sm">
