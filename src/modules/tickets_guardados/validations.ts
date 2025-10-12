@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ticketCreateSchema = z.object({
-  numero_ticket: z.string().min(1),
+  numero_ticket: z.string().optional(), // Ahora es opcional, se generará automáticamente
   fecha_salida: z.coerce.date(),
   fecha_estimada_devolucion: z.coerce.date().optional(),
   elemento: z.string().optional(),

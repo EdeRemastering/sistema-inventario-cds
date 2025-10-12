@@ -51,7 +51,7 @@ export function TicketActions({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
       {/* Estado del ticket */}
       <div className={`flex items-center gap-1 ${getStatusColor()}`}>
         {getStatusIcon()}
@@ -59,7 +59,7 @@ export function TicketActions({
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap">
         {/* Ver factura */}
         <TicketInvoice ticket={ticket} />
 
@@ -95,8 +95,8 @@ export function TicketActions({
               size="sm"
               className="text-green-600 hover:text-green-700 hover:bg-green-50"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
+              <Edit className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Editar</span>
             </Button>
           }
         />

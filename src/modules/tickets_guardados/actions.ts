@@ -5,6 +5,7 @@ import { formDataToObject } from "../../utils/form";
 import { ticketCreateSchema, ticketUpdateSchema } from "./validations";
 import { createTicket, updateTicket, deleteTicket } from "./services";
 import { saveSignature, isValidSignature, deleteSignature } from "../../lib/signature-storage";
+import { generateUniqueSavedTicketNumber } from "../../lib/ticket-generator";
 import { prisma } from "../../lib/prisma";
 
 // Tipos temporales para evitar errores de Prisma
@@ -36,6 +37,13 @@ export async function actionCreateTicket(formData: FormData) {
   const parsed = ticketCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
   
+  // Generar número de ticket automáticamente si no se proporciona
+  const numero_ticket = parsed.data.numero_ticket || await generateUniqueSavedTicketNumber();
+  
+  if (!numero_ticket) {
+    throw new Error("Error generando número de ticket");
+  }
+  
   // Extraer firmas del FormData
   const firma_entrega = formData.get("firma_funcionario_entrega") as string | null;
   const firma_recibe = formData.get("firma_funcionario_recibe") as string | null;
@@ -43,7 +51,7 @@ export async function actionCreateTicket(formData: FormData) {
   // Crear el ticket primero para obtener el ID
   const ticket = await createTicket({
     fecha_guardado: new Date(),
-    numero_ticket: parsed.data.numero_ticket,
+    numero_ticket: numero_ticket,
     fecha_salida: parsed.data.fecha_salida,
     fecha_estimada_devolucion: parsed.data.fecha_estimada_devolucion ?? null,
     elemento: parsed.data.elemento ?? null,

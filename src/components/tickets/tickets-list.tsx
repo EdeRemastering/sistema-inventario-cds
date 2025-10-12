@@ -45,17 +45,21 @@ export function TicketsList({
   const showEmptyState = !hasData || !hasResults;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Tickets Guardados</h1>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">Tickets Guardados</h1>
+      </div>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <SearchInput
               placeholder="Buscar tickets..."
               onSearch={handleSearch}
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
-            <TicketUpsertDialog create serverAction={onCreateTicket} />
+            <div className="flex justify-end">
+              <TicketUpsertDialog create serverAction={onCreateTicket} />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -74,38 +78,106 @@ export function TicketsList({
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {filteredData.map((ticket) => (
                 <div
                   key={ticket.id}
-                  className="flex items-center justify-between gap-3 rounded border p-3"
+                  className="rounded-lg border bg-card p-4 space-y-4"
                 >
-                  <div className="text-sm flex-1">
-                    <div className="font-medium">{ticket.numero_ticket}</div>
-                    <div className="text-muted-foreground">
-                      {new Date(ticket.fecha_salida).toLocaleString()}
+                  {/* Header con información principal */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="font-semibold text-base">
+                          {ticket.numero_ticket}
+                        </span>
+                        <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
+                          {ticket.elemento} - {ticket.serie}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                          <span className="font-medium">{ticket.dependencia_entrega}</span>
+                          <span className="hidden sm:inline">→</span>
+                          <span className="sm:hidden">↓</span>
+                          <span className="font-medium">{ticket.dependencia_recibe}</span>
+                        </div>
+                        <div className="mt-1">
+                          Fecha: {new Date(ticket.fecha_salida).toLocaleDateString()}
+                        </div>
+                        {ticket.orden_numero && (
+                          <div className="mt-1">
+                            Orden: {ticket.orden_numero}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-4 mt-2">
-                      <SignatureDisplay
-                        signatureUrl={ticket.firma_funcionario_entrega}
-                        label="Firma Entrega"
-                        className="text-xs"
-                      />
-                      <SignatureDisplay
-                        signatureUrl={ticket.firma_funcionario_recibe}
-                        label="Firma Recibe"
-                        className="text-xs"
+                    
+                    {/* Botones de acción en móvil */}
+                    <div className="flex sm:hidden gap-2">
+                      <TicketActions
+                        ticket={ticket}
+                        onUpdateTicket={onUpdateTicket}
+                        onDeleteTicket={onDeleteTicket}
+                        onMarkAsReturned={onMarkAsReturned}
+                        onMarkAsCompleted={onMarkAsCompleted}
                       />
                     </div>
                   </div>
-                  <div className="ml-auto">
-                    <TicketActions
-                      ticket={ticket}
-                      onUpdateTicket={onUpdateTicket}
-                      onDeleteTicket={onDeleteTicket}
-                      onMarkAsReturned={onMarkAsReturned}
-                      onMarkAsCompleted={onMarkAsCompleted}
+
+                  {/* Firmas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <SignatureDisplay
+                      signatureUrl={ticket.firma_funcionario_entrega}
+                      label="Firma Entrega"
+                      className="text-xs"
                     />
+                    <SignatureDisplay
+                      signatureUrl={ticket.firma_funcionario_recibe}
+                      label="Firma Recibe"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  {/* Información adicional y botones en desktop */}
+                  <div className="hidden sm:flex sm:items-center sm:justify-between pt-2 border-t">
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {ticket.motivo && (
+                        <div>Motivo: {ticket.motivo}</div>
+                      )}
+                      <div>
+                        Cantidad: {ticket.cantidad}
+                      </div>
+                      {ticket.marca_modelo && (
+                        <div>
+                          {ticket.marca_modelo}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <TicketActions
+                        ticket={ticket}
+                        onUpdateTicket={onUpdateTicket}
+                        onDeleteTicket={onDeleteTicket}
+                        onMarkAsReturned={onMarkAsReturned}
+                        onMarkAsCompleted={onMarkAsCompleted}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Información adicional en móvil */}
+                  <div className="sm:hidden text-xs text-muted-foreground space-y-1 pt-2 border-t">
+                    {ticket.motivo && (
+                      <div>Motivo: {ticket.motivo}</div>
+                    )}
+                    <div>
+                      Cantidad: {ticket.cantidad}
+                    </div>
+                    {ticket.marca_modelo && (
+                      <div>
+                        {ticket.marca_modelo}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -598,8 +598,8 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         onClick={() => setShowPreview(true)}
         className="text-primary hover:text-primary/80 hover:bg-primary/10"
       >
-        <FileText className="h-4 w-4 mr-2" />
-        Ver Factura
+        <FileText className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Ver Factura</span>
       </Button>
 
       <Dialog open={showPreview} onOpenChange={setShowPreview}>

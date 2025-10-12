@@ -211,8 +211,10 @@ export function MovimientosList({
   const showEmptyState = !hasData || !hasResults;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Historial de Movimientos</h1>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">Historial de Movimientos</h1>
+      </div>
 
       <MovimientosFilters
         filters={filters}
@@ -221,18 +223,20 @@ export function MovimientosList({
       />
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <SearchInput
               placeholder="Buscar en movimientos filtrados..."
               onSearch={handleSearch}
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
-            <MovimientoUpsertDialog
-              create
-              serverAction={onCreateMovimiento}
-              elementos={elementos}
-            />
+            <div className="flex justify-end">
+              <MovimientoUpsertDialog
+                create
+                serverAction={onCreateMovimiento}
+                elementos={elementos}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -251,71 +255,151 @@ export function MovimientosList({
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {filteredData.map((movimiento) => (
                 <div
                   key={movimiento.id}
-                  className="flex items-center justify-between gap-3 rounded border p-3"
+                  className="rounded-lg border bg-card p-4 space-y-4"
                 >
-                  <div className="text-sm flex-1">
-                    <div className="font-medium">
-                      {movimiento.numero_ticket}
+                  {/* Header con información principal */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="font-semibold text-base">
+                          {movimiento.numero_ticket}
+                        </span>
+                        <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
+                          Cantidad: {movimiento.cantidad}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                          <span className="font-medium">{movimiento.dependencia_entrega}</span>
+                          <span className="hidden sm:inline">→</span>
+                          <span className="sm:hidden">↓</span>
+                          <span className="font-medium">{movimiento.dependencia_recibe}</span>
+                        </div>
+                        {movimiento.orden_numero && (
+                          <div className="mt-1">
+                            Orden: {movimiento.orden_numero}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-muted-foreground">
-                      Cantidad: {movimiento.cantidad} |{" "}
-                      {movimiento.dependencia_entrega} →{" "}
-                      {movimiento.dependencia_recibe}
-                    </div>
-                    <div className="flex gap-4 mt-2">
-                      <SignatureDisplay
-                        signatureUrl={movimiento.firma_funcionario_entrega}
-                        label="Firma Entrega"
-                        className="text-xs"
+                    
+                    {/* Botones de acción en móvil */}
+                    <div className="flex sm:hidden gap-2">
+                      <MovimientoUpsertDialog
+                        create={false}
+                        serverAction={onUpdateMovimiento}
+                        elementos={elementos}
+                        defaultValues={{
+                          elemento_id: String(movimiento.elemento_id),
+                          cantidad: String(movimiento.cantidad),
+                          orden_numero: movimiento.orden_numero,
+                          fecha_movimiento: new Date(movimiento.fecha_movimiento),
+                          dependencia_entrega: movimiento.dependencia_entrega,
+                          firma_funcionario_entrega:
+                            movimiento.firma_funcionario_entrega ?? "",
+                          cargo_funcionario_entrega:
+                            movimiento.cargo_funcionario_entrega ?? "",
+                          dependencia_recibe: movimiento.dependencia_recibe,
+                          firma_funcionario_recibe:
+                            movimiento.firma_funcionario_recibe ?? "",
+                          cargo_funcionario_recibe:
+                            movimiento.cargo_funcionario_recibe ?? "",
+                          motivo: movimiento.motivo,
+                          fecha_estimada_devolucion: new Date(
+                            movimiento.fecha_estimada_devolucion
+                          ),
+                          numero_ticket: movimiento.numero_ticket,
+                          observaciones_entrega:
+                            movimiento.observaciones_entrega ?? "",
+                        }}
+                        hiddenFields={{ id: movimiento.id }}
                       />
-                      <SignatureDisplay
-                        signatureUrl={movimiento.firma_funcionario_recibe}
-                        label="Firma Recibe"
-                        className="text-xs"
-                      />
+                      <DeleteButton
+                        onConfirm={async () => {
+                          await onDeleteMovimiento(movimiento.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
                     </div>
                   </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <MovimientoUpsertDialog
-                      create={false}
-                      serverAction={onUpdateMovimiento}
-                      elementos={elementos}
-                      defaultValues={{
-                        elemento_id: String(movimiento.elemento_id),
-                        cantidad: String(movimiento.cantidad),
-                        orden_numero: movimiento.orden_numero,
-                        fecha_movimiento: new Date(movimiento.fecha_movimiento),
-                        dependencia_entrega: movimiento.dependencia_entrega,
-                        firma_funcionario_entrega:
-                          movimiento.firma_funcionario_entrega ?? "",
-                        cargo_funcionario_entrega:
-                          movimiento.cargo_funcionario_entrega ?? "",
-                        dependencia_recibe: movimiento.dependencia_recibe,
-                        firma_funcionario_recibe:
-                          movimiento.firma_funcionario_recibe ?? "",
-                        cargo_funcionario_recibe:
-                          movimiento.cargo_funcionario_recibe ?? "",
-                        motivo: movimiento.motivo,
-                        fecha_estimada_devolucion: new Date(
-                          movimiento.fecha_estimada_devolucion
-                        ),
-                        numero_ticket: movimiento.numero_ticket,
-                        observaciones_entrega:
-                          movimiento.observaciones_entrega ?? "",
-                      }}
-                      hiddenFields={{ id: movimiento.id }}
+
+                  {/* Firmas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <SignatureDisplay
+                      signatureUrl={movimiento.firma_funcionario_entrega}
+                      label="Firma Entrega"
+                      className="text-xs"
                     />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteMovimiento(movimiento.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+                    <SignatureDisplay
+                      signatureUrl={movimiento.firma_funcionario_recibe}
+                      label="Firma Recibe"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  {/* Información adicional y botones en desktop */}
+                  <div className="hidden sm:flex sm:items-center sm:justify-between pt-2 border-t">
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {movimiento.motivo && (
+                        <div>Motivo: {movimiento.motivo}</div>
+                      )}
+                      <div>
+                        Fecha: {new Date(movimiento.fecha_movimiento).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <MovimientoUpsertDialog
+                        create={false}
+                        serverAction={onUpdateMovimiento}
+                        elementos={elementos}
+                        defaultValues={{
+                          elemento_id: String(movimiento.elemento_id),
+                          cantidad: String(movimiento.cantidad),
+                          orden_numero: movimiento.orden_numero,
+                          fecha_movimiento: new Date(movimiento.fecha_movimiento),
+                          dependencia_entrega: movimiento.dependencia_entrega,
+                          firma_funcionario_entrega:
+                            movimiento.firma_funcionario_entrega ?? "",
+                          cargo_funcionario_entrega:
+                            movimiento.cargo_funcionario_entrega ?? "",
+                          dependencia_recibe: movimiento.dependencia_recibe,
+                          firma_funcionario_recibe:
+                            movimiento.firma_funcionario_recibe ?? "",
+                          cargo_funcionario_recibe:
+                            movimiento.cargo_funcionario_recibe ?? "",
+                          motivo: movimiento.motivo,
+                          fecha_estimada_devolucion: new Date(
+                            movimiento.fecha_estimada_devolucion
+                          ),
+                          numero_ticket: movimiento.numero_ticket,
+                          observaciones_entrega:
+                            movimiento.observaciones_entrega ?? "",
+                        }}
+                        hiddenFields={{ id: movimiento.id }}
+                      />
+                      <DeleteButton
+                        onConfirm={async () => {
+                          await onDeleteMovimiento(movimiento.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
+                    </div>
+                  </div>
+
+                  {/* Información adicional en móvil */}
+                  <div className="sm:hidden text-xs text-muted-foreground space-y-1 pt-2 border-t">
+                    {movimiento.motivo && (
+                      <div>Motivo: {movimiento.motivo}</div>
+                    )}
+                    <div>
+                      Fecha: {new Date(movimiento.fecha_movimiento).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
               ))}

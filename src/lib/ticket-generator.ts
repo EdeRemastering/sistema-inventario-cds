@@ -60,7 +60,7 @@ export async function generateUniqueTicketNumber(): Promise<string> {
  */
 export async function generateUniqueSavedTicketNumber(): Promise<string> {
   const currentYear = new Date().getFullYear();
-  const prefix = `SAVED-${currentYear}`;
+  const prefix = `TICKET-${currentYear}`;
   
   try {
     // Buscar el último ticket guardado del año actual
@@ -77,11 +77,18 @@ export async function generateUniqueSavedTicketNumber(): Promise<string> {
 
     let nextNumber = 1;
     
-    if (lastTicket) {
-      // Extraer el número del último ticket
-      const lastNumberStr = lastTicket.numero_ticket.split('-')[2];
-      const lastNumber = parseInt(lastNumberStr, 10);
-      nextNumber = lastNumber + 1;
+    if (lastTicket?.numero_ticket) {
+      // Extraer el número del último ticket de manera más robusta
+      const parts = lastTicket.numero_ticket.split('-');
+      
+      if (parts.length >= 3) {
+        const lastNumberStr = parts[2];
+        const lastNumber = parseInt(lastNumberStr, 10);
+        
+        if (!isNaN(lastNumber) && lastNumber > 0) {
+          nextNumber = lastNumber + 1;
+        }
+      }
     }
 
     // Formatear con 6 dígitos con ceros a la izquierda

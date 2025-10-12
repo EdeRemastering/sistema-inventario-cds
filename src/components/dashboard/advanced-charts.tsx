@@ -161,25 +161,39 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={categoriasData}
+                data={categoriasData.filter(item => (item.value || 0) > 0)}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) =>
-                  `${name} ${((percent as number) * 100).toFixed(0)}%`
-                }
+                label={({ name, percent }) => {
+                  const percentage = ((percent as number) * 100).toFixed(0);
+                  // Solo mostrar labels si el porcentaje es mayor a 5% para evitar superposición
+                  return percentage && parseFloat(percentage) > 5 
+                    ? `${name} ${percentage}%` 
+                    : '';
+                }}
                 outerRadius={80}
                 fill="hsl(var(--chart-1))"
                 dataKey="value"
               >
-                {categoriasData.map((entry, index) => (
+                {categoriasData.filter(item => (item.value || 0) > 0).map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={getChartColors()[index % getChartColors().length]}
                   />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                formatter={(value: number, name: string) => [
+                  `${value} elementos`, 
+                  name
+                ]}
+              />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                formatter={(value) => `${value} (${categoriasData.find(item => item.name === value)?.value || 0})`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
