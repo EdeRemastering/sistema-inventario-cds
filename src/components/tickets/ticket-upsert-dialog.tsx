@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { ElementosTicketForm } from "./elementos-ticket-form";
+import { ElementoFormData } from "@/modules/tickets_guardados/types";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { GenericDateTimePicker } from "../ui/generic-date-picker";
@@ -24,10 +26,6 @@ const schema = z.object({
     message: "Fecha de salida requerida",
   }),
   fecha_estimada_devolucion: z.date().optional(),
-  elemento: z.string().optional(),
-  serie: z.string().optional(),
-  marca_modelo: z.string().optional(),
-  cantidad: z.string().min(1, "Cantidad requerida"),
   dependencia_entrega: z.string().optional(),
   firma_funcionario_entrega: z.string().optional(),
   dependencia_recibe: z.string().optional(),
@@ -54,10 +52,46 @@ export function TicketUpsertDialog({
   trigger,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [elementos, setElementos] = useState<
+    {
+      id: number;
+      serie: string;
+      marca?: string | null;
+      modelo?: string | null;
+      categoria: {
+        nombre: string;
+      };
+      subcategoria?: {
+        nombre: string;
+      } | null;
+    }[]
+  >([]);
+  const [elementosSeleccionados, setElementosSeleccionados] = useState<
+    ElementoFormData[]
+  >([]);
   const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
   const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
   const [horaSalida, setHoraSalida] = useState<string>("");
   const [horaDevolucion, setHoraDevolucion] = useState<string>("");
+
+  // Obtener elementos cuando se abre el diálogo
+  React.useEffect(() => {
+    const fetchElementos = async () => {
+      try {
+        const response = await fetch("/api/elementos");
+        if (response.ok) {
+          const result = await response.json();
+          setElementos(result.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching elementos:", error);
+      }
+    };
+
+    if (open) {
+      fetchElementos();
+    }
+  }, [open]);
 
   const {
     register,
@@ -69,13 +103,18 @@ export function TicketUpsertDialog({
   } = useForm<TicketFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      cantidad: "1",
       ...defaultValues,
     } as TicketFormData,
   });
 
   const onSubmit = async (data: TicketFormData) => {
     try {
+      // Validar que hay al menos un elemento
+      if (elementosSeleccionados.length === 0) {
+        toast.error("Debe agregar al menos un elemento al ticket");
+        return;
+      }
+
       const formData = new FormData();
 
       // Agregar todos los campos del formulario
@@ -88,10 +127,6 @@ export function TicketUpsertDialog({
           "fecha_estimada_devolucion",
           data.fecha_estimada_devolucion.toISOString()
         );
-      if (data.elemento) formData.append("elemento", data.elemento);
-      if (data.serie) formData.append("serie", data.serie);
-      if (data.marca_modelo) formData.append("marca_modelo", data.marca_modelo);
-      formData.append("cantidad", data.cantidad);
       if (data.dependencia_entrega)
         formData.append("dependencia_entrega", data.dependencia_entrega);
       if (data.dependencia_recibe)
@@ -103,6 +138,9 @@ export function TicketUpsertDialog({
       if (firmaEntrega)
         formData.append("firma_funcionario_entrega", firmaEntrega);
       if (firmaRecibe) formData.append("firma_funcionario_recibe", firmaRecibe);
+
+      // Agregar elementos seleccionados
+      formData.append("elementos", JSON.stringify(elementosSeleccionados));
 
       // Agregar campos ocultos
       if (hiddenFields) {
@@ -122,6 +160,7 @@ export function TicketUpsertDialog({
       });
 
       reset();
+      setElementosSeleccionados([]);
       setFirmaEntrega(null);
       setFirmaRecibe(null);
       setOpen(false);
@@ -170,9 +209,12 @@ export function TicketUpsertDialog({
               <div className="grid gap-1">
                 <Label>Información del Ticket</Label>
                 <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                  <p className="font-medium">El número de ticket se generará automáticamente</p>
+                  <p className="font-medium">
+                    El número de ticket se generará automáticamente
+                  </p>
                   <p className="text-xs mt-1">
-                    Se creará un número único siguiendo el formato: TICKET-YYYY-NNNNNN
+                    Se creará un número único siguiendo el formato:
+                    TICKET-YYYY-NNNNNN
                   </p>
                 </div>
               </div>
@@ -219,68 +261,26 @@ export function TicketUpsertDialog({
               />
             </div>
 
-            {/* Información del Elemento */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="grid gap-1">
-                <Label htmlFor="elemento">Elemento</Label>
-                <Input id="elemento" type="text" {...register("elemento")} />
-                {errors.elemento && (
-                  <p className="text-red-500 text-sm">
-                    {errors.elemento.message}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="serie">Serie</Label>
-                <Input id="serie" type="text" {...register("serie")} />
-                {errors.serie && (
-                  <p className="text-red-500 text-sm">{errors.serie.message}</p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="marca_modelo">Marca/Modelo</Label>
-                <Input
-                  id="marca_modelo"
-                  type="text"
-                  {...register("marca_modelo")}
-                />
-                {errors.marca_modelo && (
-                  <p className="text-red-500 text-sm">
-                    {errors.marca_modelo.message}
-                  </p>
-                )}
-              </div>
-            </div>
+            {/* Selección de Múltiples Elementos */}
+            <ElementosTicketForm
+              elementos={elementos}
+              elementosSeleccionados={elementosSeleccionados}
+              onElementosChange={setElementosSeleccionados}
+            />
 
-            {/* Cantidad y Orden */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1">
-                <Label htmlFor="cantidad">Cantidad</Label>
-                <Input
-                  id="cantidad"
-                  type="number"
-                  min="1"
-                  {...register("cantidad")}
-                />
-                {errors.cantidad && (
-                  <p className="text-red-500 text-sm">
-                    {errors.cantidad.message}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="orden_numero">Número de Orden</Label>
-                <Input
-                  id="orden_numero"
-                  type="text"
-                  {...register("orden_numero")}
-                />
-                {errors.orden_numero && (
-                  <p className="text-red-500 text-sm">
-                    {errors.orden_numero.message}
-                  </p>
-                )}
-              </div>
+            {/* Número de Orden */}
+            <div className="grid gap-1">
+              <Label htmlFor="orden_numero">Número de Orden</Label>
+              <Input
+                id="orden_numero"
+                type="text"
+                {...register("orden_numero")}
+              />
+              {errors.orden_numero && (
+                <p className="text-red-500 text-sm">
+                  {errors.orden_numero.message}
+                </p>
+              )}
             </div>
 
             {/* Dependencia de Entrega */}

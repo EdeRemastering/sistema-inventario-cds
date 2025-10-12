@@ -77,10 +77,6 @@ export function TicketActions({
                   .toISOString()
                   .slice(0, 16) as unknown as Date)
               : ("" as unknown as Date),
-            elemento: ticket.elemento ?? "",
-            serie: ticket.serie ?? "",
-            marca_modelo: ticket.marca_modelo ?? "",
-            cantidad: String(ticket.cantidad),
             dependencia_entrega: ticket.dependencia_entrega ?? "",
             firma_funcionario_entrega: ticket.firma_funcionario_entrega ?? "",
             dependencia_recibe: ticket.dependencia_recibe ?? "",

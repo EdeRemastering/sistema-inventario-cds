@@ -86,6 +86,7 @@ model elementos {
   subcategoria subcategorias? @relation(fields: [subcategoria_id], references: [id], onDelete: SetNull)
   movimientos  movimientos[]
   observaciones_rel observaciones[]
+  ticket_elementos ticket_elementos[]
 
   @@index([categoria_id], map: "idx_elementos_categoria")
   @@index([subcategoria_id], map: "idx_elementos_subcategoria")
@@ -176,10 +177,10 @@ model tickets_guardados {
   numero_ticket              String    @db.VarChar(50)
   fecha_salida               DateTime  @db.DateTime(0)
   fecha_estimada_devolucion  DateTime? @db.DateTime(0)
-  elemento                   String?   @db.VarChar(255)
-  serie                      String?   @db.VarChar(100)
-  marca_modelo               String?   @db.VarChar(100)
-  cantidad                   Int       @default(1)
+  elemento                   String?   @db.VarChar(255) // Mantener para compatibilidad
+  serie                      String?   @db.VarChar(100) // Mantener para compatibilidad
+  marca_modelo               String?   @db.VarChar(100) // Mantener para compatibilidad
+  cantidad                   Int       @default(1) // Mantener para compatibilidad
   dependencia_entrega        String?   @db.VarChar(100)
   firma_funcionario_entrega  String?   @db.VarChar(500)
   dependencia_recibe         String?   @db.VarChar(100)
@@ -189,7 +190,29 @@ model tickets_guardados {
   fecha_guardado             DateTime? @default(now()) @db.DateTime(0)
   usuario_guardado           String?   @default("Sistema") @db.VarChar(100)
 
+  // Relación con elementos del ticket
+  ticket_elementos ticket_elementos[]
+
   @@map("tickets_guardados")
+}
+
+model ticket_elementos {
+  id               Int       @id @default(autoincrement())
+  ticket_id        Int
+  elemento_id      Int
+  cantidad         Int       @default(1)
+  elemento_nombre  String?   @db.VarChar(255)
+  serie            String?   @db.VarChar(100)
+  marca_modelo     String?   @db.VarChar(100)
+  creado_en        DateTime  @default(now()) @db.Timestamp(0)
+
+  // Relaciones
+  ticket   tickets_guardados @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  elemento elementos         @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+
+  @@index([ticket_id])
+  @@index([elemento_id])
+  @@map("ticket_elementos")
 }
 
 model usuarios {

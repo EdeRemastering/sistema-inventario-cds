@@ -51,10 +51,10 @@ type TicketInvoiceProps = {
     numero_ticket: string;
     fecha_salida: Date;
     fecha_estimada_devolucion?: Date | null;
-    elemento?: string | null;
-    serie?: string | null;
-    marca_modelo?: string | null;
-    cantidad: number;
+    elemento?: string | null; // Mantener para compatibilidad con tickets antiguos
+    serie?: string | null; // Mantener para compatibilidad con tickets antiguos
+    marca_modelo?: string | null; // Mantener para compatibilidad con tickets antiguos
+    cantidad?: number; // Mantener para compatibilidad con tickets antiguos
     dependencia_entrega?: string | null;
     firma_funcionario_entrega?: string | null;
     dependencia_recibe?: string | null;
@@ -63,6 +63,25 @@ type TicketInvoiceProps = {
     orden_numero?: string | null;
     fecha_guardado?: Date | null;
     usuario_guardado?: string | null;
+    ticket_elementos?: Array<{
+      id: number;
+      cantidad: number;
+      elemento_nombre?: string | null;
+      serie?: string | null;
+      marca_modelo?: string | null;
+      elemento?: {
+        id: number;
+        serie: string;
+        marca?: string | null;
+        modelo?: string | null;
+        categoria: {
+          nombre: string;
+        };
+        subcategoria?: {
+          nombre: string;
+        } | null;
+      };
+    }>;
   };
 };
 
@@ -348,7 +367,16 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         let totalHeight = 40; // Header
         totalHeight += 45; // Info ticket
         totalHeight += 15; // Espacio
-        totalHeight += 50; // Info elemento
+
+        // Altura de elementos (ajustada para múltiples elementos)
+        if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
+          totalHeight += 20; // Título de elementos
+          totalHeight += ticket.ticket_elementos.length * 35; // 35mm por elemento
+          totalHeight += (ticket.ticket_elementos.length - 1) * 5; // Espacio entre elementos
+        } else {
+          totalHeight += 50; // Info elemento (tickets antiguos)
+        }
+
         totalHeight += 15; // Espacio
         totalHeight += 40; // Dependencias
         totalHeight += 15; // Espacio
@@ -431,7 +459,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
 
         y += 15;
 
-        // Información del elemento - sin borde individual (marco unificado)
+        // Información de los elementos - sin borde individual (marco unificado)
         // Línea separadora horizontal
         pdf.setLineWidth(0.15);
         pdf.line(20, y - 5, 185, y - 5);
@@ -439,7 +467,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(0, 0, 0); // Negro
-        pdf.text("INFORMACIÓN DEL ELEMENTO", 20, y);
+        pdf.text("INFORMACIÓN DE LOS ELEMENTOS", 20, y);
 
         // Línea separadora debajo del título
         pdf.setLineWidth(0.15);
@@ -450,25 +478,85 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(0, 0, 0);
 
-        if (ticket.elemento) {
-          pdf.text(`Elemento:`, 20, y);
-          pdf.text(`${ticket.elemento}`, 65, y);
+        // Tickets nuevos con múltiples elementos
+        if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
+          pdf.text(
+            `Total de elementos: ${ticket.ticket_elementos.length}`,
+            20,
+            y
+          );
           y += 6;
-        }
 
-        if (ticket.serie) {
-          pdf.text(`Serie:`, 20, y);
-          pdf.text(`${ticket.serie}`, 65, y);
-        }
+          ticket.ticket_elementos.forEach((ticketElemento, index) => {
+            // Título del elemento
+            pdf.setFont("helvetica", "bold");
+            pdf.text(`Elemento ${index + 1}:`, 20, y);
+            y += 6;
 
-        if (ticket.marca_modelo) {
-          pdf.text(`Marca/Modelo:`, 110, y);
-          pdf.text(`${ticket.marca_modelo}`, 155, y);
-        }
-        y += 6;
+            pdf.setFont("helvetica", "normal");
 
-        pdf.text(`Cantidad:`, 20, y);
-        pdf.text(`${ticket.cantidad}`, 65, y);
+            // Nombre del elemento
+            const elementoNombre =
+              ticketElemento.elemento_nombre ||
+              (ticketElemento.elemento
+                ? `${ticketElemento.elemento.categoria.nombre}${
+                    ticketElemento.elemento.subcategoria
+                      ? ` - ${ticketElemento.elemento.subcategoria.nombre}`
+                      : ""
+                  }`
+                : "N/A");
+            pdf.text(`Elemento: ${elementoNombre}`, 25, y);
+            y += 5;
+
+            // Serie
+            const serie =
+              ticketElemento.serie || ticketElemento.elemento?.serie || "N/A";
+            pdf.text(`Serie: ${serie}`, 25, y);
+            y += 5;
+
+            // Marca/Modelo
+            const marcaModelo =
+              ticketElemento.marca_modelo ||
+              (ticketElemento.elemento
+                ? `${ticketElemento.elemento.marca || ""} ${
+                    ticketElemento.elemento.modelo || ""
+                  }`.trim()
+                : "N/A");
+            pdf.text(`Marca/Modelo: ${marcaModelo}`, 25, y);
+            y += 5;
+
+            // Cantidad
+            pdf.text(`Cantidad: ${ticketElemento.cantidad}`, 25, y);
+            y += 8;
+
+            // Línea separadora entre elementos
+            if (
+              ticket.ticket_elementos &&
+              index < ticket.ticket_elementos.length - 1
+            ) {
+              pdf.setLineWidth(0.1);
+              pdf.line(20, y - 2, 185, y - 2);
+              y += 3;
+            }
+          });
+        } else {
+          // Tickets antiguos con un solo elemento (compatibilidad)
+          if (ticket.elemento) {
+            pdf.text(`Elemento: ${ticket.elemento}`, 20, y);
+            y += 6;
+          }
+
+          if (ticket.serie) {
+            pdf.text(`Serie: ${ticket.serie}`, 20, y);
+          }
+
+          if (ticket.marca_modelo) {
+            pdf.text(`Marca/Modelo: ${ticket.marca_modelo}`, 110, y);
+          }
+          y += 6;
+
+          pdf.text(`Cantidad: ${ticket.cantidad || 1}`, 20, y);
+        }
 
         y += 15;
 
@@ -702,51 +790,135 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2 text-black">
                       <Eye className="h-5 w-5 text-black" />
-                      INFORMACIÓN DEL ELEMENTO
+                      INFORMACIÓN DE LOS ELEMENTOS
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {ticket.elemento && (
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm text-gray-600">
-                          Elemento:
-                        </span>
-                        <span className="text-sm break-words">
-                          {ticket.elemento}
-                        </span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {ticket.serie && (
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm text-gray-600">
-                            Serie:
-                          </span>
-                          <span className="text-sm font-mono break-all">
-                            {ticket.serie}
+                    {/* Tickets nuevos con múltiples elementos */}
+                    {ticket.ticket_elementos &&
+                    ticket.ticket_elementos.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="text-sm text-gray-600">
+                          Total de elementos:{" "}
+                          <span className="font-medium">
+                            {ticket.ticket_elementos.length}
                           </span>
                         </div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm text-gray-600">
-                          Cantidad:
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className="font-mono text-sm w-fit"
-                        >
-                          {ticket.cantidad}
-                        </Badge>
+                        {ticket.ticket_elementos.map(
+                          (ticketElemento, index) => (
+                            <div
+                              key={ticketElemento.id || index}
+                              className="border rounded-lg p-4 bg-gray-50"
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-medium text-sm text-gray-800">
+                                  Elemento {index + 1}
+                                </h4>
+                                <Badge
+                                  variant="secondary"
+                                  className="font-mono text-xs"
+                                >
+                                  Cantidad: {ticketElemento.cantidad}
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs text-gray-600">
+                                    Elemento:
+                                  </span>
+                                  <span className="text-sm break-words">
+                                    {ticketElemento.elemento_nombre ||
+                                      (ticketElemento.elemento
+                                        ? `${
+                                            ticketElemento.elemento.categoria
+                                              .nombre
+                                          }${
+                                            ticketElemento.elemento.subcategoria
+                                              ? ` - ${ticketElemento.elemento.subcategoria.nombre}`
+                                              : ""
+                                          }`
+                                        : "N/A")}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs text-gray-600">
+                                    Serie:
+                                  </span>
+                                  <span className="text-sm font-mono break-all">
+                                    {ticketElemento.serie ||
+                                      ticketElemento.elemento?.serie ||
+                                      "N/A"}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs text-gray-600">
+                                    Marca/Modelo:
+                                  </span>
+                                  <span className="text-sm break-words">
+                                    {ticketElemento.marca_modelo ||
+                                      (ticketElemento.elemento
+                                        ? `${
+                                            ticketElemento.elemento.marca || ""
+                                          } ${
+                                            ticketElemento.elemento.modelo || ""
+                                          }`.trim()
+                                        : "N/A")}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        )}
                       </div>
-                    </div>
-                    {ticket.marca_modelo && (
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm text-gray-600">
-                          Marca/Modelo:
-                        </span>
-                        <span className="text-sm break-words">
-                          {ticket.marca_modelo}
-                        </span>
+                    ) : (
+                      /* Tickets antiguos con un solo elemento (compatibilidad) */
+                      <div className="space-y-4">
+                        {ticket.elemento && (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-gray-600">
+                              Elemento:
+                            </span>
+                            <span className="text-sm break-words">
+                              {ticket.elemento}
+                            </span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {ticket.serie && (
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm text-gray-600">
+                                Serie:
+                              </span>
+                              <span className="text-sm font-mono break-all">
+                                {ticket.serie}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-gray-600">
+                              Cantidad:
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className="font-mono text-sm w-fit"
+                            >
+                              {ticket.cantidad || 1}
+                            </Badge>
+                          </div>
+                        </div>
+                        {ticket.marca_modelo && (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-gray-600">
+                              Marca/Modelo:
+                            </span>
+                            <span className="text-sm break-words">
+                              {ticket.marca_modelo}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>

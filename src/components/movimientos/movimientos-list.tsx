@@ -16,7 +16,6 @@ import type { Elemento } from "../../modules/elementos/types";
 type MovimientosListProps = {
   movimientos: Movimiento[];
   elementos: Elemento[];
-  onCreateMovimiento: (formData: FormData) => Promise<void>;
   onUpdateMovimiento: (formData: FormData) => Promise<void>;
   onDeleteMovimiento: (id: number) => Promise<void>;
 };
@@ -24,7 +23,6 @@ type MovimientosListProps = {
 export function MovimientosList({
   movimientos,
   elementos,
-  onCreateMovimiento,
   onUpdateMovimiento,
   onDeleteMovimiento,
 }: MovimientosListProps) {
@@ -213,7 +211,9 @@ export function MovimientosList({
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-xl sm:text-2xl font-semibold">Historial de Movimientos</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">
+          Historial de Movimientos
+        </h1>
       </div>
 
       <MovimientosFilters
@@ -274,10 +274,14 @@ export function MovimientosList({
                       </div>
                       <div className="text-sm text-muted-foreground">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                          <span className="font-medium">{movimiento.dependencia_entrega}</span>
+                          <span className="font-medium">
+                            {movimiento.dependencia_entrega}
+                          </span>
                           <span className="hidden sm:inline">→</span>
                           <span className="sm:hidden">↓</span>
-                          <span className="font-medium">{movimiento.dependencia_recibe}</span>
+                          <span className="font-medium">
+                            {movimiento.dependencia_recibe}
+                          </span>
                         </div>
                         {movimiento.orden_numero && (
                           <div className="mt-1">
@@ -286,7 +290,7 @@ export function MovimientosList({
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Botones de acción en móvil */}
                     <div className="flex sm:hidden gap-2">
                       <MovimientoUpsertDialog
@@ -297,7 +301,9 @@ export function MovimientosList({
                           elemento_id: String(movimiento.elemento_id),
                           cantidad: String(movimiento.cantidad),
                           orden_numero: movimiento.orden_numero,
-                          fecha_movimiento: new Date(movimiento.fecha_movimiento),
+                          fecha_movimiento: new Date(
+                            movimiento.fecha_movimiento
+                          ),
                           dependencia_entrega: movimiento.dependencia_entrega,
                           firma_funcionario_entrega:
                             movimiento.firma_funcionario_entrega ?? "",
@@ -349,7 +355,10 @@ export function MovimientosList({
                         <div>Motivo: {movimiento.motivo}</div>
                       )}
                       <div>
-                        Fecha: {new Date(movimiento.fecha_movimiento).toLocaleDateString()}
+                        Fecha:{" "}
+                        {new Date(
+                          movimiento.fecha_movimiento
+                        ).toLocaleDateString()}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -361,7 +370,9 @@ export function MovimientosList({
                           elemento_id: String(movimiento.elemento_id),
                           cantidad: String(movimiento.cantidad),
                           orden_numero: movimiento.orden_numero,
-                          fecha_movimiento: new Date(movimiento.fecha_movimiento),
+                          fecha_movimiento: new Date(
+                            movimiento.fecha_movimiento
+                          ),
                           dependencia_entrega: movimiento.dependencia_entrega,
                           firma_funcionario_entrega:
                             movimiento.firma_funcionario_entrega ?? "",
@@ -398,7 +409,10 @@ export function MovimientosList({
                       <div>Motivo: {movimiento.motivo}</div>
                     )}
                     <div>
-                      Fecha: {new Date(movimiento.fecha_movimiento).toLocaleDateString()}
+                      Fecha:{" "}
+                      {new Date(
+                        movimiento.fecha_movimiento
+                      ).toLocaleDateString()}
                     </div>
                   </div>
                 </div>

@@ -14,24 +14,24 @@ type TicketWithSignatures = {
   firma_funcionario_recibe: string | null;
 };
 
-type FullTicket = {
-  id: number;
-  numero_ticket: string;
-  fecha_salida: Date;
-  fecha_estimada_devolucion: Date | null;
-  elemento: string | null;
-  serie: string | null;
-  marca_modelo: string | null;
-  cantidad: number;
-  dependencia_entrega: string | null;
-  firma_funcionario_entrega: string | null;
-  dependencia_recibe: string | null;
-  firma_funcionario_recibe: string | null;
-  motivo: string | null;
-  orden_numero: string | null;
-  fecha_guardado: Date | null;
-  usuario_guardado: string | null;
-};
+// type FullTicket = {
+//   id: number;
+//   numero_ticket: string;
+//   fecha_salida: Date;
+//   fecha_estimada_devolucion: Date | null;
+//   elemento: string | null;
+//   serie: string | null;
+//   marca_modelo: string | null;
+//   cantidad: number;
+//   dependencia_entrega: string | null;
+//   firma_funcionario_entrega: string | null;
+//   dependencia_recibe: string | null;
+//   firma_funcionario_recibe: string | null;
+//   motivo: string | null;
+//   orden_numero: string | null;
+//   fecha_guardado: Date | null;
+//   usuario_guardado: string | null;
+// };
 
 export async function actionCreateTicket(formData: FormData) {
   const parsed = ticketCreateSchema.safeParse(formDataToObject(formData));
@@ -48,16 +48,29 @@ export async function actionCreateTicket(formData: FormData) {
   const firma_entrega = formData.get("firma_funcionario_entrega") as string | null;
   const firma_recibe = formData.get("firma_funcionario_recibe") as string | null;
   
+  // Extraer elementos del FormData
+  const elementosData = formData.get("elementos") as string | null;
+  let elementos = [];
+  
+  if (elementosData) {
+    try {
+      elementos = JSON.parse(elementosData);
+    } catch (error) {
+      console.error("Error parsing elementos:", error);
+      throw new Error("Error procesando elementos del ticket");
+    }
+  }
+  
+  if (elementos.length === 0) {
+    throw new Error("Debe agregar al menos un elemento al ticket");
+  }
+  
   // Crear el ticket primero para obtener el ID
   const ticket = await createTicket({
     fecha_guardado: new Date(),
     numero_ticket: numero_ticket,
     fecha_salida: parsed.data.fecha_salida,
     fecha_estimada_devolucion: parsed.data.fecha_estimada_devolucion ?? null,
-    elemento: parsed.data.elemento ?? null,
-    serie: parsed.data.serie ?? null,
-    marca_modelo: parsed.data.marca_modelo ?? null,
-    cantidad: parsed.data.cantidad,
     dependencia_entrega: parsed.data.dependencia_entrega ?? null,
     firma_funcionario_entrega: null, // Se actualizará después
     dependencia_recibe: parsed.data.dependencia_recibe ?? null,
@@ -66,6 +79,20 @@ export async function actionCreateTicket(formData: FormData) {
     orden_numero: parsed.data.orden_numero ?? null,
     usuario_guardado: parsed.data.usuario_guardado ?? null,
   });
+  
+  // Crear los elementos del ticket
+  for (const elemento of elementos) {
+    await prisma.ticket_elementos.create({
+      data: {
+        ticket_id: ticket.id,
+        elemento_id: elemento.elemento_id,
+        cantidad: elemento.cantidad,
+        elemento_nombre: elemento.elemento_nombre,
+        serie: elemento.serie,
+        marca_modelo: elemento.marca_modelo,
+      },
+    });
+  }
   
   // Guardar firmas como imágenes si son válidas
   let firmaEntregaUrl = null;
@@ -171,49 +198,94 @@ export async function actionMarkTicketAsReturned(id: number) {
       },
     });
 
-    // Crear movimiento de devolución
+    // Obtener el ticket con sus elementos
     const ticket = await prisma.tickets_guardados.findUnique({
       where: { id },
-    }) as FullTicket | null;
-
-    if (ticket && ticket.elemento) {
-      // Buscar el elemento por serie para obtener el ID
-      const elemento = await prisma.elementos.findFirst({
-        where: { serie: ticket.serie || undefined }
-      });
-      
-      if (elemento) {
-        await prisma.movimientos.create({
-          data: {
-            elemento_id: elemento.id,
-          cantidad: ticket.cantidad,
-          orden_numero: ticket.orden_numero || "",
-          fecha_movimiento: new Date(),
-          dependencia_entrega: ticket.dependencia_recibe || "",
-          firma_funcionario_entrega: ticket.firma_funcionario_recibe,
-          cargo_funcionario_entrega: "",
-          dependencia_recibe: ticket.dependencia_entrega || "",
-          firma_funcionario_recibe: ticket.firma_funcionario_entrega,
-          cargo_funcionario_recibe: "",
-          motivo: `Devolución de ticket ${ticket.numero_ticket}`,
-          fecha_estimada_devolucion: new Date(),
-          fecha_real_devolucion: new Date(),
-          observaciones_entrega: "Devolución completada",
-          observaciones_devolucion: "Elemento devuelto en buen estado",
-          tipo: "DEVOLUCION",
-          codigo_equipo: "",
-          serial_equipo: ticket.serie || "",
-          hora_entrega: new Date(),
-          hora_devolucion: new Date(),
-          numero_ticket: `DEV-${ticket.numero_ticket}`,
-          firma_entrega: ticket.firma_funcionario_recibe,
-          firma_recibe: ticket.firma_funcionario_entrega,
-          firma_devuelve: ticket.firma_funcionario_recibe,
-          firma_recibe_devolucion: ticket.firma_funcionario_entrega,
-          devuelto_por: "Sistema",
-          recibido_por: "Sistema",
+      include: {
+        ticket_elementos: {
+          include: {
+            elemento: true,
+          },
         },
-      });
+      },
+    });
+
+    if (ticket) {
+      // Para tickets nuevos con múltiples elementos
+      if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
+        for (const ticketElemento of ticket.ticket_elementos) {
+          await prisma.movimientos.create({
+            data: {
+              elemento_id: ticketElemento.elemento_id,
+              cantidad: ticketElemento.cantidad,
+              orden_numero: ticket.orden_numero || "",
+              fecha_movimiento: new Date(),
+              dependencia_entrega: ticket.dependencia_recibe || "",
+              firma_funcionario_entrega: ticket.firma_funcionario_recibe,
+              cargo_funcionario_entrega: "",
+              dependencia_recibe: ticket.dependencia_entrega || "",
+              firma_funcionario_recibe: ticket.firma_funcionario_entrega,
+              cargo_funcionario_recibe: "",
+              motivo: `Devolución de ticket ${ticket.numero_ticket}`,
+              fecha_estimada_devolucion: new Date(),
+              fecha_real_devolucion: new Date(),
+              observaciones_entrega: "Devolución completada",
+              observaciones_devolucion: "Elemento devuelto en buen estado",
+              tipo: "DEVOLUCION",
+              codigo_equipo: "",
+              serial_equipo: ticketElemento.serie || "",
+              hora_entrega: new Date(),
+              hora_devolucion: new Date(),
+              numero_ticket: `DEV-${ticket.numero_ticket}-${ticketElemento.elemento_id}`,
+              firma_entrega: ticket.firma_funcionario_recibe,
+              firma_recibe: ticket.firma_funcionario_entrega,
+              firma_devuelve: ticket.firma_funcionario_recibe,
+              firma_recibe_devolucion: ticket.firma_funcionario_entrega,
+              devuelto_por: "Sistema",
+              recibido_por: "Sistema",
+            },
+          });
+        }
+      } else {
+        // Para tickets antiguos (compatibilidad)
+        // Buscar el elemento por serie para obtener el ID
+        const elemento = await prisma.elementos.findFirst({
+          where: { serie: (ticket as Record<string, unknown>).serie as string || undefined }
+        });
+        
+        if (elemento) {
+          await prisma.movimientos.create({
+            data: {
+              elemento_id: elemento.id,
+              cantidad: (ticket as Record<string, unknown>).cantidad as number || 1,
+              orden_numero: ticket.orden_numero || "",
+              fecha_movimiento: new Date(),
+              dependencia_entrega: ticket.dependencia_recibe || "",
+              firma_funcionario_entrega: ticket.firma_funcionario_recibe,
+              cargo_funcionario_entrega: "",
+              dependencia_recibe: ticket.dependencia_entrega || "",
+              firma_funcionario_recibe: ticket.firma_funcionario_entrega,
+              cargo_funcionario_recibe: "",
+              motivo: `Devolución de ticket ${ticket.numero_ticket}`,
+              fecha_estimada_devolucion: new Date(),
+              fecha_real_devolucion: new Date(),
+              observaciones_entrega: "Devolución completada",
+              observaciones_devolucion: "Elemento devuelto en buen estado",
+              tipo: "DEVOLUCION",
+              codigo_equipo: "",
+              serial_equipo: (ticket as Record<string, unknown>).serie as string || "",
+              hora_entrega: new Date(),
+              hora_devolucion: new Date(),
+              numero_ticket: `DEV-${ticket.numero_ticket}`,
+              firma_entrega: ticket.firma_funcionario_recibe,
+              firma_recibe: ticket.firma_funcionario_entrega,
+              firma_devuelve: ticket.firma_funcionario_recibe,
+              firma_recibe_devolucion: ticket.firma_funcionario_entrega,
+              devuelto_por: "Sistema",
+              recibido_por: "Sistema",
+            },
+          });
+        }
       }
     }
 

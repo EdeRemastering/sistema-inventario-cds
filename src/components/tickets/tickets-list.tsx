@@ -32,9 +32,6 @@ export function TicketsList({
       data: tickets,
       searchFields: [
         "numero_ticket",
-        "elemento",
-        "serie",
-        "marca_modelo",
         "dependencia_entrega",
         "dependencia_recibe",
         "motivo",
@@ -92,18 +89,23 @@ export function TicketsList({
                           {ticket.numero_ticket}
                         </span>
                         <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
-                          {ticket.elemento} - {ticket.serie}
+                          Ticket #{ticket.numero_ticket}
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                          <span className="font-medium">{ticket.dependencia_entrega}</span>
+                          <span className="font-medium">
+                            {ticket.dependencia_entrega}
+                          </span>
                           <span className="hidden sm:inline">→</span>
                           <span className="sm:hidden">↓</span>
-                          <span className="font-medium">{ticket.dependencia_recibe}</span>
+                          <span className="font-medium">
+                            {ticket.dependencia_recibe}
+                          </span>
                         </div>
                         <div className="mt-1">
-                          Fecha: {new Date(ticket.fecha_salida).toLocaleDateString()}
+                          Fecha:{" "}
+                          {new Date(ticket.fecha_salida).toLocaleDateString()}
                         </div>
                         {ticket.orden_numero && (
                           <div className="mt-1">
@@ -112,7 +114,7 @@ export function TicketsList({
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Botones de acción en móvil */}
                     <div className="flex sm:hidden gap-2">
                       <TicketActions
@@ -142,17 +144,7 @@ export function TicketsList({
                   {/* Información adicional y botones en desktop */}
                   <div className="hidden sm:flex sm:items-center sm:justify-between pt-2 border-t">
                     <div className="text-xs text-muted-foreground space-y-1">
-                      {ticket.motivo && (
-                        <div>Motivo: {ticket.motivo}</div>
-                      )}
-                      <div>
-                        Cantidad: {ticket.cantidad}
-                      </div>
-                      {ticket.marca_modelo && (
-                        <div>
-                          {ticket.marca_modelo}
-                        </div>
-                      )}
+                      {ticket.motivo && <div>Motivo: {ticket.motivo}</div>}
                     </div>
                     <div className="flex gap-2">
                       <TicketActions
@@ -167,17 +159,7 @@ export function TicketsList({
 
                   {/* Información adicional en móvil */}
                   <div className="sm:hidden text-xs text-muted-foreground space-y-1 pt-2 border-t">
-                    {ticket.motivo && (
-                      <div>Motivo: {ticket.motivo}</div>
-                    )}
-                    <div>
-                      Cantidad: {ticket.cantidad}
-                    </div>
-                    {ticket.marca_modelo && (
-                      <div>
-                        {ticket.marca_modelo}
-                      </div>
-                    )}
+                    {ticket.motivo && <div>Motivo: {ticket.motivo}</div>}
                   </div>
                 </div>
               ))}
