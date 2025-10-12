@@ -1,5 +1,5 @@
 import { listMovimientos } from "../../../modules/movimientos/services";
-import { listElementosWithRelations } from "../../../modules/elementos/services";
+import { listElementos } from "../../../modules/elementos/services";
 import {
   actionCreateMovimiento,
   actionDeleteMovimiento,
@@ -12,7 +12,7 @@ import { Suspense } from "react";
 async function MovimientosContent() {
   const [movimientos, elementos] = await Promise.all([
     listMovimientos(),
-    listElementosWithRelations(),
+    listElementos(),
   ]);
 
   return (

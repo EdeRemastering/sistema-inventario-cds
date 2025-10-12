@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
-import { useId, useState } from "react";
-import { CheckIcon, ChevronDownIcon, Package } from "lucide-react";
+import { useId, useState } from "react"
+import { CheckIcon, ChevronDownIcon, Package } from "lucide-react"
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
@@ -12,37 +12,37 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/command"
+import { Label } from "@/components/ui/label"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover"
 
 export interface ElementoOption {
-  id: number;
-  serie: string;
-  marca?: string | null;
-  modelo?: string | null;
+  id: number
+  serie: string
+  marca?: string | null
+  modelo?: string | null
   categoria: {
-    nombre: string;
-  };
+    nombre: string
+  }
   subcategoria?: {
-    nombre: string;
-  } | null;
+    nombre: string
+  } | null
 }
 
 interface ElementoSearchSelectProps {
-  elementos: ElementoOption[];
-  value?: number;
-  onValueChange?: (value: number | undefined) => void;
-  placeholder?: string;
-  label?: string;
-  className?: string;
-  disabled?: boolean;
-  required?: boolean;
-  error?: string;
+  elementos: ElementoOption[]
+  value?: number
+  onValueChange?: (value: number | undefined) => void
+  placeholder?: string
+  label?: string
+  className?: string
+  disabled?: boolean
+  required?: boolean
+  error?: string
 }
 
 export function ElementoSearchSelect({
@@ -56,34 +56,29 @@ export function ElementoSearchSelect({
   required = false,
   error,
 }: ElementoSearchSelectProps) {
-  const id = useId();
-  const [open, setOpen] = useState<boolean>(false);
+  const id = useId()
+  const [open, setOpen] = useState<boolean>(false)
 
-  const selectedElemento = elementos.find((elemento) => elemento.id === value);
+  const selectedElemento = elementos.find((elemento) => elemento.id === value)
 
   const handleSelect = (currentValue: string) => {
-    const numericValue = parseInt(currentValue);
-    const newValue = numericValue === value ? undefined : numericValue;
-    onValueChange?.(newValue);
-    setOpen(false);
-  };
+    const numericValue = parseInt(currentValue)
+    const newValue = numericValue === value ? undefined : numericValue
+    onValueChange?.(newValue)
+    setOpen(false)
+  }
 
   const formatElementoLabel = (elemento: ElementoOption) => {
-    const subcategoriaText = elemento.subcategoria
-      ? ` - ${elemento.subcategoria.nombre}`
-      : "";
-    return `${elemento.categoria.nombre}${subcategoriaText}`;
-  };
+    const subcategoriaText = elemento.subcategoria 
+      ? ` - ${elemento.subcategoria.nombre}` 
+      : ""
+    return `${elemento.categoria.nombre}${subcategoriaText}`
+  }
 
   return (
     <div className={cn("grid gap-1", className)}>
       {label && (
-        <Label
-          htmlFor={id}
-          className={cn(
-            required && "after:content-['*'] after:text-red-500 after:ml-1"
-          )}
-        >
+        <Label htmlFor={id} className={cn(required && "after:content-['*'] after:text-red-500 after:ml-1")}>
           {label}
         </Label>
       )}
@@ -101,17 +96,10 @@ export function ElementoSearchSelect({
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >
-            <span
-              className={cn(
-                "truncate flex items-center gap-2",
-                !value && "text-muted-foreground"
-              )}
-            >
+            <span className={cn("truncate flex items-center gap-2", !value && "text-muted-foreground")}>
               {selectedElemento ? (
                 <div className="flex flex-col items-start text-left">
-                  <span className="text-xs text-foreground">
-                    {selectedElemento.serie}
-                  </span>
+                  <span className="text-xs text-foreground">{selectedElemento.serie}</span>
                   <span className="text-xs text-muted-foreground">
                     {formatElementoLabel(selectedElemento)}
                   </span>
@@ -132,65 +120,50 @@ export function ElementoSearchSelect({
           align="start"
         >
           <Command>
-            <CommandInput placeholder="Buscar por serie, marca, modelo o categoría..." />
+            <CommandInput placeholder="Buscar elemento..." />
             <CommandList className="max-h-[250px]">
               <CommandEmpty>
                 <div className="flex flex-col items-center justify-center py-6 text-center">
                   <Package className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    No se encontraron elementos
-                  </p>
+                  <p className="text-sm text-muted-foreground">No se encontraron elementos</p>
                 </div>
               </CommandEmpty>
               <CommandGroup>
-                {elementos.map((elemento) => {
-                  // Crear un valor de búsqueda que incluya toda la información relevante
-                  const searchValue = [
-                    elemento.serie,
-                    elemento.marca || "",
-                    elemento.modelo || "",
-                    elemento.categoria.nombre,
-                    elemento.subcategoria?.nombre || "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")
-                    .toLowerCase()
-                    .trim();
-
-                  return (
-                    <CommandItem
-                      key={elemento.id}
-                      value={searchValue}
-                      onSelect={() => handleSelect(`${elemento.id}`)}
-                      className="flex items-center gap-3 p-3"
-                    >
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{elemento.serie}</span>
-                          {elemento.marca && elemento.modelo && (
-                            <span className="text-sm text-muted-foreground">
-                              {elemento.marca} {elemento.modelo}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {formatElementoLabel(elemento)}
-                        </span>
+                {elementos.map((elemento) => (
+                  <CommandItem
+                    key={elemento.id}
+                    value={`${elemento.id}`}
+                    onSelect={handleSelect}
+                    className="flex items-center gap-3 p-3"
+                  >
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{elemento.serie}</span>
+                        {elemento.marca && elemento.modelo && (
+                          <span className="text-sm text-muted-foreground">
+                            {elemento.marca} {elemento.modelo}
+                          </span>
+                        )}
                       </div>
-                      {value === elemento.id && (
-                        <CheckIcon size={16} className="ml-auto text-primary" />
-                      )}
-                    </CommandItem>
-                  );
-                })}
+                      <span className="text-sm text-muted-foreground">
+                        {formatElementoLabel(elemento)}
+                      </span>
+                    </div>
+                    {value === elemento.id && (
+                      <CheckIcon size={16} className="ml-auto text-primary" />
+                    )}
+                  </CommandItem>
+                ))}
               </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && (
+        <p className="text-red-500 text-sm">{error}</p>
+      )}
     </div>
-  );
+  )
 }
 
 // Componente por defecto para mantener compatibilidad
@@ -199,7 +172,7 @@ export default function Component() {
     { id: 1, serie: "next.js", categoria: { nombre: "Next.js" } },
     { id: 2, serie: "sveltekit", categoria: { nombre: "SvelteKit" } },
     { id: 3, serie: "nuxt.js", categoria: { nombre: "Nuxt.js" } },
-  ] as ElementoOption[];
+  ] as ElementoOption[]
 
   return (
     <div className="*:not-first:mt-2">
@@ -209,5 +182,5 @@ export default function Component() {
         placeholder="Seleccionar framework"
       />
     </div>
-  );
+  )
 }

@@ -5,28 +5,6 @@ export function listElementos(): Promise<Elemento[]> {
   return prisma.elementos.findMany({ orderBy: { id: "desc" } }) as unknown as Promise<Elemento[]>;
 }
 
-export function listElementosWithRelations() {
-  return prisma.elementos.findMany({
-    select: {
-      id: true,
-      serie: true,
-      marca: true,
-      modelo: true,
-      categoria: {
-        select: {
-          nombre: true,
-        },
-      },
-      subcategoria: {
-        select: {
-          nombre: true,
-        },
-      },
-    },
-    orderBy: { id: "desc" },
-  });
-}
-
 export function getElemento(id: number): Promise<Elemento | null> {
   return prisma.elementos.findUnique({ where: { id } }) as unknown as Promise<Elemento | null>;
 }

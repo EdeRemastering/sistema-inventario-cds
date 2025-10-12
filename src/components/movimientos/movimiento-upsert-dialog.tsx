@@ -154,7 +154,7 @@ export function MovimientoUpsertDialog({
         return;
       }
 
-      actionValidateStock(Number(elementoId), cantidadNum)
+      actionValidateStock(elementoId, cantidadNum)
         .then((result) => {
           if (result.isValid) {
             setStockInfo({
@@ -186,8 +186,8 @@ export function MovimientoUpsertDialog({
     try {
       // Validar stock antes de enviar
       if (selectedElementoId && cantidad) {
-        const elementoId = selectedElementoId;
-        const cantidadNum = cantidad;
+        const elementoId = parseInt(selectedElementoId);
+        const cantidadNum = parseInt(cantidad);
 
         if (
           !isNaN(elementoId) &&
@@ -196,7 +196,7 @@ export function MovimientoUpsertDialog({
           cantidadNum > 0
         ) {
           const stockValidation = await actionValidateStock(
-            Number(elementoId),
+            elementoId,
             cantidadNum
           );
           if (!stockValidation.isValid) {
@@ -217,8 +217,8 @@ export function MovimientoUpsertDialog({
       }
 
       // Agregar todos los campos del formulario
-      formData.append("elemento_id", data.elemento_id.toString());
-      formData.append("cantidad", data.cantidad.toString());
+      formData.append("elemento_id", data.elemento_id);
+      formData.append("cantidad", data.cantidad);
       if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
       formData.append(
         "fecha_movimiento",
