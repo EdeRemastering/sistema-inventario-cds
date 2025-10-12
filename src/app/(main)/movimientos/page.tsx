@@ -1,7 +1,6 @@
 import { listMovimientos } from "../../../modules/movimientos/services";
 import { listElementos } from "../../../modules/elementos/services";
 import {
-  actionCreateMovimiento,
   actionDeleteMovimiento,
   actionUpdateMovimiento,
 } from "../../../modules/movimientos/actions";
@@ -19,7 +18,6 @@ async function MovimientosContent() {
     <MovimientosList
       movimientos={movimientos}
       elementos={elementos}
-      onCreateMovimiento={actionCreateMovimiento}
       onUpdateMovimiento={actionUpdateMovimiento}
       onDeleteMovimiento={actionDeleteMovimiento}
     />
