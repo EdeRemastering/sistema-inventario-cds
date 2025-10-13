@@ -1,8 +1,18 @@
 import { prisma } from "../../lib/prisma";
-import type { Elemento, CreateElementoInput, UpdateElementoInput } from "./types";
+import type { Elemento, CreateElementoInput, UpdateElementoInput, ElementoWithRelations } from "./types";
 
 export function listElementos(): Promise<Elemento[]> {
   return prisma.elementos.findMany({ orderBy: { id: "desc" } }) as unknown as Promise<Elemento[]>;
+}
+
+export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
+  return prisma.elementos.findMany({ 
+    include: {
+      categoria: true,
+      subcategoria: true,
+    },
+    orderBy: { id: "desc" } 
+  }) as unknown as Promise<ElementoWithRelations[]>;
 }
 
 export function getElemento(id: number): Promise<Elemento | null> {

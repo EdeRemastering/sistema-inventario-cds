@@ -19,4 +19,24 @@ export type Elemento = {
 export type CreateElementoInput = Omit<Elemento, "id" | "creado_en" | "actualizado_en">;
 export type UpdateElementoInput = Partial<CreateElementoInput> & { id?: number };
 
+export type ElementoWithRelations = Elemento & {
+  categoria: {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    estado: string;
+    created_at: Date;
+    updated_at: Date;
+  };
+  subcategoria: {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    categoria_id: number;
+    estado: string;
+    created_at: Date;
+    updated_at: Date;
+  } | null;
+};
+
 

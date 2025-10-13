@@ -19,6 +19,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { GenericDateTimePicker } from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
+import { actionListElementos } from "@/modules/elementos/actions";
 
 const schema = z.object({
   numero_ticket: z.string().optional(), // Ahora es opcional, se generará automáticamente
@@ -78,11 +79,8 @@ export function TicketUpsertDialog({
   React.useEffect(() => {
     const fetchElementos = async () => {
       try {
-        const response = await fetch("/api/elementos");
-        if (response.ok) {
-          const result = await response.json();
-          setElementos(result.data || []);
-        }
+        const elementosData = await actionListElementos();
+        setElementos(elementosData || []);
       } catch (error) {
         console.error("Error fetching elementos:", error);
       }

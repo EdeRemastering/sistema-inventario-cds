@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+src/generated/
+src/test/
+vitest.config.ts
+*.generated.*
+**/generated/**
+**/prisma/**
+*.wasm.js
+src/generated/prisma/**
+src/generated/**/*

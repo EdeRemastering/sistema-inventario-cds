@@ -13,6 +13,7 @@ import {
   exportToExcel
 } from "./report-generator";
 import { actionCreateReporteGenerado } from "../modules/reportes_generados/actions";
+import type { InventarioReporteData, MovimientosReporteData, PrestamosActivosReporteData, CategoriasReporteData, ObservacionesReporteData, TicketsReporteData } from "./report-generator";
 
 // Tipos de reporte disponibles
 export type ReporteType = 
@@ -23,24 +24,40 @@ export type ReporteType =
   | "observaciones"
   | "tickets";
 
-// Función para obtener datos desde las API routes
+// Función para obtener datos usando actions
 async function fetchReportData(
   tipoReporte: ReporteType, 
   fechaInicio?: string, 
   fechaFin?: string
 ) {
-  const params = new URLSearchParams();
-  if (fechaInicio) params.append('fechaInicio', fechaInicio);
-  if (fechaFin) params.append('fechaFin', fechaFin);
+  const { 
+    actionGetInventarioReporteData,
+    actionGetMovimientosReporteData,
+    actionGetPrestamosActivosReporteData,
+    actionGetCategoriasReporteData,
+    actionGetObservacionesReporteData,
+    actionGetTicketsReporteData
+  } = await import("../modules/reportes/actions");
   
-  const url = `/api/reportes/${tipoReporte}${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await fetch(url);
+  const fechaInicioDate = fechaInicio ? new Date(fechaInicio) : undefined;
+  const fechaFinDate = fechaFin ? new Date(fechaFin) : undefined;
   
-  if (!response.ok) {
-    throw new Error(`Error al obtener datos de ${tipoReporte}`);
+  switch (tipoReporte) {
+    case 'inventario':
+      return await actionGetInventarioReporteData();
+    case 'movimientos':
+      return await actionGetMovimientosReporteData(fechaInicioDate, fechaFinDate);
+    case 'prestamos-activos':
+      return await actionGetPrestamosActivosReporteData();
+    case 'categorias':
+      return await actionGetCategoriasReporteData();
+    case 'observaciones':
+      return await actionGetObservacionesReporteData(fechaInicioDate, fechaFinDate);
+    case 'tickets':
+      return await actionGetTicketsReporteData(fechaInicioDate, fechaFinDate);
+    default:
+      throw new Error(`Tipo de reporte no válido: ${tipoReporte}`);
   }
-  
-  return response.json();
 }
 
 // Función para generar nombre de archivo
@@ -87,7 +104,7 @@ function downloadFile(dataUrl: string, fileName: string) {
 // ===== FUNCIONES ESPECÍFICAS PARA CADA TIPO DE REPORTE =====
 
 export async function generateInventarioReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('inventario', fechaInicio, fechaFin);
+  const datos = await fetchReportData('inventario', fechaInicio, fechaFin) as unknown as InventarioReporteData;
   const nombreArchivo = generateFileName('inventario', tipo);
   
   let dataUrl: string;
@@ -104,7 +121,7 @@ export async function generateInventarioReport(tipo: 'pdf' | 'excel', fechaInici
 }
 
 export async function generateMovimientosReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('movimientos', fechaInicio, fechaFin);
+  const datos = await fetchReportData('movimientos', fechaInicio, fechaFin) as unknown as MovimientosReporteData;
   const nombreArchivo = generateFileName('movimientos', tipo, fechaInicio);
   
   let dataUrl: string;
@@ -121,7 +138,7 @@ export async function generateMovimientosReport(tipo: 'pdf' | 'excel', fechaInic
 }
 
 export async function generatePrestamosActivosReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('prestamos-activos', fechaInicio, fechaFin);
+  const datos = await fetchReportData('prestamos-activos', fechaInicio, fechaFin) as unknown as PrestamosActivosReporteData;
   const nombreArchivo = generateFileName('prestamos-activos', tipo);
   
   let dataUrl: string;
@@ -138,12 +155,12 @@ export async function generatePrestamosActivosReport(tipo: 'pdf' | 'excel', fech
 }
 
 export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('categorias', fechaInicio, fechaFin);
+  const datos = await fetchReportData('categorias', fechaInicio, fechaFin) as unknown as CategoriasReporteData;
   const nombreArchivo = generateFileName('categorias', tipo);
   
   if (tipo === 'pdf') {
     // Generar PDF con el nuevo estilo profesional
-    const pdfDataUrl = await generateCategoriasPDF({ categorias: datos });
+    const pdfDataUrl = await generateCategoriasPDF(datos);
     
     // Crear enlace de descarga
     const link = document.createElement('a');
@@ -157,7 +174,7 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
     return { success: true, message: `Reporte de categorías generado exitosamente` };
   }
   
-  const excelData = datos.map((cat: { id: number; nombre: string; descripcion: string | null; estado: string; total_elementos: number; total_subcategorias: number; creado_en: Date }) => ({
+  const excelData = datos.categorias.map((cat: { id: number; nombre: string; descripcion: string | null; estado: string; total_elementos: number; total_subcategorias: number; creado_en: Date }) => ({
     'ID': cat.id,
     'Nombre': cat.nombre,
     'Descripción': cat.descripcion,
@@ -174,12 +191,12 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
 }
 
 export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('observaciones', fechaInicio, fechaFin);
+  const datos = await fetchReportData('observaciones', fechaInicio, fechaFin) as unknown as ObservacionesReporteData;
   const nombreArchivo = generateFileName('observaciones', tipo, fechaInicio);
   
   if (tipo === 'pdf') {
     // Generar PDF con el nuevo estilo profesional
-    const pdfDataUrl = await generateObservacionesPDF({ observaciones: datos });
+    const pdfDataUrl = await generateObservacionesPDF(datos);
     
     // Crear enlace de descarga
     const link = document.createElement('a');
@@ -193,7 +210,7 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
     return { success: true, message: `Reporte de observaciones generado exitosamente` };
   }
   
-  const excelData = datos.map((obs: { id: number; fecha_observacion: Date; descripcion: string; elemento_serie: string; elemento_marca: string | null; elemento_modelo: string | null; elemento_categoria: string; creado_en: Date }) => ({
+  const excelData = datos.observaciones.map((obs: { id: number; fecha_observacion: Date; descripcion: string; elemento_serie: string; elemento_marca: string | null; elemento_modelo: string | null; elemento_categoria: string; creado_en: Date }) => ({
     'ID': obs.id,
     'Fecha Observación': new Date(obs.fecha_observacion).toLocaleDateString(),
     'Descripción': obs.descripcion,
@@ -211,12 +228,12 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
 }
 
 export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('tickets', fechaInicio, fechaFin);
+  const datos = await fetchReportData('tickets', fechaInicio, fechaFin) as unknown as TicketsReporteData;
   const nombreArchivo = generateFileName('tickets', tipo, fechaInicio);
   
   if (tipo === 'pdf') {
     // Generar PDF con el nuevo estilo profesional
-    const pdfDataUrl = await generateTicketsPDF({ tickets: datos });
+    const pdfDataUrl = await generateTicketsPDF(datos);
     
     // Crear enlace de descarga
     const link = document.createElement('a');
@@ -230,7 +247,7 @@ export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?:
     return { success: true, message: `Reporte de tickets generado exitosamente` };
   }
   
-  const excelData = datos.map((ticket: { id: number; numero_ticket: string; fecha_salida: Date; fecha_estimada_devolucion: Date | null; elemento: string | null; serie: string | null; marca_modelo: string | null; cantidad: number; dependencia_entrega: string | null; dependencia_recibe: string | null; motivo: string | null; orden_numero: string | null; usuario_guardado: string | null }) => ({
+  const excelData = datos.tickets.map((ticket: { id: number; numero_ticket: string; fecha_salida: Date; fecha_estimada_devolucion: Date | null; elemento: string | null; serie: string | null; marca_modelo: string | null; cantidad: number; dependencia_entrega: string | null; dependencia_recibe: string | null; motivo: string | null; orden_numero: string | null; usuario_guardado: string | null }) => ({
     'ID': ticket.id,
     'Número Ticket': ticket.numero_ticket,
     'Fecha Salida': new Date(ticket.fecha_salida).toLocaleDateString(),

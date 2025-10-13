@@ -6,21 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
-
-type LowStockElement = {
-  id: number;
-  serie: string;
-  marca: string | null;
-  modelo: string | null;
-  cantidad: number;
-  ubicacion: string | null;
-  estado_funcional: string;
-  estado_fisico: string;
-  categoria: { nombre: string };
-  subcategoria: { nombre: string } | null;
-  availableStock: number;
-  totalPrestado: number;
-};
+import {
+  actionGetLowStockElementos,
+  type LowStockElement,
+} from "@/modules/elementos/actions";
 
 export function LowStockAlerts() {
   const [lowStockElements, setLowStockElements] = useState<LowStockElement[]>(
@@ -31,12 +20,9 @@ export function LowStockAlerts() {
   useEffect(() => {
     const loadLowStockElements = async () => {
       try {
-        // Obtener elementos con stock bajo desde la API
-        const response = await fetch("/api/elementos/low-stock");
-        if (response.ok) {
-          const data = await response.json();
-          setLowStockElements(data);
-        }
+        // Obtener elementos con stock bajo usando actions
+        const data = await actionGetLowStockElementos();
+        setLowStockElements(data);
       } catch (error) {
         console.error("Error cargando elementos con stock bajo:", error);
       } finally {
