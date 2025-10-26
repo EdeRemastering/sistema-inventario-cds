@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "../ui/button";
 import { CheckCircle, Clock, Edit } from "lucide-react";
 import { TicketInvoice } from "./ticket-invoice";
 import { TicketUpsertDialog } from "./ticket-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import { StatusChangeButton } from "../status-change-button";
+import { DeliverySignatureDialog } from "./delivery-signature-dialog";
 import type { TicketGuardado } from "../../modules/tickets_guardados/types";
 
 type TicketActionsProps = {
@@ -22,6 +24,8 @@ export function TicketActions({
   onDeleteTicket,
   onMarkAsReturned,
 }: TicketActionsProps) {
+  const [showSignatureDialog, setShowSignatureDialog] = useState(false);
+
   // Los tickets_guardados no tienen fecha_real_devolucion,
   // verificamos si fue marcado como devuelto por el motivo
   const isDelivered =
@@ -45,6 +49,10 @@ export function TicketActions({
   };
 
   const handleMarkAsDelivered = async () => {
+    setShowSignatureDialog(true);
+  };
+
+  const handleSignatureSuccess = async () => {
     if (onMarkAsReturned) {
       await onMarkAsReturned(ticket.id);
     }
@@ -78,8 +86,12 @@ export function TicketActions({
                   .slice(0, 16) as unknown as Date)
               : ("" as unknown as Date),
             dependencia_entrega: ticket.dependencia_entrega ?? "",
+            persona_entrega_nombre: ticket.persona_entrega_nombre ?? "",
+            persona_entrega_apellido: ticket.persona_entrega_apellido ?? "",
             firma_funcionario_entrega: ticket.firma_funcionario_entrega ?? "",
             dependencia_recibe: ticket.dependencia_recibe ?? "",
+            persona_recibe_nombre: ticket.persona_recibe_nombre ?? "",
+            persona_recibe_apellido: ticket.persona_recibe_apellido ?? "",
             firma_funcionario_recibe: ticket.firma_funcionario_recibe ?? "",
             motivo: ticket.motivo ?? "",
             orden_numero: ticket.orden_numero ?? "",
@@ -99,14 +111,15 @@ export function TicketActions({
 
         {/* Marcar como entregado */}
         {!isDelivered && (
-          <StatusChangeButton
-            onConfirm={handleMarkAsDelivered}
-            buttonText="Marcar como Entregado"
-            title="Marcar como Entregado"
-            description={`¿Estás seguro de que quieres marcar el ticket ${ticket.numero_ticket} como entregado? Esta acción actualizará el estado del ticket y creará un movimiento de devolución.`}
-            icon={<CheckCircle className="h-4 w-4" />}
-            statusType="deliver"
-          />
+          <Button
+            onClick={handleMarkAsDelivered}
+            variant="outline"
+            size="sm"
+            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+          >
+            <CheckCircle className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Marcar como Entregado</span>
+          </Button>
         )}
 
         {/* Eliminar */}
@@ -116,6 +129,15 @@ export function TicketActions({
           description="¿Estás seguro de que quieres eliminar este ticket? Esta acción no se puede deshacer."
         />
       </div>
+
+      {/* Diálogo de firmas para entrega */}
+      <DeliverySignatureDialog
+        open={showSignatureDialog}
+        onOpenChange={setShowSignatureDialog}
+        ticketId={ticket.id}
+        ticketNumber={ticket.numero_ticket}
+        onSuccess={handleSignatureSuccess}
+      />
     </div>
   );
 }

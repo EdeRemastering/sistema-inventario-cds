@@ -10,6 +10,9 @@ import {
   exportInventarioToExcel,
   exportMovimientosToExcel,
   exportPrestamosActivosToExcel,
+  exportCategoriasToExcel,
+  exportObservacionesToExcel,
+  exportTicketsToExcel,
   exportToExcel
 } from "./report-generator";
 import { actionCreateReporteGenerado } from "../modules/reportes_generados/actions";
@@ -74,7 +77,7 @@ function generateFileName(tipoReporte: ReporteType, formato: 'pdf' | 'excel', fe
     tickets: `tickets_${fechaFiltro}`
   };
   
-  return `${nombres[tipoReporte]}.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
+  return `${nombres[tipoReporte]}.${formato === 'excel' ? 'csv' : 'pdf'}`;
 }
 
 // Función para guardar en historial
@@ -96,9 +99,17 @@ function downloadFile(dataUrl: string, fileName: string) {
   const link = document.createElement('a');
   link.href = dataUrl;
   link.download = fileName;
+  link.style.display = 'none';
   document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  
+  // Usar requestAnimationFrame para asegurar que el DOM esté listo
+  requestAnimationFrame(() => {
+    link.click();
+    // Limpiar después de un breve delay
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 100);
+  });
 }
 
 // ===== FUNCIONES ESPECÍFICAS PARA CADA TIPO DE REPORTE =====
@@ -161,32 +172,13 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
   if (tipo === 'pdf') {
     // Generar PDF con el nuevo estilo profesional
     const pdfDataUrl = await generateCategoriasPDF(datos);
-    
-    // Crear enlace de descarga
-    const link = document.createElement('a');
-    link.href = pdfDataUrl;
-    link.download = nombreArchivo;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    await saveToHistory('categorias', nombreArchivo, tipo);
-    return { success: true, message: `Reporte de categorías generado exitosamente` };
+    downloadFile(pdfDataUrl, nombreArchivo);
+  } else {
+    // Usar la función específica de exportación a Excel
+    await exportCategoriasToExcel(datos);
   }
   
-  const excelData = datos.categorias.map((cat: { id: number; nombre: string; descripcion: string | null; estado: string; total_elementos: number; total_subcategorias: number; creado_en: Date }) => ({
-    'ID': cat.id,
-    'Nombre': cat.nombre,
-    'Descripción': cat.descripcion,
-    'Estado': cat.estado,
-    'Total Elementos': cat.total_elementos,
-    'Total Subcategorías': cat.total_subcategorias,
-    'Creado': new Date(cat.creado_en).toLocaleDateString()
-  }));
-  
-  await exportToExcel(excelData, nombreArchivo, 'REPORTE DE CATEGORÍAS');
   await saveToHistory('categorias', nombreArchivo, tipo);
-  
   return { success: true, message: `Reporte de categorías generado exitosamente` };
 }
 
@@ -197,76 +189,36 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
   if (tipo === 'pdf') {
     // Generar PDF con el nuevo estilo profesional
     const pdfDataUrl = await generateObservacionesPDF(datos);
-    
-    // Crear enlace de descarga
-    const link = document.createElement('a');
-    link.href = pdfDataUrl;
-    link.download = nombreArchivo;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    await saveToHistory('observaciones', nombreArchivo, tipo);
-    return { success: true, message: `Reporte de observaciones generado exitosamente` };
+    downloadFile(pdfDataUrl, nombreArchivo);
+  } else {
+    // Usar la función específica de exportación a Excel
+    await exportObservacionesToExcel(datos);
   }
   
-  const excelData = datos.observaciones.map((obs: { id: number; fecha_observacion: Date; descripcion: string; elemento_serie: string; elemento_marca: string | null; elemento_modelo: string | null; elemento_categoria: string; creado_en: Date }) => ({
-    'ID': obs.id,
-    'Fecha Observación': new Date(obs.fecha_observacion).toLocaleDateString(),
-    'Descripción': obs.descripcion,
-    'Elemento Serie': obs.elemento_serie,
-    'Elemento Marca': obs.elemento_marca,
-    'Elemento Modelo': obs.elemento_modelo,
-    'Categoría': obs.elemento_categoria,
-    'Creado': new Date(obs.creado_en).toLocaleDateString()
-  }));
-  
-  await exportToExcel(excelData, nombreArchivo, 'REPORTE DE OBSERVACIONES');
   await saveToHistory('observaciones', nombreArchivo, tipo);
-  
   return { success: true, message: `Reporte de observaciones generado exitosamente` };
 }
 
 export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('tickets', fechaInicio, fechaFin) as unknown as TicketsReporteData;
-  const nombreArchivo = generateFileName('tickets', tipo, fechaInicio);
-  
-  if (tipo === 'pdf') {
-    // Generar PDF con el nuevo estilo profesional
-    const pdfDataUrl = await generateTicketsPDF(datos);
+  try {
+    const datos = await fetchReportData('tickets', fechaInicio, fechaFin) as unknown as TicketsReporteData;
+    const nombreArchivo = generateFileName('tickets', tipo, fechaInicio);
     
-    // Crear enlace de descarga
-    const link = document.createElement('a');
-    link.href = pdfDataUrl;
-    link.download = nombreArchivo;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (tipo === 'pdf') {
+      // Generar PDF con el nuevo estilo profesional
+      const pdfDataUrl = await generateTicketsPDF(datos);
+      downloadFile(pdfDataUrl, nombreArchivo);
+    } else {
+      // Usar la función específica de exportación a Excel
+      await exportTicketsToExcel(datos);
+    }
     
     await saveToHistory('tickets', nombreArchivo, tipo);
     return { success: true, message: `Reporte de tickets generado exitosamente` };
+  } catch (error) {
+    console.error('Error generando reporte de tickets:', error);
+    return { success: false, message: `Error al generar reporte de tickets: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
-  
-  const excelData = datos.tickets.map((ticket: { id: number; numero_ticket: string; fecha_salida: Date; fecha_estimada_devolucion: Date | null; elemento: string | null; serie: string | null; marca_modelo: string | null; cantidad: number; dependencia_entrega: string | null; dependencia_recibe: string | null; motivo: string | null; orden_numero: string | null; usuario_guardado: string | null }) => ({
-    'ID': ticket.id,
-    'Número Ticket': ticket.numero_ticket,
-    'Fecha Salida': new Date(ticket.fecha_salida).toLocaleDateString(),
-    'Fecha Est. Devolución': ticket.fecha_estimada_devolucion ? new Date(ticket.fecha_estimada_devolucion).toLocaleDateString() : 'N/A',
-    'Elemento': ticket.elemento,
-    'Serie': ticket.serie,
-    'Marca/Modelo': ticket.marca_modelo,
-    'Cantidad': ticket.cantidad,
-    'Dependencia Entrega': ticket.dependencia_entrega,
-    'Dependencia Recibe': ticket.dependencia_recibe,
-    'Motivo': ticket.motivo,
-    'Orden Número': ticket.orden_numero,
-    'Usuario Guardado': ticket.usuario_guardado
-  }));
-  
-  await exportToExcel(excelData, nombreArchivo, 'REPORTE DE TICKETS GUARDADOS');
-  await saveToHistory('tickets', nombreArchivo, tipo);
-  
-  return { success: true, message: `Reporte de tickets generado exitosamente` };
 }
 
 // Función principal que maneja cualquier tipo de reporte

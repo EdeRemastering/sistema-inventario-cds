@@ -135,7 +135,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
             className="flex-1"
           >
             <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Exportar Excel
+            Exportar CSV
           </Button>
         </div>
 
@@ -145,7 +145,7 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
             <strong>Tipo:</strong> {getReporteDescription(tipoReporte)}
           </p>
           <p>
-            <strong>Formato:</strong> PDF
+            <strong>Formatos:</strong> PDF y CSV (compatible con Excel)
           </p>
           <p>
             <strong>Incluye:</strong> {getReporteIncludes(tipoReporte)}

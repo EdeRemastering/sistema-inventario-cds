@@ -13,6 +13,55 @@ import { CDSLogo } from "../ui/cds-logo";
 import { toast } from "sonner";
 
 /**
+ * Función auxiliar para cargar una firma como imagen con máxima calidad y resolución
+ */
+async function loadSignatureImage(
+  signatureUrl: string
+): Promise<string | null> {
+  if (!signatureUrl) return null;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Crear imagen optimizada para jsPDF con máxima resolución
+      const targetWidth = 200; // Resolución muy alta para mejor calidad
+      const targetHeight = 100;
+      const ratio = Math.min(
+        targetWidth / img.width,
+        targetHeight / img.height
+      );
+
+      // Crear canvas con resolución muy alta para jsPDF
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      if (ctx) {
+        // Configuraciones específicas para máxima calidad en jsPDF
+        ctx.imageSmoothingEnabled = true; // Activar para mejor calidad en PDF
+        ctx.imageSmoothingQuality = "high";
+
+        // Configurar contexto para máxima calidad
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Dibujar con configuración optimizada para PDF
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Usar PNG con máxima calidad para jsPDF
+        resolve(canvas.toDataURL("image/png", 1.0));
+      } else {
+        reject(new Error("No se pudo crear el contexto del canvas"));
+      }
+    };
+    img.onerror = () => reject(new Error("Error al cargar la firma"));
+    img.src = signatureUrl;
+  });
+}
+
+/**
  * Función auxiliar para cargar la imagen del logo CDS
  */
 async function loadCDSLogo(): Promise<string> {
@@ -56,8 +105,12 @@ type TicketInvoiceProps = {
     marca_modelo?: string | null; // Mantener para compatibilidad con tickets antiguos
     cantidad?: number; // Mantener para compatibilidad con tickets antiguos
     dependencia_entrega?: string | null;
+    persona_entrega_nombre?: string | null;
+    persona_entrega_apellido?: string | null;
     firma_funcionario_entrega?: string | null;
     dependencia_recibe?: string | null;
+    persona_recibe_nombre?: string | null;
+    persona_recibe_apellido?: string | null;
     firma_funcionario_recibe?: string | null;
     motivo?: string | null;
     orden_numero?: string | null;
@@ -82,6 +135,13 @@ type TicketInvoiceProps = {
         } | null;
       };
     }>;
+    // Información de devolución (si existe)
+    fecha_real_devolucion?: Date | null;
+    devuelto_por?: string | null;
+    recibido_por?: string | null;
+    firma_devuelve?: string | null;
+    firma_recibe_devolucion?: string | null;
+    hora_devolucion?: Date | null;
   };
 };
 
@@ -378,8 +438,19 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         }
 
         totalHeight += 15; // Espacio
-        totalHeight += 40; // Dependencias
+        totalHeight += 100; // Dependencias y Personas (aumentado para incluir firmas reales)
         totalHeight += 15; // Espacio
+
+        // Información de devolución (si existe)
+        if (
+          ticket.fecha_real_devolucion ||
+          ticket.devuelto_por ||
+          ticket.recibido_por
+        ) {
+          totalHeight += 100; // Información de devolución (aumentado para firmas reales)
+          totalHeight += 10; // Espacio
+        }
+
         if (ticket.motivo) {
           totalHeight += 35; // Motivo
           totalHeight += 10; // Espacio
@@ -560,7 +631,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
 
         y += 15;
 
-        // Dependencias - sin borde individual (marco unificado)
+        // Dependencias y Personas - sin borde individual (marco unificado)
         // Línea separadora horizontal
         pdf.setLineWidth(0.15);
         pdf.line(20, y - 5, 185, y - 5);
@@ -568,7 +639,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(0, 0, 0); // Negro
-        pdf.text("DEPENDENCIAS", 20, y);
+        pdf.text("DEPENDENCIA DE ENTREGA", 20, y);
 
         // Línea separadora debajo del título
         pdf.setLineWidth(0.15);
@@ -579,21 +650,246 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(0, 0, 0);
 
-        pdf.text(`Dependencia de Entrega:`, 20, y);
+        // Columna 1: Dependencia
+        pdf.text(`Dependencia:`, 20, y);
         pdf.text(
           `${ticket.dependencia_entrega || "No especificado"}`,
           20,
           y + 6
         );
+
+        // Columna 2: Persona que entrega
+        pdf.text(`Persona que Entrega:`, 110, y);
+        const personaEntrega =
+          ticket.persona_entrega_nombre && ticket.persona_entrega_apellido
+            ? `${ticket.persona_entrega_nombre} ${ticket.persona_entrega_apellido}`
+            : "No especificado";
+        pdf.text(personaEntrega, 110, y + 6);
         y += 12;
 
-        pdf.text(`Dependencia que Recibe:`, 20, y);
+        // Firma de entrega (columna 2) - solo imagen, más grande y más arriba
+        if (ticket.firma_funcionario_entrega) {
+          try {
+            const firmaDataUrl = await loadSignatureImage(
+              ticket.firma_funcionario_entrega
+            );
+            if (firmaDataUrl) {
+              // Usar configuración de máxima calidad para jsPDF
+              pdf.addImage(
+                firmaDataUrl,
+                "PNG",
+                110,
+                y - 2,
+                30,
+                11.25,
+                undefined,
+                "SLOW"
+              );
+              y += 12;
+            } else {
+              pdf.text(`✓ Firma registrada`, 110, y + 6);
+              y += 12;
+            }
+          } catch (error) {
+            console.warn("Error cargando firma de entrega:", error);
+            pdf.text(`✓ Firma registrada`, 110, y + 6);
+            y += 12;
+          }
+        } else {
+          pdf.text(`No registrada`, 110, y + 6);
+          y += 12;
+        }
+        y += 3;
+
+        // Dependencia que recibe
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y - 5, 185, y - 5);
+
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(0, 0, 0);
+        pdf.text("DEPENDENCIA QUE RECIBE", 20, y);
+
+        pdf.setLineWidth(0.15);
+        pdf.line(20, y + 2, 185, y + 2);
+        y += 8;
+
+        pdf.setFontSize(10);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(0, 0, 0);
+
+        // Columna 1: Dependencia
+        pdf.text(`Dependencia:`, 20, y);
         pdf.text(
           `${ticket.dependencia_recibe || "No especificado"}`,
           20,
           y + 6
         );
-        y += 15;
+
+        // Columna 2: Persona que recibe
+        pdf.text(`Persona que Recibe:`, 110, y);
+        const personaRecibe =
+          ticket.persona_recibe_nombre && ticket.persona_recibe_apellido
+            ? `${ticket.persona_recibe_nombre} ${ticket.persona_recibe_apellido}`
+            : "No especificado";
+        pdf.text(personaRecibe, 110, y + 6);
+        y += 12;
+
+        // Firma de recepción (columna 2) - solo imagen, más grande y más arriba
+        if (ticket.firma_funcionario_recibe) {
+          try {
+            const firmaDataUrl = await loadSignatureImage(
+              ticket.firma_funcionario_recibe
+            );
+            if (firmaDataUrl) {
+              // Usar configuración de máxima calidad para jsPDF
+              pdf.addImage(
+                firmaDataUrl,
+                "PNG",
+                110,
+                y - 2,
+                30,
+                11.25,
+                undefined,
+                "SLOW"
+              );
+              y += 12;
+            } else {
+              pdf.text(`✓ Firma registrada`, 110, y + 6);
+              y += 12;
+            }
+          } catch (error) {
+            console.warn("Error cargando firma de recepción:", error);
+            pdf.text(`✓ Firma registrada`, 110, y + 6);
+            y += 12;
+          }
+        } else {
+          pdf.text(`No registrada`, 110, y + 6);
+          y += 12;
+        }
+        y += 3;
+
+        // Información de devolución (si existe)
+        if (
+          ticket.fecha_real_devolucion ||
+          ticket.devuelto_por ||
+          ticket.recibido_por
+        ) {
+          // Línea separadora horizontal
+          pdf.setLineWidth(0.15);
+          pdf.line(20, y - 5, 185, y - 5);
+
+          pdf.setFontSize(14);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(0, 0, 0);
+          pdf.text("INFORMACIÓN DE DEVOLUCIÓN", 20, y);
+
+          pdf.setLineWidth(0.15);
+          pdf.line(20, y + 2, 185, y + 2);
+          y += 8;
+
+          pdf.setFontSize(10);
+          pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(0, 0, 0);
+
+          // Fecha real de devolución
+          if (ticket.fecha_real_devolucion) {
+            pdf.text(`Fecha Real de Devolución:`, 20, y);
+            pdf.text(`${formatDate(ticket.fecha_real_devolucion)}`, 20, y + 6);
+            y += 12;
+          }
+
+          // Hora de devolución
+          if (ticket.hora_devolucion) {
+            pdf.text(`Hora de Devolución:`, 20, y);
+            pdf.text(`${formatDate(ticket.hora_devolucion)}`, 20, y + 6);
+            y += 12;
+          }
+
+          // Persona que devuelve
+          if (ticket.devuelto_por) {
+            pdf.text(`Devuelto por:`, 20, y);
+            pdf.text(ticket.devuelto_por, 20, y + 6);
+            y += 12;
+          }
+
+          // Persona que recibe la devolución
+          if (ticket.recibido_por) {
+            pdf.text(`Recibido por:`, 20, y);
+            pdf.text(ticket.recibido_por, 20, y + 6);
+            y += 12;
+          }
+
+          // Firmas de devolución - solo imagen, más grande y más arriba
+          if (ticket.firma_devuelve) {
+            try {
+              const firmaDataUrl = await loadSignatureImage(
+                ticket.firma_devuelve
+              );
+              if (firmaDataUrl) {
+                // Usar configuración de máxima calidad para jsPDF
+                pdf.addImage(
+                  firmaDataUrl,
+                  "PNG",
+                  20,
+                  y - 2,
+                  30,
+                  11.25,
+                  undefined,
+                  "SLOW"
+                );
+                y += 12;
+              } else {
+                pdf.text(`✓ Firma registrada`, 20, y + 6);
+                y += 12;
+              }
+            } catch (error) {
+              console.warn("Error cargando firma de devolución:", error);
+              pdf.text(`✓ Firma registrada`, 20, y + 6);
+              y += 12;
+            }
+          } else {
+            pdf.text(`No registrada`, 20, y + 6);
+            y += 12;
+          }
+          y += 3;
+
+          if (ticket.firma_recibe_devolucion) {
+            try {
+              const firmaDataUrl = await loadSignatureImage(
+                ticket.firma_recibe_devolucion
+              );
+              if (firmaDataUrl) {
+                // Usar configuración de máxima calidad para jsPDF
+                pdf.addImage(
+                  firmaDataUrl,
+                  "PNG",
+                  20,
+                  y - 2,
+                  30,
+                  11.25,
+                  undefined,
+                  "SLOW"
+                );
+                y += 12;
+              } else {
+                pdf.text(`✓ Firma registrada`, 20, y + 6);
+                y += 12;
+              }
+            } catch (error) {
+              console.warn(
+                "Error cargando firma de recepción de devolución:",
+                error
+              );
+              pdf.text(`✓ Firma registrada`, 20, y + 6);
+              y += 12;
+            }
+          } else {
+            pdf.text(`No registrada`, 20, y + 6);
+            y += 12;
+          }
+          y += 3;
+        }
 
         // Motivo - sin borde individual (marco unificado)
         if (ticket.motivo) {
@@ -675,6 +971,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: false,
     });
   };
 
@@ -943,6 +1240,17 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm text-gray-600">
+                        Persona que Entrega:
+                      </span>
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {ticket.persona_entrega_nombre &&
+                        ticket.persona_entrega_apellido
+                          ? `${ticket.persona_entrega_nombre} ${ticket.persona_entrega_apellido}`
+                          : "No especificado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
                         Firma del Funcionario:
                       </span>
                       <div className="mt-2 flex justify-start">
@@ -974,6 +1282,17 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm text-gray-600">
+                        Persona que Recibe:
+                      </span>
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {ticket.persona_recibe_nombre &&
+                        ticket.persona_recibe_apellido
+                          ? `${ticket.persona_recibe_nombre} ${ticket.persona_recibe_apellido}`
+                          : "No especificado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
                         Firma del Funcionario:
                       </span>
                       <div className="mt-2 flex justify-start">
@@ -986,6 +1305,93 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Información de Devolución (si existe) */}
+                {(ticket.fecha_real_devolucion ||
+                  ticket.devuelto_por ||
+                  ticket.recibido_por) && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2 text-black">
+                        <span className="text-black">🔄</span>
+                        INFORMACIÓN DE DEVOLUCIÓN
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {ticket.fecha_real_devolucion && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Fecha Real de Devolución:
+                          </span>
+                          <span className="text-sm">
+                            {formatDate(ticket.fecha_real_devolucion)}
+                          </span>
+                        </div>
+                      )}
+
+                      {ticket.hora_devolucion && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Hora de Devolución:
+                          </span>
+                          <span className="text-sm">
+                            {formatDate(ticket.hora_devolucion)}
+                          </span>
+                        </div>
+                      )}
+
+                      {ticket.devuelto_por && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Devuelto por:
+                          </span>
+                          <p className="text-gray-700 text-sm mt-1 break-words">
+                            {ticket.devuelto_por}
+                          </p>
+                        </div>
+                      )}
+
+                      {ticket.recibido_por && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Recibido por:
+                          </span>
+                          <p className="text-gray-700 text-sm mt-1 break-words">
+                            {ticket.recibido_por}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Firma de quien devuelve:
+                          </span>
+                          <div className="mt-2 flex justify-start">
+                            <SignatureDisplay
+                              signatureUrl={ticket.firma_devuelve}
+                              label="Ver Firma"
+                              className="text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Firma de quien recibe devolución:
+                          </span>
+                          <div className="mt-2 flex justify-start">
+                            <SignatureDisplay
+                              signatureUrl={ticket.firma_recibe_devolucion}
+                              label="Ver Firma"
+                              className="text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               {/* Additional Information */}

@@ -72,8 +72,12 @@ export async function actionCreateTicket(formData: FormData) {
     fecha_salida: parsed.data.fecha_salida,
     fecha_estimada_devolucion: parsed.data.fecha_estimada_devolucion ?? null,
     dependencia_entrega: parsed.data.dependencia_entrega ?? null,
+    persona_entrega_nombre: parsed.data.persona_entrega_nombre ?? null,
+    persona_entrega_apellido: parsed.data.persona_entrega_apellido ?? null,
     firma_funcionario_entrega: null, // Se actualizará después
     dependencia_recibe: parsed.data.dependencia_recibe ?? null,
+    persona_recibe_nombre: parsed.data.persona_recibe_nombre ?? null,
+    persona_recibe_apellido: parsed.data.persona_recibe_apellido ?? null,
     firma_funcionario_recibe: null, // Se actualizará después
     motivo: parsed.data.motivo ?? null,
     orden_numero: parsed.data.orden_numero ?? null,
@@ -187,14 +191,30 @@ export async function actionDeleteTicket(id: number) {
 /**
  * Marca un ticket como entregado
  */
-export async function actionMarkTicketAsReturned(id: number) {
+export async function actionMarkTicketAsReturned(id: number, firmaEntrega?: string, firmaRecibe?: string) {
   try {
+    // Verificar que se proporcionen las firmas requeridas
+    if (!firmaEntrega || !firmaRecibe) {
+      throw new Error("Se requieren las firmas de entrega y recepción para marcar el ticket como entregado");
+    }
+
+    // Validar que las firmas sean válidas
+    if (!isValidSignature(firmaEntrega) || !isValidSignature(firmaRecibe)) {
+      throw new Error("Las firmas proporcionadas no son válidas");
+    }
+
+    // Guardar las firmas como archivos
+    const firmaEntregaUrl = await saveSignature(firmaEntrega, "ticket", id, "entrega");
+    const firmaRecibeUrl = await saveSignature(firmaRecibe, "ticket", id, "recibe");
+
     // Los tickets_guardados no tienen fecha_real_devolucion, 
     // solo se actualiza el motivo para indicar que fue devuelto
     await prisma.tickets_guardados.update({
       where: { id },
       data: {
         motivo: "Ticket devuelto - " + new Date().toISOString(),
+        firma_funcionario_entrega: firmaEntregaUrl,
+        firma_funcionario_recibe: firmaRecibeUrl,
       },
     });
 

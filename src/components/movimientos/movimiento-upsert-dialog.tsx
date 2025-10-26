@@ -27,27 +27,42 @@ import { SignaturePadComponent } from "../ui/signature-pad";
 import { generateUniqueTicketNumber } from "../../lib/ticket-generator";
 import { actionValidateStock } from "../../modules/movimientos/actions";
 
-const schema = z.object({
-  elemento_id: z.string().min(1, "Selecciona elemento"),
-  cantidad: z.string().min(1, "Cantidad requerida"),
-  orden_numero: z.string().optional(),
-  fecha_movimiento: z.date({
-    message: "Fecha de movimiento requerida",
-  }),
-  hora_movimiento: z.string().optional(),
-  dependencia_entrega: z.string().min(1, "Requerido"),
-  firma_funcionario_entrega: z.string().optional(),
-  cargo_funcionario_entrega: z.string().optional(),
-  dependencia_recibe: z.string().min(1, "Requerido"),
-  firma_funcionario_recibe: z.string().optional(),
-  cargo_funcionario_recibe: z.string().optional(),
-  motivo: z.string().optional(),
-  fecha_estimada_devolucion: z.date({
-    message: "Fecha estimada de devolución requerida",
-  }),
-  numero_ticket: z.string().optional(),
-  observaciones_entrega: z.string().optional(),
-});
+const schema = z
+  .object({
+    elemento_id: z.string().min(1, "Selecciona elemento"),
+    cantidad: z.string().min(1, "Cantidad requerida"),
+    orden_numero: z.string().optional(),
+    fecha_movimiento: z.date({
+      message: "Fecha de movimiento requerida",
+    }),
+    hora_movimiento: z.string().optional(),
+    dependencia_entrega: z.string().min(1, "Requerido"),
+    firma_funcionario_entrega: z.string().optional(),
+    cargo_funcionario_entrega: z.string().optional(),
+    dependencia_recibe: z.string().min(1, "Requerido"),
+    firma_funcionario_recibe: z.string().optional(),
+    cargo_funcionario_recibe: z.string().optional(),
+    motivo: z.string().optional(),
+    fecha_estimada_devolucion: z.date({
+      message: "Fecha estimada de devolución requerida",
+    }),
+    numero_ticket: z.string().optional(),
+    observaciones_entrega: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Validar que si se proporciona hora_movimiento, sea válida
+      if (data.hora_movimiento && data.hora_movimiento !== "") {
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        return timeRegex.test(data.hora_movimiento);
+      }
+      return true;
+    },
+    {
+      message: "Formato de hora inválido (debe ser HH:MM)",
+      path: ["hora_movimiento"],
+    }
+  );
 
 type MovimientoFormData = z.infer<typeof schema>;
 
@@ -281,6 +296,7 @@ export function MovimientoUpsertDialog({
       setFirmaRecibe(null);
       setFechaMovimiento(undefined);
       setFechaDevolucion(undefined);
+      setHoraDevolucion("");
       setStockInfo(null);
       setOpen(false);
     } catch (error) {

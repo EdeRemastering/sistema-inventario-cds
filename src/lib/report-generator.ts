@@ -879,7 +879,7 @@ async function loadImageAsBase64(imagePath: string): Promise<string> {
 }
 
 /**
- * Exporta datos a Excel con diseño profesional usando XML
+ * Exporta datos a Excel con diseño profesional usando CSV mejorado
  */
 export async function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx', reportTitle: string = 'REPORTE'): Promise<void> {
   if (data.length === 0) {
@@ -887,138 +887,66 @@ export async function exportToExcel(data: Record<string, unknown>[], filename: s
     return;
   }
 
-  const headers = Object.keys(data[0]);
-  const tableData = data.map(row => headers.map(header => row[header] || 'N/A'));
-  
-  // Cargar logo como base64
-  const logoBase64 = await loadImageAsBase64('/cds-logo.png');
-  
-  // Crear XML para Excel con estilos y logo
-  const xml = `<?xml version="1.0"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
- <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
-  <Title>Reporte CDS</Title>
-  <Author>Sistema Inventario CDS</Author>
-  <Created>${new Date().toISOString()}</Created>
- </DocumentProperties>
- <Styles>
-  <Style ss:ID="HeaderStyle">
-   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#2E7D32" ss:Pattern="Solid"/>
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="DataStyle">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="TitleStyle">
-   <Font ss:Bold="1" ss:Size="18"/>
-   <Alignment ss:Horizontal="Left"/>
-  </Style>
-  <Style ss:ID="SubtitleStyle">
-   <Font ss:Bold="1" ss:Size="14"/>
-   <Alignment ss:Horizontal="Left"/>
-  </Style>
-  <Style ss:ID="InfoStyle">
-   <Font ss:Bold="1" ss:Size="12"/>
-   <Alignment ss:Horizontal="Left"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Reporte">
-  <Table ss:DefaultColumnWidth="120" ss:DefaultRowHeight="15">
-   ${logoBase64 ? `
-   <!-- Logo CDS -->
-   <Row>
-    <Cell ss:StyleID="TitleStyle">
-     <Data ss:Type="String">
-      <html:img src="data:image/png;base64,${logoBase64}" width="60" height="60" alt="CDS Logo"/>
-     </Data>
-    </Cell>
-   </Row>
-   ` : `
-   <!-- Logo CDS (texto alternativo) -->
-   <Row>
-    <Cell ss:StyleID="TitleStyle"><Data ss:Type="String">CDS</Data></Cell>
-   </Row>
-   `}
-   <Row></Row>
-   
-   <!-- Título principal -->
-   <Row>
-    <Cell ss:StyleID="TitleStyle"><Data ss:Type="String">SISTEMA DE INVENTARIO CDS</Data></Cell>
-   </Row>
-   
-   <!-- Subtítulo del reporte -->
-   <Row>
-    <Cell ss:StyleID="SubtitleStyle"><Data ss:Type="String">${reportTitle}</Data></Cell>
-   </Row>
-   
-   <!-- Fecha de generación -->
-   <Row>
-    <Cell ss:StyleID="InfoStyle"><Data ss:Type="String">Fecha: ${new Date().toLocaleDateString('es-ES')}</Data></Cell>
-   </Row>
-   <Row></Row>
-   
-   <!-- Información del reporte -->
-   <Row>
-    <Cell ss:StyleID="InfoStyle"><Data ss:Type="String">INFORMACIÓN DEL REPORTE</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="InfoStyle"><Data ss:Type="String">Total de registros: ${data.length}</Data></Cell>
-   </Row>
-   <Row></Row>
-   
-   <!-- Encabezados de tabla -->
-   <Row>
-    ${headers.map(header => `<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">${header}</Data></Cell>`).join('')}
-   </Row>
-   
-   <!-- Datos de la tabla -->
-   ${tableData.map(row => `
-   <Row>
-    ${row.map(cell => `<Cell ss:StyleID="DataStyle"><Data ss:Type="String">${cell}</Data></Cell>`).join('')}
-   </Row>
-   `).join('')}
-  </Table>
-  
-  <!-- Configuración para ocultar cuadrícula -->
-  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
-   <DisplayGridlines>false</DisplayGridlines>
-   <Selected/>
-   <FreezePanes/>
-   <FrozenNoSplit/>
-   <SplitHorizontal>1</SplitHorizontal>
-   <TopRowBottomPane>1</TopRowBottomPane>
-   <ActivePane>2</ActivePane>
-  </WorksheetOptions>
- </Worksheet>
-</Workbook>`;
+  try {
+    const headers = Object.keys(data[0]);
+    const tableData = data.map(row => headers.map(header => {
+      const value = row[header];
+      // Escapar comillas y caracteres especiales para CSV
+      if (typeof value === 'string') {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value || 'N/A';
+    }));
 
-  // Crear blob y descargar
-  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+    // Crear contenido CSV con encabezado profesional
+    let csvContent = '';
+    
+    // Agregar información del reporte
+    csvContent += `SISTEMA DE INVENTARIO CDS\n`;
+    csvContent += `${reportTitle}\n`;
+    csvContent += `Fecha: ${new Date().toLocaleDateString('es-ES')}\n`;
+    csvContent += `Total de registros: ${data.length}\n\n`;
+    
+    // Agregar encabezados
+    csvContent += headers.map(header => `"${header}"`).join(',') + '\n';
+    
+    // Agregar datos
+    tableData.forEach(row => {
+      csvContent += row.join(',') + '\n';
+    });
+
+    // Crear blob con el tipo correcto para Excel
+    const blob = new Blob([csvContent], { 
+      type: 'application/vnd.ms-excel;charset=utf-8' 
+    });
+    
+    // Crear URL y descargar
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename.replace('.xlsx', '.csv'); // Cambiar extensión a CSV
+    link.style.display = 'none';
+    
+    // Agregar al DOM y hacer clic
+    document.body.appendChild(link);
+    
+    // Usar setTimeout para asegurar que el DOM esté listo
+    setTimeout(() => {
+      link.click();
+      
+      // Limpiar después de un breve delay
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    }, 10);
+    
+  } catch (error) {
+    console.error('Error al exportar a Excel:', error);
+    throw new Error('Error al generar el archivo Excel');
+  }
 }
 
 /**
@@ -1038,7 +966,7 @@ export async function exportInventarioToExcel(data: InventarioReporteData): Prom
     'Subcategoría': elemento.subcategoria?.nombre || 'N/A'
   }));
 
-  await exportToExcel(excelData, `inventario_completo_${new Date().toISOString().split('T')[0]}.xlsx`, 'REPORTE DE INVENTARIO COMPLETO');
+  await exportToExcel(excelData, `inventario_completo_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE INVENTARIO COMPLETO');
   return 'Inventario exportado exitosamente';
 }
 
@@ -1061,7 +989,7 @@ export async function exportMovimientosToExcel(data: MovimientosReporteData): Pr
     'Fecha Real Devolución': movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
   }));
 
-  await exportToExcel(excelData, `movimientos_${new Date().toISOString().split('T')[0]}.xlsx`, 'REPORTE DE MOVIMIENTOS');
+  await exportToExcel(excelData, `movimientos_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE MOVIMIENTOS');
   return 'Movimientos exportados exitosamente';
 }
 
@@ -1081,6 +1009,65 @@ export async function exportPrestamosActivosToExcel(data: PrestamosActivosReport
     'Estado': prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
   }));
 
-  await exportToExcel(excelData, `prestamos_activos_${new Date().toISOString().split('T')[0]}.xlsx`, 'REPORTE DE PRÉSTAMOS ACTIVOS');
+  await exportToExcel(excelData, `prestamos_activos_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE PRÉSTAMOS ACTIVOS');
   return 'Préstamos activos exportados exitosamente';
+}
+
+/**
+ * Exporta categorías a Excel
+ */
+export async function exportCategoriasToExcel(data: CategoriasReporteData): Promise<string> {
+  const excelData = data.categorias.map(categoria => ({
+    'ID': categoria.id,
+    'Nombre': categoria.nombre,
+    'Descripción': categoria.descripcion || 'Sin descripción',
+    'Estado': categoria.estado,
+    'Total Elementos': categoria.total_elementos,
+    'Total Subcategorías': categoria.total_subcategorias,
+    'Fecha Creación': categoria.creado_en.toLocaleDateString('es-ES')
+  }));
+
+  await exportToExcel(excelData, `categorias_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE CATEGORÍAS');
+  return 'Categorías exportadas exitosamente';
+}
+
+/**
+ * Exporta observaciones a Excel
+ */
+export async function exportObservacionesToExcel(data: ObservacionesReporteData): Promise<string> {
+  const excelData = data.observaciones.map(observacion => ({
+    'ID': observacion.id,
+    'Fecha Observación': observacion.fecha_observacion.toLocaleDateString('es-ES'),
+    'Serie': observacion.elemento_serie,
+    'Marca/Modelo': `${observacion.elemento_marca || 'N/A'} ${observacion.elemento_modelo || 'N/A'}`,
+    'Categoría': observacion.elemento_categoria,
+    'Descripción': observacion.descripcion,
+    'Fecha Creación': observacion.creado_en.toLocaleDateString('es-ES')
+  }));
+
+  await exportToExcel(excelData, `observaciones_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE OBSERVACIONES');
+  return 'Observaciones exportadas exitosamente';
+}
+
+/**
+ * Exporta tickets a Excel
+ */
+export async function exportTicketsToExcel(data: TicketsReporteData): Promise<string> {
+  const excelData = data.tickets.map(ticket => ({
+    'ID': ticket.id,
+    'Ticket': ticket.numero_ticket,
+    'Fecha Salida': ticket.fecha_salida.toLocaleDateString('es-ES'),
+    'Fecha Est. Devolución': ticket.fecha_estimada_devolucion?.toLocaleDateString('es-ES') || 'No especificado',
+    'Elemento': ticket.elemento || 'N/A',
+    'Serie': ticket.serie || 'N/A',
+    'Cantidad': ticket.cantidad,
+    'Dependencia Entrega': ticket.dependencia_entrega || 'N/A',
+    'Dependencia Recibe': ticket.dependencia_recibe || 'N/A',
+    'Motivo': ticket.motivo || 'N/A',
+    'Orden Número': ticket.orden_numero || 'N/A',
+    'Usuario Guardado': ticket.usuario_guardado || 'N/A'
+  }));
+
+  await exportToExcel(excelData, `tickets_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE TICKETS GUARDADOS');
+  return 'Tickets exportados exitosamente';
 }

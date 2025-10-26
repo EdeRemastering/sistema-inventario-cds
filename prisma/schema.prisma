@@ -182,8 +182,12 @@ model tickets_guardados {
   marca_modelo               String?   @db.VarChar(100) // Mantener para compatibilidad
   cantidad                   Int       @default(1) // Mantener para compatibilidad
   dependencia_entrega        String?   @db.VarChar(100)
+  persona_entrega_nombre     String?   @db.VarChar(100)
+  persona_entrega_apellido   String?   @db.VarChar(100)
   firma_funcionario_entrega  String?   @db.VarChar(500)
   dependencia_recibe         String?   @db.VarChar(100)
+  persona_recibe_nombre      String?   @db.VarChar(100)
+  persona_recibe_apellido    String?   @db.VarChar(100)
   firma_funcionario_recibe   String?   @db.VarChar(500)
   motivo                     String?   @db.VarChar(255)
   orden_numero               String?   @db.VarChar(50)

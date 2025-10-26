@@ -27,8 +27,12 @@ export type TicketGuardado = {
   fecha_salida: Date;
   fecha_estimada_devolucion: Date | null;
   dependencia_entrega: string | null;
+  persona_entrega_nombre: string | null;
+  persona_entrega_apellido: string | null;
   firma_funcionario_entrega: string | null;
   dependencia_recibe: string | null;
+  persona_recibe_nombre: string | null;
+  persona_recibe_apellido: string | null;
   firma_funcionario_recibe: string | null;
   motivo: string | null;
   orden_numero: string | null;

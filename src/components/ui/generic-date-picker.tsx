@@ -43,9 +43,16 @@ export function GenericDatePicker({
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       // Si se incluye tiempo, mantener la hora actual si existe
-      if (includeTime && value && timeValue) {
+      if (includeTime && timeValue) {
         const [hours, minutes] = timeValue.split(":");
-        date.setHours(parseInt(hours), parseInt(minutes));
+        if (
+          hours &&
+          minutes &&
+          !isNaN(parseInt(hours)) &&
+          !isNaN(parseInt(minutes))
+        ) {
+          date.setHours(parseInt(hours), parseInt(minutes));
+        }
       }
       onChange(date);
     }
@@ -129,7 +136,16 @@ export function GenericDatePicker({
               type="time"
               id={`${label.toLowerCase().replace(/\s+/g, "-")}-time`}
               value={timeValue || ""}
-              onChange={(e) => onTimeChange?.(e.target.value)}
+              onChange={(e) => {
+                const timeValue = e.target.value;
+                // Validar formato de hora (HH:MM)
+                if (
+                  timeValue === "" ||
+                  /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)
+                ) {
+                  onTimeChange?.(timeValue);
+                }
+              }}
               className={cn(
                 "w-32 bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
                 error && "border-red-500 focus-visible:ring-red-500",

@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import type { InventarioReporteData, MovimientosReporteData, PrestamosActivosReporteData } from "../../lib/report-generator";
+import type { InventarioReporteData, MovimientosReporteData, PrestamosActivosReporteData, CategoriasReporteData, ObservacionesReporteData, TicketsReporteData } from "../../lib/report-generator";
 
 /**
  * Obtiene todos los elementos del inventario con sus relaciones para el reporte
@@ -137,7 +137,7 @@ export async function getPrestamosActivosReporteData(): Promise<PrestamosActivos
 /**
  * Obtiene reporte de categorías con estadísticas
  */
-export async function getCategoriasReporteData() {
+export async function getCategoriasReporteData(): Promise<CategoriasReporteData> {
   const categorias = await prisma.categorias.findMany({
     include: {
       _count: {
@@ -152,15 +152,17 @@ export async function getCategoriasReporteData() {
     }
   });
 
-  return categorias.map(categoria => ({
-    id: categoria.id,
-    nombre: categoria.nombre,
-    descripcion: categoria.descripcion || 'N/A',
-    estado: categoria.estado,
-    total_elementos: categoria._count.elementos,
-    total_subcategorias: categoria._count.subcategorias,
-    creado_en: categoria.created_at
-  }));
+  return {
+    categorias: categorias.map(categoria => ({
+      id: categoria.id,
+      nombre: categoria.nombre,
+      descripcion: categoria.descripcion || 'N/A',
+      estado: categoria.estado,
+      total_elementos: categoria._count.elementos,
+      total_subcategorias: categoria._count.subcategorias,
+      creado_en: categoria.created_at
+    }))
+  };
 }
 
 /**
@@ -169,7 +171,7 @@ export async function getCategoriasReporteData() {
 export async function getObservacionesReporteData(
   fechaInicio?: Date,
   fechaFin?: Date
-) {
+): Promise<ObservacionesReporteData> {
   const whereClause: { fecha_observacion?: { gte: Date; lte: Date } } = {};
   
   if (fechaInicio && fechaFin) {
@@ -200,16 +202,18 @@ export async function getObservacionesReporteData(
     }
   });
 
-  return observaciones.map(observacion => ({
-    id: observacion.id,
-    fecha_observacion: observacion.fecha_observacion,
-    descripcion: observacion.descripcion,
-    elemento_serie: observacion.elemento.serie,
-    elemento_marca: observacion.elemento.marca || 'N/A',
-    elemento_modelo: observacion.elemento.modelo || 'N/A',
-    elemento_categoria: observacion.elemento.categoria.nombre,
-    creado_en: observacion.creado_en
-  }));
+  return {
+    observaciones: observaciones.map(observacion => ({
+      id: observacion.id,
+      fecha_observacion: observacion.fecha_observacion,
+      descripcion: observacion.descripcion,
+      elemento_serie: observacion.elemento.serie,
+      elemento_marca: observacion.elemento.marca || 'N/A',
+      elemento_modelo: observacion.elemento.modelo || 'N/A',
+      elemento_categoria: observacion.elemento.categoria.nombre,
+      creado_en: observacion.creado_en
+    }))
+  };
 }
 
 /**
@@ -218,7 +222,7 @@ export async function getObservacionesReporteData(
 export async function getTicketsReporteData(
   fechaInicio?: Date,
   fechaFin?: Date
-) {
+): Promise<TicketsReporteData> {
   const whereClause: { fecha_salida?: { gte: Date; lte: Date } } = {};
   
   if (fechaInicio && fechaFin) {
@@ -235,22 +239,24 @@ export async function getTicketsReporteData(
     }
   });
 
-  return tickets.map(ticket => ({
-    id: ticket.id,
-    numero_ticket: ticket.numero_ticket,
-    fecha_salida: ticket.fecha_salida,
-    fecha_estimada_devolucion: ticket.fecha_estimada_devolucion,
-    elemento: ticket.elemento || 'N/A',
-    serie: ticket.serie || 'N/A',
-    marca_modelo: ticket.marca_modelo || 'N/A',
-    cantidad: ticket.cantidad,
-    dependencia_entrega: ticket.dependencia_entrega || 'N/A',
-    dependencia_recibe: ticket.dependencia_recibe || 'N/A',
-    motivo: ticket.motivo || 'N/A',
-    orden_numero: ticket.orden_numero || 'N/A',
-    fecha_guardado: ticket.fecha_guardado,
-    usuario_guardado: ticket.usuario_guardado || 'N/A'
-  }));
+  return {
+    tickets: tickets.map(ticket => ({
+      id: ticket.id,
+      numero_ticket: ticket.numero_ticket,
+      fecha_salida: ticket.fecha_salida,
+      fecha_estimada_devolucion: ticket.fecha_estimada_devolucion,
+      elemento: ticket.elemento || 'N/A',
+      serie: ticket.serie || 'N/A',
+      marca_modelo: ticket.marca_modelo || 'N/A',
+      cantidad: ticket.cantidad,
+      dependencia_entrega: ticket.dependencia_entrega || 'N/A',
+      dependencia_recibe: ticket.dependencia_recibe || 'N/A',
+      motivo: ticket.motivo || 'N/A',
+      orden_numero: ticket.orden_numero || 'N/A',
+      fecha_guardado: ticket.fecha_guardado,
+      usuario_guardado: ticket.usuario_guardado || 'N/A'
+    }))
+  };
 }
 
 /**
