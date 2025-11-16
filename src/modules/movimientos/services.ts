@@ -17,4 +17,24 @@ export function deleteMovimiento(id: number): Promise<Movimiento> {
   return prisma.movimientos.delete({ where: { id } });
 }
 
+export async function findMovimientoByTicket(numero_ticket: string) {
+  return prisma.movimientos.findFirst({
+    where: {
+      numero_ticket,
+      tipo: "SALIDA",
+      fecha_real_devolucion: null, // Solo préstamos activos (no devueltos)
+    },
+    include: {
+      elemento: {
+        select: {
+          id: true,
+          serie: true,
+          marca: true,
+          modelo: true,
+        },
+      },
+    },
+  });
+}
+
 

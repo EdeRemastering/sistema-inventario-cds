@@ -31,15 +31,15 @@ export function UsuariosList({
   const showEmptyState = !hasData || !hasResults;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Usuarios</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-xl sm:text-2xl font-semibold">Usuarios</h1>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <SearchInput
               placeholder="Buscar usuarios..."
               onSearch={handleSearch}
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
             <UsuarioUpsertDialog create serverAction={onCreateUsuario} />
           </div>
@@ -64,19 +64,21 @@ export function UsuariosList({
               {filteredData.map((usuario) => (
                 <div
                   key={usuario.id}
-                  className="flex items-center gap-3 rounded border p-3"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 rounded border p-3"
                 >
-                  <span className="font-medium">{usuario.nombre}</span>
-                  <span className="text-muted-foreground">@{usuario.username}</span>
-                  <span className="text-xs rounded bg-secondary px-2 py-0.5 ml-2">
-                    {usuario.rol}
-                  </span>
-                  {usuario.activo === false && (
-                    <span className="text-xs rounded bg-destructive/10 text-destructive px-2 py-0.5">
-                      Inactivo
+                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                    <span className="font-medium break-words">{usuario.nombre}</span>
+                    <span className="text-muted-foreground text-sm break-words">@{usuario.username}</span>
+                    <span className="text-xs rounded bg-secondary px-2 py-0.5 whitespace-nowrap">
+                      {usuario.rol}
                     </span>
-                  )}
-                  <div className="ml-auto flex gap-2">
+                    {usuario.activo === false && (
+                      <span className="text-xs rounded bg-destructive/10 text-destructive px-2 py-0.5 whitespace-nowrap">
+                        Inactivo
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2 sm:ml-auto">
                     <UsuarioUpsertDialog
                       create={false}
                       serverAction={onUpdateUsuario}

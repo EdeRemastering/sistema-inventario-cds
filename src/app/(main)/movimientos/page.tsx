@@ -3,6 +3,7 @@ import { listElementos } from "../../../modules/elementos/services";
 import {
   actionDeleteMovimiento,
   actionUpdateMovimiento,
+  actionDevolver,
 } from "../../../modules/movimientos/actions";
 import { MovimientosList } from "../../../components/movimientos/movimientos-list";
 import { MovimientosSkeleton } from "../../../components/skeletons/movimientos";
@@ -20,6 +21,7 @@ async function MovimientosContent() {
       elementos={elementos}
       onUpdateMovimiento={actionUpdateMovimiento}
       onDeleteMovimiento={actionDeleteMovimiento}
+      onDevolver={actionDevolver}
     />
   );
 }

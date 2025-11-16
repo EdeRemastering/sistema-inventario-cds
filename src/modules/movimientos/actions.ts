@@ -158,4 +158,133 @@ export async function actionValidateStock(elementoId: number, requestedQuantity:
   }
 }
 
+export async function actionBuscarPrestamoPorTicket(numero_ticket: string) {
+  try {
+    const { findMovimientoByTicket } = await import("./services");
+    const movimiento = await findMovimientoByTicket(numero_ticket);
+    
+    if (!movimiento) {
+      throw new Error("Préstamo no encontrado o ya fue devuelto");
+    }
+    
+    return {
+      id: movimiento.id,
+      numero_ticket: movimiento.numero_ticket,
+      fecha_movimiento: movimiento.fecha_movimiento,
+      cantidad: movimiento.cantidad,
+      elemento: {
+        id: movimiento.elemento.id,
+        serie: movimiento.elemento.serie,
+        marca: movimiento.elemento.marca,
+        modelo: movimiento.elemento.modelo,
+      },
+      dependencia_entrega: movimiento.dependencia_entrega,
+      funcionario_entrega: movimiento.firma_funcionario_entrega || "",
+      dependencia_recibe: movimiento.dependencia_recibe,
+      funcionario_recibe: movimiento.firma_funcionario_recibe || "",
+      fecha_estimada_devolucion: movimiento.fecha_estimada_devolucion,
+      motivo: movimiento.motivo,
+    };
+  } catch (error) {
+    console.error("Error buscando préstamo:", error);
+    throw error instanceof Error ? error : new Error("Error al buscar el préstamo");
+  }
+}
+
+export async function actionDevolver(formData: FormData) {
+  try {
+    const { devolucionSchema } = await import("./validations");
+    const parsed = devolucionSchema.safeParse(formDataToObject(formData));
+    if (!parsed.success) {
+      const errorMessage = parsed.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      throw new Error(`Datos inválidos para la devolución: ${errorMessage}`);
+    }
+
+    // Extraer firmas del FormData
+    const firma_devuelve = formData.get("firma_devuelve") as string | null;
+    const firma_recibe_devolucion = formData.get("firma_recibe_devolucion") as string | null;
+
+    // Validar que las firmas estén presentes
+    if (!firma_devuelve || !firma_recibe_devolucion) {
+      throw new Error("Se requieren ambas firmas para completar la devolución");
+    }
+
+    // Verificar que el movimiento existe
+    const movimiento = await prisma.movimientos.findUnique({
+      where: { id: parsed.data.id },
+    });
+
+    if (!movimiento) {
+      throw new Error("Movimiento no encontrado");
+    }
+
+    if (movimiento.fecha_real_devolucion) {
+      throw new Error("Este movimiento ya fue devuelto");
+    }
+
+    // Validar firmas
+    if (!isValidSignature(firma_devuelve)) {
+      throw new Error("La firma de quien devuelve no es válida");
+    }
+
+    if (!isValidSignature(firma_recibe_devolucion)) {
+      throw new Error("La firma de quien recibe no es válida");
+    }
+
+    // Guardar firmas como imágenes
+    let firmaDevuelveUrl: string | null = null;
+    let firmaRecibeDevolucionUrl: string | null = null;
+
+    try {
+      firmaDevuelveUrl = await saveSignature(
+        firma_devuelve,
+        "movimiento",
+        parsed.data.id,
+        "devuelve"
+      );
+    } catch (error) {
+      console.error("Error guardando firma de quien devuelve:", error);
+      throw new Error("Error al guardar la firma de quien devuelve");
+    }
+
+    try {
+      firmaRecibeDevolucionUrl = await saveSignature(
+        firma_recibe_devolucion,
+        "movimiento",
+        parsed.data.id,
+        "recibe_devolucion"
+      );
+    } catch (error) {
+      console.error("Error guardando firma de quien recibe:", error);
+      throw new Error("Error al guardar la firma de quien recibe");
+    }
+
+    // Actualizar el movimiento con la devolución
+    // El stock se recalcula automáticamente al marcar fecha_real_devolucion
+    await updateMovimiento(parsed.data.id, {
+      fecha_real_devolucion: parsed.data.fecha_real_devolucion,
+      observaciones_devolucion: parsed.data.observaciones_devolucion || null,
+      devuelto_por: parsed.data.devuelto_por || null,
+      recibido_por: parsed.data.recibido_por || null,
+      firma_devuelve: firmaDevuelveUrl,
+      firma_recibe_devolucion: firmaRecibeDevolucionUrl,
+    });
+
+    // Log de auditoría
+    await logAction({
+      action: "UPDATE",
+      entity: "movimiento",
+      entityId: parsed.data.id,
+      details: `Devolución registrada para movimiento ${movimiento.numero_ticket}`,
+    });
+
+    revalidatePath("/movimientos");
+  } catch (error) {
+    console.error("Error en actionDevolver:", error);
+    // Propagar el error con un mensaje claro
+    const errorMessage = error instanceof Error ? error.message : "Error al procesar la devolución";
+    throw new Error(errorMessage);
+  }
+}
+
 

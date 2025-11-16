@@ -51,9 +51,10 @@ type MovimientoPrestamo = {
 
 type Props = {
   onDevolver: (formData: FormData) => Promise<void>;
+  trigger?: React.ReactNode;
 };
 
-export function DevolucionDialog({ onDevolver }: Props) {
+export function DevolucionDialog({ onDevolver, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [busquedaTicket, setBusquedaTicket] = useState("");
   const [prestamoEncontrado, setPrestamoEncontrado] =
@@ -85,36 +86,36 @@ export function DevolucionDialog({ onDevolver }: Props) {
     setBuscando(true);
 
     try {
-      // Simulación de búsqueda - en implementación real sería una API call
-      // Por ahora simulamos datos
-      setTimeout(() => {
-        const prestamoSimulado: MovimientoPrestamo = {
-          id: 1,
-          numero_ticket: busquedaTicket,
-          fecha_movimiento: new Date("2024-01-15"),
-          cantidad: 1,
-          elemento: {
-            id: 1,
-            serie: "LAP001",
-            marca: "Dell",
-            modelo: "Latitude 5520",
-          },
-          dependencia_entrega: "IT",
-          funcionario_entrega: "Juan Pérez",
-          dependencia_recibe: "Administración",
-          funcionario_recibe: "María García",
-          fecha_estimada_devolucion: new Date("2024-02-15"),
-          motivo: "Préstamo para trabajo remoto",
-        };
+      const { actionBuscarPrestamoPorTicket } = await import("../../modules/movimientos/actions");
+      const prestamo = await actionBuscarPrestamoPorTicket(busquedaTicket.trim());
+      
+      const prestamoEncontrado: MovimientoPrestamo = {
+        id: prestamo.id,
+        numero_ticket: prestamo.numero_ticket,
+        fecha_movimiento: new Date(prestamo.fecha_movimiento),
+        cantidad: prestamo.cantidad,
+        elemento: {
+          id: prestamo.elemento.id,
+          serie: prestamo.elemento.serie,
+          marca: prestamo.elemento.marca,
+          modelo: prestamo.elemento.modelo,
+        },
+        dependencia_entrega: prestamo.dependencia_entrega,
+        funcionario_entrega: prestamo.funcionario_entrega,
+        dependencia_recibe: prestamo.dependencia_recibe,
+        funcionario_recibe: prestamo.funcionario_recibe,
+        fecha_estimada_devolucion: new Date(prestamo.fecha_estimada_devolucion),
+        motivo: prestamo.motivo,
+      };
 
-        setPrestamoEncontrado(prestamoSimulado);
-        setValue("numero_ticket", prestamoSimulado.numero_ticket);
-        setBuscando(false);
-        toast.success("Préstamo encontrado");
-      }, 1000);
-    } catch {
+      setPrestamoEncontrado(prestamoEncontrado);
+      setValue("numero_ticket", prestamoEncontrado.numero_ticket);
       setBuscando(false);
-      toast.error("Error buscando el préstamo");
+      toast.success("Préstamo encontrado");
+    } catch (error) {
+      setBuscando(false);
+      const errorMessage = error instanceof Error ? error.message : "Error buscando el préstamo";
+      toast.error(errorMessage);
     }
   };
 
@@ -124,27 +125,33 @@ export function DevolucionDialog({ onDevolver }: Props) {
       return;
     }
 
+    // Validar que las firmas estén presentes
+    if (!firmaDevuelve || !firmaRecibe) {
+      toast.error("Se requieren ambas firmas para completar la devolución");
+      return;
+    }
+
+    const formData = new FormData();
+
+    // Datos de la devolución
+    formData.append("id", prestamoEncontrado.id.toString());
+    formData.append("fecha_real_devolucion", data.fecha_real_devolucion);
+    formData.append(
+      "observaciones_devolucion",
+      data.observaciones_devolucion || ""
+    );
+    formData.append("devuelto_por", data.devuelto_por || "");
+    formData.append("recibido_por", data.recibido_por || "");
+
+    // Firmas digitales (ya validadas que existen)
+    formData.append("firma_devuelve", firmaDevuelve);
+    formData.append("firma_recibe_devolucion", firmaRecibe);
+
     try {
-      const formData = new FormData();
-
-      // Datos de la devolución
-      formData.append("id", prestamoEncontrado.id.toString());
-      formData.append("fecha_real_devolucion", data.fecha_real_devolucion);
-      formData.append(
-        "observaciones_devolucion",
-        data.observaciones_devolucion || ""
-      );
-      formData.append("devuelto_por", data.devuelto_por || "");
-      formData.append("recibido_por", data.recibido_por || "");
-
-      // Firmas digitales
-      if (firmaDevuelve) formData.append("firma_devuelve", firmaDevuelve);
-      if (firmaRecibe) formData.append("firma_recibe_devolucion", firmaRecibe);
-
       await toast.promise(onDevolver(formData), {
         loading: "Procesando devolución...",
         success: "Devolución registrada exitosamente",
-        error: "Error al procesar la devolución",
+        error: (err) => err instanceof Error ? err.message : "Error al procesar la devolución",
       });
 
       reset();
@@ -154,7 +161,9 @@ export function DevolucionDialog({ onDevolver }: Props) {
       setFirmaRecibe(null);
       setOpen(false);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error procesando devolución:", error);
+      const errorMessage = error instanceof Error ? error.message : "Error al procesar la devolución";
+      toast.error(errorMessage);
     }
   };
 
@@ -164,13 +173,16 @@ export function DevolucionDialog({ onDevolver }: Props) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} variant="outline">
-        <FileText className="h-4 w-4 mr-2" />
-        Registrar Devolución
-      </Button>
-
+      {trigger ? (
+        <div onClick={() => setOpen(true)}>{trigger}</div>
+      ) : (
+        <Button onClick={() => setOpen(true)} variant="outline">
+          <FileText className="h-4 w-4 mr-2" />
+          Registrar Devolución
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Registrar Devolución</DialogTitle>
           </DialogHeader>
@@ -181,7 +193,7 @@ export function DevolucionDialog({ onDevolver }: Props) {
               <Label htmlFor="busqueda-ticket">
                 Buscar Préstamo por Número de Ticket
               </Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="busqueda-ticket"
                   placeholder="Ej: TICKET-2025-000001"
@@ -190,11 +202,13 @@ export function DevolucionDialog({ onDevolver }: Props) {
                   onKeyPress={(e) =>
                     e.key === "Enter" && (e.preventDefault(), buscarPrestamo())
                   }
+                  className="w-full"
                 />
                 <Button
                   type="button"
                   onClick={buscarPrestamo}
                   disabled={buscando || !busquedaTicket.trim()}
+                  className="w-full sm:w-auto"
                 >
                   {buscando ? (
                     "Buscando..."
@@ -223,7 +237,7 @@ export function DevolucionDialog({ onDevolver }: Props) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="font-medium">Ticket:</span>{" "}
                       {prestamoEncontrado.numero_ticket}

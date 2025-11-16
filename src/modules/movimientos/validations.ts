@@ -22,4 +22,12 @@ export const movimientoUpdateSchema = movimientoCreateSchema.partial().extend({
   id: z.number().int().positive(),
 });
 
+export const devolucionSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  fecha_real_devolucion: z.coerce.date(),
+  observaciones_devolucion: z.string().optional(),
+  devuelto_por: z.string().optional(),
+  recibido_por: z.string().optional(),
+});
+
 

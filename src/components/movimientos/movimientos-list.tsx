@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader } from "../ui/card";
+import { Button } from "../ui/button";
 import { SearchInput } from "../ui/search-input";
 import { EmptyState } from "../ui/empty-state";
 import { useSearch } from "../../hooks/use-search";
@@ -10,6 +11,7 @@ import { MovimientoUpsertDialog } from "./movimiento-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import { SignatureDisplay } from "../ui/signature-display";
 import { MovimientosFilters, MovimientoFilters } from "./movimientos-filters";
+import { DevolucionDialog } from "./devolucion-dialog";
 import type { Movimiento } from "../../modules/movimientos/types";
 import type { Elemento } from "../../modules/elementos/types";
 
@@ -18,6 +20,7 @@ type MovimientosListProps = {
   elementos: Elemento[];
   onUpdateMovimiento: (formData: FormData) => Promise<void>;
   onDeleteMovimiento: (id: number) => Promise<void>;
+  onDevolver: (formData: FormData) => Promise<void>;
 };
 
 export function MovimientosList({
@@ -25,6 +28,7 @@ export function MovimientosList({
   elementos,
   onUpdateMovimiento,
   onDeleteMovimiento,
+  onDevolver,
 }: MovimientosListProps) {
   const [filters, setFilters] = useState<MovimientoFilters>({
     numeroTicket: "",
@@ -214,6 +218,15 @@ export function MovimientosList({
         <h1 className="text-xl sm:text-2xl font-semibold">
           Historial de Movimientos
         </h1>
+        <DevolucionDialog 
+          onDevolver={onDevolver}
+          trigger={
+            <Button variant="outline" className="w-full sm:w-auto">
+              <FileText className="h-4 w-4 mr-2" />
+              Registrar Devolución
+            </Button>
+          }
+        />
       </div>
 
       <MovimientosFilters
