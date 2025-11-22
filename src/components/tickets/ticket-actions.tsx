@@ -53,9 +53,8 @@ export function TicketActions({
   };
 
   const handleSignatureSuccess = async () => {
-    if (onMarkAsReturned) {
-      await onMarkAsReturned(ticket.id);
-    }
+    // El diálogo de firmas ya maneja la llamada a actionMarkTicketAsReturned
+    // con las firmas necesarias, por lo que no necesitamos llamarlo aquí nuevamente
   };
 
   return (

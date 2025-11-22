@@ -185,6 +185,7 @@ export function TicketUpsertDialog({
         });
       }
 
+      console.log("Enviando formulario de ticket...");
       const promise = serverAction(formData);
 
       await toast.promise(promise, {
@@ -192,7 +193,11 @@ export function TicketUpsertDialog({
         success: create
           ? "Ticket creado exitosamente"
           : "Ticket actualizado exitosamente",
-        error: "Error al procesar el formulario",
+        error: (err) => {
+          const errorMessage = err instanceof Error ? err.message : "Error al procesar el formulario";
+          console.error("Error detallado en onSubmit:", err);
+          return errorMessage;
+        },
       });
 
       reset();
@@ -203,7 +208,14 @@ export function TicketUpsertDialog({
       setHoraDevolucion("");
       setOpen(false);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error capturado en onSubmit:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Error desconocido al procesar el ticket";
+      toast.error(errorMessage, {
+        duration: 5000,
+        description: "Por favor, verifica los datos e intenta nuevamente."
+      });
     }
   };
 
