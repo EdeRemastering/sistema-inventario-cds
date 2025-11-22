@@ -212,14 +212,27 @@ export async function actionDeleteTicket(id: number) {
  */
 export async function actionMarkTicketAsReturned(id: number, firmaEntrega?: string, firmaRecibe?: string) {
   try {
+    console.log("=== Iniciando actionMarkTicketAsReturned ===");
+    console.log("Ticket ID:", id);
+    console.log("Firma Entrega recibida:", firmaEntrega ? "Sí" : "No");
+    console.log("Firma Recibe recibida:", firmaRecibe ? "Sí" : "No");
+    
     // Verificar que se proporcionen las firmas requeridas
     if (!firmaEntrega || !firmaRecibe) {
       throw new Error("Se requieren las firmas de entrega y recepción para marcar el ticket como entregado");
     }
 
     // Validar que las firmas sean válidas
-    if (!isValidSignature(firmaEntrega) || !isValidSignature(firmaRecibe)) {
-      throw new Error("Las firmas proporcionadas no son válidas");
+    console.log("Validando firma de entrega...");
+    const isValidFirmaEntrega = isValidSignature(firmaEntrega);
+    console.log("Firma de entrega válida:", isValidFirmaEntrega);
+    
+    console.log("Validando firma de recibe...");
+    const isValidFirmaRecibe = isValidSignature(firmaRecibe);
+    console.log("Firma de recibe válida:", isValidFirmaRecibe);
+    
+    if (!isValidFirmaEntrega || !isValidFirmaRecibe) {
+      throw new Error("Las firmas proporcionadas no son válidas. Asegúrate de firmar en ambos campos.");
     }
 
     // Guardar las firmas como archivos
@@ -312,9 +325,15 @@ export async function actionMarkTicketAsReturned(id: number, firmaEntrega?: stri
       });
     } else {
       // Para tickets nuevos con múltiples elementos
-      for (const ticketElemento of ticket.ticket_elementos) {
-        // Generar número de ticket único para cada elemento
-        const numeroTicketDevolucion = `DEV-${ticket.numero_ticket}-${ticketElemento.elemento_id}-${Date.now()}`;
+      for (let i = 0; i < ticket.ticket_elementos.length; i++) {
+        const ticketElemento = ticket.ticket_elementos[i];
+        // Generar número de ticket único para cada elemento usando timestamp + índice
+        const numeroTicketDevolucion = `DEV-${ticket.numero_ticket}-${ticketElemento.elemento_id}-${Date.now()}-${i}`;
+        
+        // Pequeña pausa para asegurar timestamps únicos si hay muchos elementos
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
         
         await prisma.movimientos.create({
           data: {
@@ -350,12 +369,20 @@ export async function actionMarkTicketAsReturned(id: number, firmaEntrega?: stri
       }
     }
 
+    console.log("Revalidando rutas...");
     revalidatePath("/tickets");
     revalidatePath("/movimientos");
+    
+    console.log("=== Proceso completado exitosamente ===");
   } catch (error) {
-    console.error("Error marcando ticket como devuelto:", error);
-    const errorMessage = error instanceof Error ? error.message : "Error desconocido al marcar ticket como devuelto";
-    throw new Error(errorMessage);
+    console.error("=== Error marcando ticket como devuelto ===");
+    console.error("Error completo:", error);
+    
+    // Re-lanzar el error original para mantener el mensaje específico
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Error desconocido al marcar ticket como devuelto");
   }
 }
 

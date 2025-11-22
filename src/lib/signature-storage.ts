@@ -61,10 +61,19 @@ export async function deleteSignature(signatureUrl: string): Promise<void> {
  */
 export function isValidSignature(signatureData: string): boolean {
   if (!signatureData || !signatureData.startsWith('data:image/png;base64,')) {
+    console.log("Firma inválida: no es un data URL válido");
     return false;
   }
   
   // Verificar que no sea solo el canvas vacío (generalmente es muy pequeño)
   const base64Data = signatureData.replace(/^data:image\/png;base64,/, '');
-  return base64Data.length > 1000; // Un canvas vacío suele ser menor a 1000 caracteres
+  const isValid = base64Data.length > 100; // Reducido de 1000 a 100 para ser más flexible
+  
+  if (!isValid) {
+    console.log(`Firma inválida: tamaño muy pequeño (${base64Data.length} caracteres)`);
+  } else {
+    console.log(`Firma válida: ${base64Data.length} caracteres`);
+  }
+  
+  return isValid;
 }
