@@ -6,7 +6,6 @@ import { CheckCircle, Clock, Edit } from "lucide-react";
 import { TicketInvoice } from "./ticket-invoice";
 import { TicketUpsertDialog } from "./ticket-upsert-dialog";
 import { DeleteButton } from "../delete-button";
-import { StatusChangeButton } from "../status-change-button";
 import { DeliverySignatureDialog } from "./delivery-signature-dialog";
 import type { TicketGuardado } from "../../modules/tickets_guardados/types";
 
@@ -14,7 +13,6 @@ type TicketActionsProps = {
   ticket: TicketGuardado;
   onUpdateTicket: (formData: FormData) => Promise<void>;
   onDeleteTicket: (id: number) => Promise<void>;
-  onMarkAsReturned?: (id: number) => Promise<void>;
   onMarkAsCompleted?: (id: number) => Promise<void>;
 };
 
@@ -22,7 +20,6 @@ export function TicketActions({
   ticket,
   onUpdateTicket,
   onDeleteTicket,
-  onMarkAsReturned,
 }: TicketActionsProps) {
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
 

@@ -855,30 +855,6 @@ export async function generateTicketsReport(data: TicketsReporteData): Promise<s
 }
 
 /**
- * Función auxiliar para cargar y convertir imagen a base64
- */
-async function loadImageAsBase64(imagePath: string): Promise<string> {
-  try {
-    const response = await fetch(imagePath);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        // Remover el prefijo "data:image/png;base64,"
-        const base64Data = base64.split(',')[1];
-        resolve(base64Data);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    console.warn('No se pudo cargar el logo, usando texto alternativo');
-    return '';
-  }
-}
-
-/**
  * Exporta datos a Excel con diseño profesional usando CSV mejorado
  */
 export async function exportToExcel(data: Record<string, unknown>[], filename: string = 'reporte.xlsx', reportTitle: string = 'REPORTE'): Promise<void> {

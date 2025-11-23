@@ -15,7 +15,6 @@ type TicketsListProps = {
   onCreateTicket: (formData: FormData) => Promise<void>;
   onUpdateTicket: (formData: FormData) => Promise<void>;
   onDeleteTicket: (id: number) => Promise<void>;
-  onMarkAsReturned?: (id: number) => Promise<void>;
   onMarkAsCompleted?: (id: number) => Promise<void>;
 };
 
@@ -24,7 +23,6 @@ export function TicketsList({
   onCreateTicket,
   onUpdateTicket,
   onDeleteTicket,
-  onMarkAsReturned,
   onMarkAsCompleted,
 }: TicketsListProps) {
   const { searchQuery, filteredData, handleSearch, hasResults, hasData } =
@@ -121,7 +119,6 @@ export function TicketsList({
                         ticket={ticket}
                         onUpdateTicket={onUpdateTicket}
                         onDeleteTicket={onDeleteTicket}
-                        onMarkAsReturned={onMarkAsReturned}
                         onMarkAsCompleted={onMarkAsCompleted}
                       />
                     </div>
@@ -151,7 +148,6 @@ export function TicketsList({
                         ticket={ticket}
                         onUpdateTicket={onUpdateTicket}
                         onDeleteTicket={onDeleteTicket}
-                        onMarkAsReturned={onMarkAsReturned}
                         onMarkAsCompleted={onMarkAsCompleted}
                       />
                     </div>

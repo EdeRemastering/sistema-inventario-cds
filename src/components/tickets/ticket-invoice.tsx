@@ -359,21 +359,28 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       });
     } else {
       // Tickets antiguos con un solo elemento (compatibilidad)
-      if ((ticket as any).elemento) {
-        pdf.text(`Elemento: ${(ticket as any).elemento}`, 20, y);
+      const legacyTicket = ticket as unknown as {
+        elemento?: string;
+        serie?: string;
+        marca_modelo?: string;
+        cantidad?: number;
+      };
+      
+      if (legacyTicket.elemento) {
+        pdf.text(`Elemento: ${legacyTicket.elemento}`, 20, y);
         y += 6;
       }
 
-      if ((ticket as any).serie) {
-        pdf.text(`Serie: ${(ticket as any).serie}`, 20, y);
+      if (legacyTicket.serie) {
+        pdf.text(`Serie: ${legacyTicket.serie}`, 20, y);
       }
 
-      if ((ticket as any).marca_modelo) {
-        pdf.text(`Marca/Modelo: ${(ticket as any).marca_modelo}`, 110, y);
+      if (legacyTicket.marca_modelo) {
+        pdf.text(`Marca/Modelo: ${legacyTicket.marca_modelo}`, 110, y);
       }
       y += 6;
 
-      pdf.text(`Cantidad: ${(ticket as any).cantidad || 1}`, 20, y);
+      pdf.text(`Cantidad: ${legacyTicket.cantidad || 1}`, 20, y);
     }
 
     y += 15;
@@ -821,19 +828,6 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const formatDateTime = (date: Date | string | null | undefined) => {
-    if (!date) return "No especificado";
-    const d = new Date(date);
-    return d.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
   };
 
   return (
