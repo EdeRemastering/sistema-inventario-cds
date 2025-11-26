@@ -40,7 +40,9 @@ export function DeliverySignatureDialog({
 
     setIsSubmitting(true);
     try {
+      console.log("Iniciando proceso de devolución para ticket:", ticketId);
       await actionMarkTicketAsReturned(ticketId, firmaEntrega, firmaRecibe);
+      console.log("Devolución completada exitosamente");
       toast.success("Ticket marcado como entregado exitosamente");
       onSuccess?.();
       onOpenChange(false);
@@ -48,12 +50,15 @@ export function DeliverySignatureDialog({
       setFirmaEntrega(null);
       setFirmaRecibe(null);
     } catch (error) {
-      console.error("Error marcando ticket como entregado:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Error al marcar ticket como entregado"
-      );
+      console.error("Error detallado marcando ticket como entregado:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Error desconocido al marcar ticket como entregado";
+      
+      toast.error(errorMessage, {
+        duration: 5000,
+        description: "Por favor, verifica los datos e intenta nuevamente."
+      });
     } finally {
       setIsSubmitting(false);
     }

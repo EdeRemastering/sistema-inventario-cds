@@ -149,8 +149,398 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return "N/A";
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const generatePDFAlternative = async () => {
+    console.log("Usando método alternativo para generar PDF...");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    let y = 20;
+
+    // Marco unificado para todo el documento
+    pdf.setDrawColor(0, 0, 0); // Negro
+    pdf.setLineWidth(0.3);
+
+    // Calcular la altura total del documento
+    let totalHeight = 40; // Header
+    totalHeight += 45; // Info ticket
+    totalHeight += 15; // Espacio
+
+    // Altura de elementos (ajustada para múltiples elementos)
+    if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
+      totalHeight += 20; // Título de elementos
+      totalHeight += ticket.ticket_elementos.length * 35; // 35mm por elemento
+      totalHeight += (ticket.ticket_elementos.length - 1) * 5; // Espacio entre elementos
+    } else {
+      totalHeight += 50; // Info elemento (tickets antiguos)
+    }
+
+    totalHeight += 15; // Espacio
+    totalHeight += 100; // Dependencias y Personas (aumentado para incluir firmas reales)
+    totalHeight += 15; // Espacio
+
+    // Información de devolución (si existe)
+    if (
+      ticket.fecha_real_devolucion ||
+      ticket.devuelto_por ||
+      ticket.recibido_por
+    ) {
+      totalHeight += 100; // Información de devolución (aumentado para firmas reales)
+      totalHeight += 10; // Espacio
+    }
+
+    if (ticket.motivo) {
+      totalHeight += 35; // Motivo
+      totalHeight += 10; // Espacio
+    }
+    totalHeight += 20; // Footer
+    totalHeight += 20; // Espacio final
+
+    // Dibujar el marco unificado
+    pdf.rect(15, 10, 180, totalHeight, "S");
+
+    // Logo CDS (imagen real)
+    try {
+      const logoDataUrl = await loadCDSLogo();
+      pdf.addImage(logoDataUrl, "PNG", 20, 18, 25, 25);
+    } catch (error) {
+      console.warn(
+        "No se pudo cargar el logo, usando texto como fallback:",
+        error
+      );
+      // Fallback a texto si no se puede cargar la imagen
+      pdf.setFontSize(28);
+      pdf.setTextColor(0, 0, 0); // Negro
+      pdf.setFont("helvetica", "bold");
+      pdf.text("CDS", 25, 28);
+    }
+
+    // Título principal (alineado verticalmente con el centro del logo)
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("SISTEMA DE INVENTARIO", 70, 25);
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("COMPROBANTE DE PRÉSTAMO", 70, 32);
+
+    // Número de ticket debajo del título (alineado verticalmente)
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.text(`Ticket: ${ticket.numero_ticket}`, 70, 39);
+
+    y = 55;
+
+    // Información del ticket - sin borde individual (marco unificado)
+    // Línea separadora horizontal
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0); // Negro
+    pdf.text("INFORMACIÓN DEL TICKET", 20, y);
+
+    // Línea separadora debajo del título
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+
+    // Fecha de salida
+    pdf.text(`Fecha de Salida:`, 20, y);
+    pdf.text(`${formatDate(ticket.fecha_salida)}`, 65, y);
+    y += 6;
+
+    // Fecha de devolución debajo de la fecha de salida
+    pdf.text(`Fecha Est. Devolución:`, 20, y);
+    pdf.text(`${formatDate(ticket.fecha_estimada_devolucion)}`, 65, y);
+    y += 6;
+
+    if (ticket.orden_numero) {
+      pdf.text(`Orden Número:`, 20, y);
+      pdf.text(`${ticket.orden_numero}`, 65, y);
+      y += 6;
+    }
+
+    y += 15;
+
+    // Información de los elementos - sin borde individual (marco unificado)
+    // Línea separadora horizontal
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0); // Negro
+    pdf.text("INFORMACIÓN DE LOS ELEMENTOS", 20, y);
+
+    // Línea separadora debajo del título
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+
+    // Tickets nuevos con múltiples elementos
+    if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
+      pdf.text(
+        `Total de elementos: ${ticket.ticket_elementos.length}`,
+        20,
+        y
+      );
+      y += 6;
+
+      ticket.ticket_elementos.forEach((ticketElemento, index) => {
+        // Título del elemento
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`Elemento ${index + 1}:`, 20, y);
+        y += 6;
+
+        pdf.setFont("helvetica", "normal");
+
+        // Nombre del elemento
+        const elementoNombre =
+          ticketElemento.elemento_nombre ||
+          (ticketElemento.elemento
+            ? `${ticketElemento.elemento.categoria.nombre}${
+                ticketElemento.elemento.subcategoria
+                  ? ` - ${ticketElemento.elemento.subcategoria.nombre}`
+                  : ""
+              }`
+            : "N/A");
+        pdf.text(`Elemento: ${elementoNombre}`, 25, y);
+        y += 5;
+
+        // Serie
+        const serie =
+          ticketElemento.serie || ticketElemento.elemento?.serie || "N/A";
+        pdf.text(`Serie: ${serie}`, 25, y);
+        y += 5;
+
+        // Marca/Modelo
+        const marcaModelo =
+          ticketElemento.marca_modelo ||
+          (ticketElemento.elemento
+            ? `${ticketElemento.elemento.marca || ""} ${
+                ticketElemento.elemento.modelo || ""
+              }`.trim()
+            : "N/A");
+        pdf.text(`Marca/Modelo: ${marcaModelo}`, 25, y);
+        y += 5;
+
+        // Cantidad
+        pdf.text(`Cantidad: ${ticketElemento.cantidad}`, 25, y);
+        y += 8;
+
+        // Línea separadora entre elementos
+        if (
+          ticket.ticket_elementos &&
+          index < ticket.ticket_elementos.length - 1
+        ) {
+          pdf.setLineWidth(0.1);
+          pdf.line(20, y - 2, 185, y - 2);
+          y += 3;
+        }
+      });
+    } else {
+      // Tickets antiguos con un solo elemento (compatibilidad)
+      const legacyTicket = ticket as unknown as {
+        elemento?: string;
+        serie?: string;
+        marca_modelo?: string;
+        cantidad?: number;
+      };
+      
+      if (legacyTicket.elemento) {
+        pdf.text(`Elemento: ${legacyTicket.elemento}`, 20, y);
+        y += 6;
+      }
+
+      if (legacyTicket.serie) {
+        pdf.text(`Serie: ${legacyTicket.serie}`, 20, y);
+      }
+
+      if (legacyTicket.marca_modelo) {
+        pdf.text(`Marca/Modelo: ${legacyTicket.marca_modelo}`, 110, y);
+      }
+      y += 6;
+
+      pdf.text(`Cantidad: ${legacyTicket.cantidad || 1}`, 20, y);
+    }
+
+    y += 15;
+
+    // Dependencias y Personas - sin borde individual (marco unificado)
+    // Línea separadora horizontal
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0); // Negro
+    pdf.text("DEPENDENCIA DE ENTREGA", 20, y);
+
+    // Línea separadora debajo del título
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+
+    pdf.text(
+      `Dependencia: ${ticket.dependencia_entrega || "N/A"}`,
+      20,
+      y
+    );
+    y += 6;
+
+    const nombreEntrega = `${ticket.persona_entrega_nombre || ""} ${
+      ticket.persona_entrega_apellido || ""
+    }`.trim();
+    if (nombreEntrega) {
+      pdf.text(`Persona que Entrega: ${nombreEntrega}`, 20, y);
+      y += 6;
+    }
+
+    // Cargar y agregar firma de entrega
+    if (ticket.firma_funcionario_entrega) {
+      try {
+        const firmaEntregaImg = await loadSignatureImage(
+          ticket.firma_funcionario_entrega
+        );
+        if (firmaEntregaImg) {
+          pdf.addImage(firmaEntregaImg, "PNG", 20, y, 40, 15);
+          y += 17;
+          pdf.text("Firma de quien Entrega", 20, y);
+          y += 6;
+        }
+      } catch (error) {
+        console.warn("No se pudo cargar firma de entrega:", error);
+        pdf.text("Firma: No disponible", 20, y);
+        y += 6;
+      }
+    }
+
+    y += 10;
+
+    // Dependencia de Recibe
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("DEPENDENCIA QUE RECIBE", 20, y);
+
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+
+    pdf.text(`Dependencia: ${ticket.dependencia_recibe || "N/A"}`, 20, y);
+    y += 6;
+
+    const nombreRecibe = `${ticket.persona_recibe_nombre || ""} ${
+      ticket.persona_recibe_apellido || ""
+    }`.trim();
+    if (nombreRecibe) {
+      pdf.text(`Persona que Recibe: ${nombreRecibe}`, 20, y);
+      y += 6;
+    }
+
+    // Cargar y agregar firma de recibe
+    if (ticket.firma_funcionario_recibe) {
+      try {
+        const firmaRecibeImg = await loadSignatureImage(
+          ticket.firma_funcionario_recibe
+        );
+        if (firmaRecibeImg) {
+          pdf.addImage(firmaRecibeImg, "PNG", 20, y, 40, 15);
+          y += 17;
+          pdf.text("Firma de quien Recibe", 20, y);
+          y += 6;
+        }
+      } catch (error) {
+        console.warn("No se pudo cargar firma de recibe:", error);
+        pdf.text("Firma: No disponible", 20, y);
+        y += 6;
+      }
+    }
+
+    // Motivo si existe
+    if (ticket.motivo) {
+      y += 15;
+      pdf.setLineWidth(0.15);
+      pdf.line(20, y - 5, 185, y - 5);
+
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("MOTIVO", 20, y);
+
+      pdf.setLineWidth(0.15);
+      pdf.line(20, y + 2, 185, y + 2);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+
+      const motivoLines = pdf.splitTextToSize(ticket.motivo, 160);
+      pdf.text(motivoLines, 20, y);
+      y += motivoLines.length * 5 + 5;
+    }
+
+    // Footer
+    y += 10;
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(
+      `Generado el ${new Date().toLocaleDateString("es-CO")} a las ${new Date().toLocaleTimeString("es-CO")}`,
+      105,
+      y,
+      { align: "center" }
+    );
+
+    pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
+    toast.success("PDF generado exitosamente");
+  };
+
   const generatePDF = async () => {
     setIsGenerating(true);
+    
+    // Intentar primero con el método alternativo más confiable
+    const useAlternativeMethod = true;
+    
+    if (useAlternativeMethod) {
+      try {
+        await generatePDFAlternative();
+        return;
+      } catch (error) {
+        console.error("Error en método alternativo, intentando con html2canvas:", error);
+        // Si falla el alternativo, intentar con html2canvas
+      }
+    }
+    
     try {
       const invoiceElement = document.getElementById("ticket-invoice-content");
       if (!invoiceElement) {
@@ -158,7 +548,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       }
 
       // Esperar un momento para que se renderice completamente
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Crear una versión simplificada del contenido para PDF
       const simplifiedElement = invoiceElement.cloneNode(true) as HTMLElement;
@@ -410,534 +800,12 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
       toast.success("PDF generado exitosamente");
     } catch (error) {
-      console.error("Error generando PDF:", error);
+      console.error("Error generando PDF con html2canvas:", error);
 
       // Intentar método alternativo simple sin mostrar error al usuario aún
       try {
-        console.log("Intentando método alternativo...");
-
-        const pdf = new jsPDF("p", "mm", "a4");
-        let y = 20;
-
-        // Marco unificado para todo el documento
-        pdf.setDrawColor(0, 0, 0); // Negro
-        pdf.setLineWidth(0.3);
-
-        // Calcular la altura total del documento
-        let totalHeight = 40; // Header
-        totalHeight += 45; // Info ticket
-        totalHeight += 15; // Espacio
-
-        // Altura de elementos (ajustada para múltiples elementos)
-        if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
-          totalHeight += 20; // Título de elementos
-          totalHeight += ticket.ticket_elementos.length * 35; // 35mm por elemento
-          totalHeight += (ticket.ticket_elementos.length - 1) * 5; // Espacio entre elementos
-        } else {
-          totalHeight += 50; // Info elemento (tickets antiguos)
-        }
-
-        totalHeight += 15; // Espacio
-        totalHeight += 100; // Dependencias y Personas (aumentado para incluir firmas reales)
-        totalHeight += 15; // Espacio
-
-        // Información de devolución (si existe)
-        if (
-          ticket.fecha_real_devolucion ||
-          ticket.devuelto_por ||
-          ticket.recibido_por
-        ) {
-          totalHeight += 100; // Información de devolución (aumentado para firmas reales)
-          totalHeight += 10; // Espacio
-        }
-
-        if (ticket.motivo) {
-          totalHeight += 35; // Motivo
-          totalHeight += 10; // Espacio
-        }
-        totalHeight += 20; // Footer
-        totalHeight += 20; // Espacio final
-
-        // Dibujar el marco unificado
-        pdf.rect(15, 10, 180, totalHeight, "S");
-
-        // Logo CDS (imagen real)
-        try {
-          const logoDataUrl = await loadCDSLogo();
-          pdf.addImage(logoDataUrl, "PNG", 20, 18, 25, 25);
-        } catch (error) {
-          console.warn(
-            "No se pudo cargar el logo, usando texto como fallback:",
-            error
-          );
-          // Fallback a texto si no se puede cargar la imagen
-          pdf.setFontSize(28);
-          pdf.setTextColor(0, 0, 0); // Negro
-          pdf.setFont("helvetica", "bold");
-          pdf.text("CDS", 25, 28);
-        }
-
-        // Título principal (alineado verticalmente con el centro del logo)
-        pdf.setFontSize(16);
-        pdf.setTextColor(0, 0, 0);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("SISTEMA DE INVENTARIO", 70, 25);
-        pdf.setFontSize(14);
-        pdf.setFont("helvetica", "normal");
-        pdf.text("COMPROBANTE DE PRÉSTAMO", 70, 32);
-
-        // Número de ticket debajo del título (alineado verticalmente)
-        pdf.setFontSize(12);
-        pdf.setFont("helvetica", "bold");
-        pdf.text(`Ticket: ${ticket.numero_ticket}`, 70, 39);
-
-        y = 55;
-
-        // Información del ticket - sin borde individual (marco unificado)
-        // Línea separadora horizontal
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y - 5, 185, y - 5);
-
-        pdf.setFontSize(14);
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(0, 0, 0); // Negro
-        pdf.text("INFORMACIÓN DEL TICKET", 20, y);
-
-        // Línea separadora debajo del título
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y + 2, 185, y + 2);
-        y += 8;
-
-        pdf.setFontSize(10);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(0, 0, 0);
-
-        // Fecha de salida
-        pdf.text(`Fecha de Salida:`, 20, y);
-        pdf.text(`${formatDate(ticket.fecha_salida)}`, 65, y);
-        y += 6;
-
-        // Fecha de devolución debajo de la fecha de salida
-        pdf.text(`Fecha Est. Devolución:`, 20, y);
-        pdf.text(`${formatDate(ticket.fecha_estimada_devolucion)}`, 65, y);
-        y += 6;
-
-        if (ticket.orden_numero) {
-          pdf.text(`Orden Número:`, 20, y);
-          pdf.text(`${ticket.orden_numero}`, 65, y);
-          y += 6;
-        }
-
-        y += 15;
-
-        // Información de los elementos - sin borde individual (marco unificado)
-        // Línea separadora horizontal
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y - 5, 185, y - 5);
-
-        pdf.setFontSize(14);
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(0, 0, 0); // Negro
-        pdf.text("INFORMACIÓN DE LOS ELEMENTOS", 20, y);
-
-        // Línea separadora debajo del título
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y + 2, 185, y + 2);
-        y += 8;
-
-        pdf.setFontSize(10);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(0, 0, 0);
-
-        // Tickets nuevos con múltiples elementos
-        if (ticket.ticket_elementos && ticket.ticket_elementos.length > 0) {
-          pdf.text(
-            `Total de elementos: ${ticket.ticket_elementos.length}`,
-            20,
-            y
-          );
-          y += 6;
-
-          ticket.ticket_elementos.forEach((ticketElemento, index) => {
-            // Título del elemento
-            pdf.setFont("helvetica", "bold");
-            pdf.text(`Elemento ${index + 1}:`, 20, y);
-            y += 6;
-
-            pdf.setFont("helvetica", "normal");
-
-            // Nombre del elemento
-            const elementoNombre =
-              ticketElemento.elemento_nombre ||
-              (ticketElemento.elemento
-                ? `${ticketElemento.elemento.categoria.nombre}${
-                    ticketElemento.elemento.subcategoria
-                      ? ` - ${ticketElemento.elemento.subcategoria.nombre}`
-                      : ""
-                  }`
-                : "N/A");
-            pdf.text(`Elemento: ${elementoNombre}`, 25, y);
-            y += 5;
-
-            // Serie
-            const serie =
-              ticketElemento.serie || ticketElemento.elemento?.serie || "N/A";
-            pdf.text(`Serie: ${serie}`, 25, y);
-            y += 5;
-
-            // Marca/Modelo
-            const marcaModelo =
-              ticketElemento.marca_modelo ||
-              (ticketElemento.elemento
-                ? `${ticketElemento.elemento.marca || ""} ${
-                    ticketElemento.elemento.modelo || ""
-                  }`.trim()
-                : "N/A");
-            pdf.text(`Marca/Modelo: ${marcaModelo}`, 25, y);
-            y += 5;
-
-            // Cantidad
-            pdf.text(`Cantidad: ${ticketElemento.cantidad}`, 25, y);
-            y += 8;
-
-            // Línea separadora entre elementos
-            if (
-              ticket.ticket_elementos &&
-              index < ticket.ticket_elementos.length - 1
-            ) {
-              pdf.setLineWidth(0.1);
-              pdf.line(20, y - 2, 185, y - 2);
-              y += 3;
-            }
-          });
-        } else {
-          // Tickets antiguos con un solo elemento (compatibilidad)
-          if (ticket.elemento) {
-            pdf.text(`Elemento: ${ticket.elemento}`, 20, y);
-            y += 6;
-          }
-
-          if (ticket.serie) {
-            pdf.text(`Serie: ${ticket.serie}`, 20, y);
-          }
-
-          if (ticket.marca_modelo) {
-            pdf.text(`Marca/Modelo: ${ticket.marca_modelo}`, 110, y);
-          }
-          y += 6;
-
-          pdf.text(`Cantidad: ${ticket.cantidad || 1}`, 20, y);
-        }
-
-        y += 15;
-
-        // Dependencias y Personas - sin borde individual (marco unificado)
-        // Línea separadora horizontal
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y - 5, 185, y - 5);
-
-        pdf.setFontSize(14);
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(0, 0, 0); // Negro
-        pdf.text("DEPENDENCIA DE ENTREGA", 20, y);
-
-        // Línea separadora debajo del título
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y + 2, 185, y + 2);
-        y += 8;
-
-        pdf.setFontSize(10);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(0, 0, 0);
-
-        // Columna 1: Dependencia
-        pdf.text(`Dependencia:`, 20, y);
-        pdf.text(
-          `${ticket.dependencia_entrega || "No especificado"}`,
-          20,
-          y + 6
-        );
-
-        // Columna 2: Persona que entrega
-        pdf.text(`Persona que Entrega:`, 110, y);
-        const personaEntrega =
-          ticket.persona_entrega_nombre && ticket.persona_entrega_apellido
-            ? `${ticket.persona_entrega_nombre} ${ticket.persona_entrega_apellido}`
-            : "No especificado";
-        pdf.text(personaEntrega, 110, y + 6);
-        y += 12;
-
-        // Firma de entrega (columna 2) - solo imagen, más grande y más arriba
-        if (ticket.firma_funcionario_entrega) {
-          try {
-            const firmaDataUrl = await loadSignatureImage(
-              ticket.firma_funcionario_entrega
-            );
-            if (firmaDataUrl) {
-              // Usar configuración de máxima calidad para jsPDF
-              pdf.addImage(
-                firmaDataUrl,
-                "PNG",
-                110,
-                y - 2,
-                30,
-                11.25,
-                undefined,
-                "SLOW"
-              );
-              y += 12;
-            } else {
-              pdf.text(`✓ Firma registrada`, 110, y + 6);
-              y += 12;
-            }
-          } catch (error) {
-            console.warn("Error cargando firma de entrega:", error);
-            pdf.text(`✓ Firma registrada`, 110, y + 6);
-            y += 12;
-          }
-        } else {
-          pdf.text(`No registrada`, 110, y + 6);
-          y += 12;
-        }
-        y += 3;
-
-        // Dependencia que recibe
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y - 5, 185, y - 5);
-
-        pdf.setFontSize(14);
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(0, 0, 0);
-        pdf.text("DEPENDENCIA QUE RECIBE", 20, y);
-
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y + 2, 185, y + 2);
-        y += 8;
-
-        pdf.setFontSize(10);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(0, 0, 0);
-
-        // Columna 1: Dependencia
-        pdf.text(`Dependencia:`, 20, y);
-        pdf.text(
-          `${ticket.dependencia_recibe || "No especificado"}`,
-          20,
-          y + 6
-        );
-
-        // Columna 2: Persona que recibe
-        pdf.text(`Persona que Recibe:`, 110, y);
-        const personaRecibe =
-          ticket.persona_recibe_nombre && ticket.persona_recibe_apellido
-            ? `${ticket.persona_recibe_nombre} ${ticket.persona_recibe_apellido}`
-            : "No especificado";
-        pdf.text(personaRecibe, 110, y + 6);
-        y += 12;
-
-        // Firma de recepción (columna 2) - solo imagen, más grande y más arriba
-        if (ticket.firma_funcionario_recibe) {
-          try {
-            const firmaDataUrl = await loadSignatureImage(
-              ticket.firma_funcionario_recibe
-            );
-            if (firmaDataUrl) {
-              // Usar configuración de máxima calidad para jsPDF
-              pdf.addImage(
-                firmaDataUrl,
-                "PNG",
-                110,
-                y - 2,
-                30,
-                11.25,
-                undefined,
-                "SLOW"
-              );
-              y += 12;
-            } else {
-              pdf.text(`✓ Firma registrada`, 110, y + 6);
-              y += 12;
-            }
-          } catch (error) {
-            console.warn("Error cargando firma de recepción:", error);
-            pdf.text(`✓ Firma registrada`, 110, y + 6);
-            y += 12;
-          }
-        } else {
-          pdf.text(`No registrada`, 110, y + 6);
-          y += 12;
-        }
-        y += 3;
-
-        // Información de devolución (si existe)
-        if (
-          ticket.fecha_real_devolucion ||
-          ticket.devuelto_por ||
-          ticket.recibido_por
-        ) {
-          // Línea separadora horizontal
-          pdf.setLineWidth(0.15);
-          pdf.line(20, y - 5, 185, y - 5);
-
-          pdf.setFontSize(14);
-          pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(0, 0, 0);
-          pdf.text("INFORMACIÓN DE DEVOLUCIÓN", 20, y);
-
-          pdf.setLineWidth(0.15);
-          pdf.line(20, y + 2, 185, y + 2);
-          y += 8;
-
-          pdf.setFontSize(10);
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(0, 0, 0);
-
-          // Fecha real de devolución
-          if (ticket.fecha_real_devolucion) {
-            pdf.text(`Fecha Real de Devolución:`, 20, y);
-            pdf.text(`${formatDate(ticket.fecha_real_devolucion)}`, 20, y + 6);
-            y += 12;
-          }
-
-          // Hora de devolución
-          if (ticket.hora_devolucion) {
-            pdf.text(`Hora de Devolución:`, 20, y);
-            pdf.text(`${formatDate(ticket.hora_devolucion)}`, 20, y + 6);
-            y += 12;
-          }
-
-          // Persona que devuelve
-          if (ticket.devuelto_por) {
-            pdf.text(`Devuelto por:`, 20, y);
-            pdf.text(ticket.devuelto_por, 20, y + 6);
-            y += 12;
-          }
-
-          // Persona que recibe la devolución
-          if (ticket.recibido_por) {
-            pdf.text(`Recibido por:`, 20, y);
-            pdf.text(ticket.recibido_por, 20, y + 6);
-            y += 12;
-          }
-
-          // Firmas de devolución - solo imagen, más grande y más arriba
-          if (ticket.firma_devuelve) {
-            try {
-              const firmaDataUrl = await loadSignatureImage(
-                ticket.firma_devuelve
-              );
-              if (firmaDataUrl) {
-                // Usar configuración de máxima calidad para jsPDF
-                pdf.addImage(
-                  firmaDataUrl,
-                  "PNG",
-                  20,
-                  y - 2,
-                  30,
-                  11.25,
-                  undefined,
-                  "SLOW"
-                );
-                y += 12;
-              } else {
-                pdf.text(`✓ Firma registrada`, 20, y + 6);
-                y += 12;
-              }
-            } catch (error) {
-              console.warn("Error cargando firma de devolución:", error);
-              pdf.text(`✓ Firma registrada`, 20, y + 6);
-              y += 12;
-            }
-          } else {
-            pdf.text(`No registrada`, 20, y + 6);
-            y += 12;
-          }
-          y += 3;
-
-          if (ticket.firma_recibe_devolucion) {
-            try {
-              const firmaDataUrl = await loadSignatureImage(
-                ticket.firma_recibe_devolucion
-              );
-              if (firmaDataUrl) {
-                // Usar configuración de máxima calidad para jsPDF
-                pdf.addImage(
-                  firmaDataUrl,
-                  "PNG",
-                  20,
-                  y - 2,
-                  30,
-                  11.25,
-                  undefined,
-                  "SLOW"
-                );
-                y += 12;
-              } else {
-                pdf.text(`✓ Firma registrada`, 20, y + 6);
-                y += 12;
-              }
-            } catch (error) {
-              console.warn(
-                "Error cargando firma de recepción de devolución:",
-                error
-              );
-              pdf.text(`✓ Firma registrada`, 20, y + 6);
-              y += 12;
-            }
-          } else {
-            pdf.text(`No registrada`, 20, y + 6);
-            y += 12;
-          }
-          y += 3;
-        }
-
-        // Motivo - sin borde individual (marco unificado)
-        if (ticket.motivo) {
-          // Línea separadora horizontal
-          pdf.setLineWidth(0.15);
-          pdf.line(20, y - 5, 185, y - 5);
-
-          pdf.setFontSize(14);
-          pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(0, 0, 0); // Negro
-          pdf.text("MOTIVO DEL PRÉSTAMO", 20, y);
-
-          // Línea separadora debajo del título
-          pdf.setLineWidth(0.5);
-          pdf.line(20, y + 2, 185, y + 2);
-          y += 8;
-
-          pdf.setFontSize(10);
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(0, 0, 0);
-          const motivoLines = pdf.splitTextToSize(ticket.motivo, 170);
-          pdf.text(motivoLines, 20, y);
-          y += motivoLines.length * 4 + 10;
-        }
-
-        // Footer - sin borde individual (marco unificado)
-        y += 10;
-        // Línea separadora horizontal antes del footer
-        pdf.setLineWidth(0.15);
-        pdf.line(20, y - 5, 185, y - 5);
-
-        pdf.setFontSize(9);
-        pdf.setTextColor(0, 0, 0); // Negro
-        pdf.setFont("helvetica", "normal");
-
-        pdf.text(`Fecha de Generación: ${formatDate(new Date())}`, 25, y + 6);
-        if (ticket.usuario_guardado) {
-          pdf.text(`Generado por: ${ticket.usuario_guardado}`, 25, y + 12);
-        }
-
-        pdf.setFont("helvetica", "bold");
-        pdf.text("Sistema de Inventario CDS", 175, y + 6, { align: "right" });
-        pdf.setFont("helvetica", "normal");
-        pdf.text("Comprobante de Préstamo", 175, y + 12, { align: "right" });
-
-        pdf.save(`ticket-${ticket.numero_ticket}.pdf`);
-
-        // Mostrar mensaje de éxito si el método alternativo funcionó
+        console.log("Primer método falló, intentando método alternativo...");
+        await generatePDFAlternative();
         toast.success("PDF generado exitosamente con método alternativo");
       } catch (fallbackError) {
         console.error("Error en método alternativo:", fallbackError);
@@ -960,19 +828,6 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const formatDate = (date: Date | string | null | undefined) => {
-    if (!date) return "No especificado";
-    const d = new Date(date);
-    return d.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
   };
 
   return (

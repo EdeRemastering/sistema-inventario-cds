@@ -10,16 +10,16 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // Archivos a ignorar (debe ser el primer elemento)
   {
     ignores: [
       "node_modules/**",
       ".next/**",
       "out/**",
       "build/**",
+      "dist/**",
       "next-env.d.ts",
       "src/generated/**",
-      "src/test/**",
       "vitest.config.ts",
       "**/*.generated.*",
       "**/generated/**",
@@ -27,21 +27,36 @@ const eslintConfig = [
       "**/*.wasm.js",
       "src/generated/prisma/**",
       "src/generated/**/*",
-      "**/*.test.*",
-      "**/*.spec.*",
     ],
   },
+  
+  // Configuración base de Next.js
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  
+  // Reglas estrictas para todo el proyecto
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "error",
+      // Variables no usadas = ERROR (sin excepciones)
       "@typescript-eslint/no-unused-vars": "error",
-      "no-unused-vars": "off", // Desactivar la regla base para usar la de TypeScript
+      "no-unused-vars": "off", // Desactivar la regla base
+      
+      // Tipo any = ERROR
+      "@typescript-eslint/no-explicit-any": "error",
+      
+      // Otras reglas útiles
+      "@typescript-eslint/no-empty-function": "warn",
+      "@typescript-eslint/no-inferrable-types": "off",
+      "prefer-const": "error",
+      "no-var": "error",
     },
   },
+  
+  // Excepciones para archivos de test
   {
-    files: ["**/*.test.*", "**/*.spec.*", "src/test/**/*"],
+    files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/test/**/*"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "off", // Permitir any en tests
+      "@typescript-eslint/no-unused-vars": "warn", // Solo advertencia en tests
     },
   },
 ];

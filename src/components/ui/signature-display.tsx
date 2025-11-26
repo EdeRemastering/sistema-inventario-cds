@@ -27,6 +27,10 @@ export function SignatureDisplay({
     );
   }
 
+  // Verificar si es un data URL (base64) o una URL de archivo
+  const isDataUrl = signatureUrl.startsWith('data:image/');
+  const isR2Url = signatureUrl.includes('r2.cloudflarestorage.com') || signatureUrl.includes('r2.dev');
+
   return (
     <>
       <div className={`flex items-center gap-2 ${className}`}>
@@ -49,14 +53,31 @@ export function SignatureDisplay({
             <DialogTitle>{label}</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-4">
-            <Image
-              src={signatureUrl}
-              alt={label}
-              width={400}
-              height={200}
-              className="max-w-full h-auto border rounded-lg shadow-sm"
-              style={{ maxHeight: "300px" }}
-            />
+            {isDataUrl || isR2Url ? (
+              // Para data URLs y R2, usar img nativa (mejor compatibilidad con CORS)
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={signatureUrl}
+                alt={label}
+                className="max-w-full h-auto border rounded-lg shadow-sm"
+                style={{ maxHeight: "300px", maxWidth: "400px" }}
+                onError={(e) => {
+                  console.error('Error cargando imagen:', signatureUrl);
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FcnJvciBjYXJnYW5kbyBpbWFnZW48L3RleHQ+PC9zdmc+';
+                }}
+              />
+            ) : (
+              // Para URLs locales, usar Next Image
+              <Image
+                src={signatureUrl}
+                alt={label}
+                width={400}
+                height={200}
+                className="max-w-full h-auto border rounded-lg shadow-sm"
+                style={{ maxHeight: "300px" }}
+                onError={() => console.error('Error cargando imagen:', signatureUrl)}
+              />
+            )}
           </div>
           <div className="text-xs text-muted-foreground text-center">
             Firma digital guardada

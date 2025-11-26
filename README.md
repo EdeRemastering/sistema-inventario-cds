@@ -109,13 +109,7 @@ src/
 ├── contexts/             # Contextos de React
 ├── lib/                  # Utilidades y configuración
 ├── utils/                # Funciones utilitarias
-├── types/                # Definiciones de tipos
-└── docs/                 # Documentación del proyecto
-    ├── modules/          # Documentación de módulos
-    ├── components/       # Documentación de componentes
-    ├── hooks/            # Documentación de hooks
-    ├── contexts/         # Documentación de contexts
-    └── services/         # Documentación de servicios
+└── types/                # Definiciones de tipos
 ```
 
 ## Instalación y Configuración
@@ -140,10 +134,10 @@ pnpm install
 
 3. **Configurar variables de entorno**
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Editar `.env.local` con las configuraciones necesarias:
+Editar `.env` con las configuraciones necesarias:
 ```env
 # Base de datos
 DATABASE_URL="mysql://usuario:password@localhost:3306/sistema_inventario_cds"
@@ -152,9 +146,19 @@ DATABASE_URL="mysql://usuario:password@localhost:3306/sistema_inventario_cds"
 NEXTAUTH_SECRET="tu-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Configuración de la aplicación
-NEXT_PUBLIC_APP_NAME="Sistema de Inventario CDS"
+# Configuración de firmas (opcional: Cloudflare R2)
+USE_R2_STORAGE=false
+USE_FILESYSTEM_SIGNATURES=true
+
+# Si usas Cloudflare R2 para firmas (ver docs/setup/CLOUDFLARE_R2_SETUP.md)
+# R2_ACCOUNT_ID="tu-account-id"
+# R2_ACCESS_KEY_ID="tu-access-key"
+# R2_SECRET_ACCESS_KEY="tu-secret-access-key"
+# R2_BUCKET_NAME="nombre-bucket"
+# R2_PUBLIC_URL=""
 ```
+
+Para más detalles sobre la configuración, consulta la [documentación](./docs/README.md)
 
 4. **Configurar la base de datos**
 ```bash
@@ -316,8 +320,18 @@ pnpm test:coverage      # Tests con cobertura
 DATABASE_URL="mysql://..."
 NEXTAUTH_SECRET="..."
 NEXTAUTH_URL="https://tu-dominio.com"
-NEXT_PUBLIC_APP_NAME="Sistema de Inventario CDS"
+
+# Configuración de firmas (recomendado para producción)
+USE_R2_STORAGE=true
+USE_FILESYSTEM_SIGNATURES=false
+R2_ACCOUNT_ID="..."
+R2_ACCESS_KEY_ID="..."
+R2_SECRET_ACCESS_KEY="..."
+R2_BUCKET_NAME="..."
+R2_PUBLIC_URL="https://cdn.tu-dominio.com"
 ```
+
+**Nota**: Para producción, se recomienda usar Cloudflare R2 para almacenar firmas. Consulta la [guía de configuración de R2](./docs/setup/CLOUDFLARE_R2_SETUP.md) y la [guía de migración](./docs/guides/MIGRATION_GUIDE.md)
 
 ## Contribución
 
@@ -338,15 +352,25 @@ NEXT_PUBLIC_APP_NAME="Sistema de Inventario CDS"
 - **Componentes**: Documentar props y ejemplos
 - **Tests**: Escribir tests para funcionalidades críticas
 
-## Documentación
+## 📚 Documentación
 
-La documentación completa está disponible en `src/docs/`:
+La documentación completa está organizada en el directorio [`docs/`](./docs/):
 
-- **Módulos**: `src/docs/modules/`
-- **Componentes**: `src/docs/components/`
-- **Hooks**: `src/docs/hooks/`
-- **Contexts**: `src/docs/contexts/`
-- **Servicios**: `src/docs/services/`
+### 📖 Guías y Configuración
+- **[Setup y Configuración](./docs/setup/)** - Guías de configuración inicial
+  - [Cloudflare R2](./docs/setup/CLOUDFLARE_R2_SETUP.md) - Configuración de almacenamiento en la nube
+- **[Guías de Migración](./docs/guides/)** - Guías para actualizaciones y migraciones
+  - [Migración de Firmas](./docs/guides/MIGRATION_GUIDE.md) - Migración del sistema de firmas
+
+### 💻 Documentación Técnica
+- **[Documentación de Desarrollo](./docs/development/)** - Documentación del código
+  - [Módulos](./docs/development/modules/) - Lógica de negocio
+  - [Componentes](./docs/development/components/) - Componentes de React
+  - [Hooks](./docs/development/hooks/) - Custom hooks
+  - [Contextos](./docs/development/contexts/) - Context API
+  - [Servicios](./docs/development/services/) - Utilidades y servicios
+
+Para más información, consulta el [README de documentación](./docs/README.md)
 
 ## Licencia
 

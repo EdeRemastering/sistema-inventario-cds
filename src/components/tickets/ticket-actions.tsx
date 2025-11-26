@@ -13,7 +13,6 @@ type TicketActionsProps = {
   ticket: TicketGuardado;
   onUpdateTicket: (formData: FormData) => Promise<void>;
   onDeleteTicket: (id: number) => Promise<void>;
-  onMarkAsReturned?: (id: number) => Promise<void>;
   onMarkAsCompleted?: (id: number) => Promise<void>;
 };
 
@@ -21,7 +20,6 @@ export function TicketActions({
   ticket,
   onUpdateTicket,
   onDeleteTicket,
-  onMarkAsReturned,
 }: TicketActionsProps) {
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
 
@@ -52,9 +50,8 @@ export function TicketActions({
   };
 
   const handleSignatureSuccess = async () => {
-    if (onMarkAsReturned) {
-      await onMarkAsReturned(ticket.id);
-    }
+    // El diálogo de firmas ya maneja la llamada a actionMarkTicketAsReturned
+    // con las firmas necesarias, por lo que no necesitamos llamarlo aquí nuevamente
   };
 
   return (
