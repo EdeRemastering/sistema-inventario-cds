@@ -15,6 +15,9 @@ import {
   Users,
   BarChart3,
   LogOut,
+  MapPin,
+  Wrench,
+  FileCheck,
 } from "lucide-react";
 
 import {
@@ -42,8 +45,11 @@ const items: NavItem[] = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/categorias", label: "Categorías", icon: FolderTree },
   { href: "/subcategorias", label: "Subcategorías", icon: Boxes },
+  { href: "/ubicaciones", label: "Ubicaciones", icon: MapPin },
   { href: "/elementos", label: "Elementos", icon: Package2 },
   { href: "/movimientos", label: "Movimientos", icon: ClipboardList },
+  { href: "/mantenimientos", label: "Mantenimientos", icon: Wrench },
+  { href: "/hojas-vida", label: "Hojas de Vida", icon: FileCheck },
   { href: "/observaciones", label: "Observaciones", icon: FileText },
   { href: "/tickets", label: "Tickets", icon: Ticket },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },

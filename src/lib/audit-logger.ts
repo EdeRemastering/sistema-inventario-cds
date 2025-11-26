@@ -17,6 +17,7 @@ export type LogEntity =
   | "elemento"
   | "categoria"
   | "subcategoria"
+  | "ubicacion"
   | "movimiento"
   | "usuario"
   | "observacion"

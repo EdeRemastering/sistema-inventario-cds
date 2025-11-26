@@ -13,7 +13,6 @@ import {
   exportCategoriasToExcel,
   exportObservacionesToExcel,
   exportTicketsToExcel,
-  exportToExcel
 } from "./report-generator";
 import { actionCreateReporteGenerado } from "../modules/reportes_generados/actions";
 import type { InventarioReporteData, MovimientosReporteData, PrestamosActivosReporteData, CategoriasReporteData, ObservacionesReporteData, TicketsReporteData } from "./report-generator";

@@ -16,7 +16,10 @@ export type Movimiento = {
   observaciones_entrega: string | null;
   observaciones_devolucion: string | null;
   firma_recepcion: string | null;
-  tipo: "SALIDA" | "DEVOLUCION";
+  tipo: "ENTRADA" | "SALIDA" | "DEVOLUCION" | "TRASLADO";
+  ubicacion_anterior_id: number | null;
+  ubicacion_nueva_id: number | null;
+  usuario: string | null;
   firma_entrega: string | null;
   firma_recibe: string | null;
   codigo_equipo: string | null;
@@ -41,9 +44,19 @@ export type Movimiento = {
       nombre: string;
     } | null;
   };
+  ubicacion_anterior?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+  } | null;
+  ubicacion_nueva?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+  } | null;
 };
 
-export type CreateMovimientoInput = Omit<Movimiento, "id" | "creado_en" | "elemento">;
+export type CreateMovimientoInput = Omit<Movimiento, "id" | "creado_en" | "elemento" | "ubicacion_anterior" | "ubicacion_nueva">;
 export type UpdateMovimientoInput = Partial<CreateMovimientoInput> & { id?: number };
 
 

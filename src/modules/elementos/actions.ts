@@ -23,9 +23,13 @@ export async function actionCreateElemento(formData: FormData) {
     marca: parsed.data.marca === "" ? null : parsed.data.marca || null,
     modelo: parsed.data.modelo === "" ? null : parsed.data.modelo || null,
     ubicacion: parsed.data.ubicacion === "" ? null : parsed.data.ubicacion || null,
+    ubicacion_id: parsed.data.ubicacion_id === "" ? null : parsed.data.ubicacion_id || null,
+    fecha_salida: parsed.data.fecha_salida === "" ? null : parsed.data.fecha_salida || null,
     codigo_equipo: parsed.data.codigo_equipo === "" ? null : parsed.data.codigo_equipo || null,
+    especificaciones: parsed.data.especificaciones || null,
     observaciones: parsed.data.observaciones === "" ? null : parsed.data.observaciones || null,
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
+    activo: parsed.data.activo ?? true,
   });
   revalidatePath("/elementos");
 }
@@ -38,9 +42,13 @@ export async function actionUpdateElemento(formData: FormData) {
     marca: parsed.data.marca === "" ? null : parsed.data.marca || null,
     modelo: parsed.data.modelo === "" ? null : parsed.data.modelo || null,
     ubicacion: parsed.data.ubicacion === "" ? null : parsed.data.ubicacion || null,
+    ubicacion_id: parsed.data.ubicacion_id === "" ? null : parsed.data.ubicacion_id || null,
+    fecha_salida: parsed.data.fecha_salida === "" ? null : parsed.data.fecha_salida || null,
     codigo_equipo: parsed.data.codigo_equipo === "" ? null : parsed.data.codigo_equipo || null,
+    especificaciones: parsed.data.especificaciones || null,
     observaciones: parsed.data.observaciones === "" ? null : parsed.data.observaciones || null,
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
+    activo: parsed.data.activo,
   });
   revalidatePath("/elementos");
 }

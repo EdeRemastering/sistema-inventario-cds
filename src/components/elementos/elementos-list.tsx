@@ -10,11 +10,15 @@ import { DeleteButton } from "../delete-button";
 import type { Elemento } from "../../modules/elementos/types";
 import type { Categoria } from "../../modules/categorias/types";
 import type { Subcategoria } from "../../modules/subcategorias/types";
+import type { Ubicacion } from "../../modules/ubicaciones/types";
+import type { Sede } from "../../modules/sedes/types";
 
 type ElementosListProps = {
   elementos: Elemento[];
+  sedes: Sede[];
   categorias: Categoria[];
   subcategorias: Subcategoria[];
+  ubicaciones: Ubicacion[];
   onCreateElemento: (formData: FormData) => Promise<void>;
   onUpdateElemento: (formData: FormData) => Promise<void>;
   onDeleteElemento: (id: number) => Promise<void>;
@@ -22,8 +26,10 @@ type ElementosListProps = {
 
 export function ElementosList({
   elementos,
+  sedes,
   categorias,
   subcategorias,
+  ubicaciones,
   onCreateElemento,
   onUpdateElemento,
   onDeleteElemento,
@@ -50,8 +56,10 @@ export function ElementosList({
             <ElementoUpsertDialog
               create
               serverAction={onCreateElemento}
+              sedes={sedes}
               categorias={categorias}
               subcategorias={subcategorias}
+              ubicaciones={ubicaciones}
             />
           </div>
         </CardHeader>
@@ -87,9 +95,17 @@ export function ElementosList({
                     <ElementoUpsertDialog
                       create={false}
                       serverAction={onUpdateElemento}
+                      sedes={sedes}
                       categorias={categorias}
                       subcategorias={subcategorias}
+                      ubicaciones={ubicaciones}
                       defaultValues={{
+                        sede_id: elemento.ubicacion_rel?.sede?.id
+                          ? String(elemento.ubicacion_rel.sede.id)
+                          : "",
+                        ubicacion_id: elemento.ubicacion_id
+                          ? String(elemento.ubicacion_id)
+                          : "",
                         categoria_id: String(elemento.categoria_id),
                         subcategoria_id: elemento.subcategoria_id
                           ? String(elemento.subcategoria_id)

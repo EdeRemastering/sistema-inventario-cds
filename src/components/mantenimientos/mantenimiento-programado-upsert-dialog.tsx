@@ -1,0 +1,449 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Checkbox } from "../ui/checkbox";
+import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
+import type { Elemento } from "../../modules/elementos/types";
+
+const meses = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+];
+
+const schema = z.object({
+  elemento_id: z.string().min(1, "Selecciona elemento"),
+  frecuencia: z.enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"]),
+  año: z.string().min(1, "Año requerido"),
+  estado: z.enum(["PENDIENTE", "REALIZADO", "APLAZADO", "CANCELADO"]),
+  observaciones: z.string().optional(),
+  // Semanas de cada mes
+  enero_semana1: z.boolean().default(false),
+  enero_semana2: z.boolean().default(false),
+  enero_semana3: z.boolean().default(false),
+  enero_semana4: z.boolean().default(false),
+  febrero_semana1: z.boolean().default(false),
+  febrero_semana2: z.boolean().default(false),
+  febrero_semana3: z.boolean().default(false),
+  febrero_semana4: z.boolean().default(false),
+  marzo_semana1: z.boolean().default(false),
+  marzo_semana2: z.boolean().default(false),
+  marzo_semana3: z.boolean().default(false),
+  marzo_semana4: z.boolean().default(false),
+  abril_semana1: z.boolean().default(false),
+  abril_semana2: z.boolean().default(false),
+  abril_semana3: z.boolean().default(false),
+  abril_semana4: z.boolean().default(false),
+  mayo_semana1: z.boolean().default(false),
+  mayo_semana2: z.boolean().default(false),
+  mayo_semana3: z.boolean().default(false),
+  mayo_semana4: z.boolean().default(false),
+  junio_semana1: z.boolean().default(false),
+  junio_semana2: z.boolean().default(false),
+  junio_semana3: z.boolean().default(false),
+  junio_semana4: z.boolean().default(false),
+  julio_semana1: z.boolean().default(false),
+  julio_semana2: z.boolean().default(false),
+  julio_semana3: z.boolean().default(false),
+  julio_semana4: z.boolean().default(false),
+  agosto_semana1: z.boolean().default(false),
+  agosto_semana2: z.boolean().default(false),
+  agosto_semana3: z.boolean().default(false),
+  agosto_semana4: z.boolean().default(false),
+  septiembre_semana1: z.boolean().default(false),
+  septiembre_semana2: z.boolean().default(false),
+  septiembre_semana3: z.boolean().default(false),
+  septiembre_semana4: z.boolean().default(false),
+  octubre_semana1: z.boolean().default(false),
+  octubre_semana2: z.boolean().default(false),
+  octubre_semana3: z.boolean().default(false),
+  octubre_semana4: z.boolean().default(false),
+  noviembre_semana1: z.boolean().default(false),
+  noviembre_semana2: z.boolean().default(false),
+  noviembre_semana3: z.boolean().default(false),
+  noviembre_semana4: z.boolean().default(false),
+  diciembre_semana1: z.boolean().default(false),
+  diciembre_semana2: z.boolean().default(false),
+  diciembre_semana3: z.boolean().default(false),
+  diciembre_semana4: z.boolean().default(false),
+});
+
+type MantenimientoProgramadoFormData = z.infer<typeof schema>;
+
+type Props = {
+  serverAction: (formData: FormData) => Promise<void>;
+  create?: boolean;
+  defaultValues?: Partial<MantenimientoProgramado>;
+  elementos: Elemento[];
+  hiddenFields?: Record<string, string | number>;
+  onClose?: () => void;
+};
+
+export function MantenimientoProgramadoUpsertDialog({
+  serverAction,
+  create = true,
+  defaultValues,
+  elementos,
+  hiddenFields,
+  onClose,
+}: Props) {
+  const [open, setOpen] = useState(!defaultValues);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<MantenimientoProgramadoFormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      elemento_id: defaultValues?.elemento_id?.toString() || "",
+      frecuencia: defaultValues?.frecuencia || "MENSUAL",
+      año: defaultValues?.año?.toString() || new Date().getFullYear().toString(),
+      estado: defaultValues?.estado || "PENDIENTE",
+      observaciones: defaultValues?.observaciones || "",
+      enero_semana1: defaultValues?.enero_semana1 || false,
+      enero_semana2: defaultValues?.enero_semana2 || false,
+      enero_semana3: defaultValues?.enero_semana3 || false,
+      enero_semana4: defaultValues?.enero_semana4 || false,
+      febrero_semana1: defaultValues?.febrero_semana1 || false,
+      febrero_semana2: defaultValues?.febrero_semana2 || false,
+      febrero_semana3: defaultValues?.febrero_semana3 || false,
+      febrero_semana4: defaultValues?.febrero_semana4 || false,
+      marzo_semana1: defaultValues?.marzo_semana1 || false,
+      marzo_semana2: defaultValues?.marzo_semana2 || false,
+      marzo_semana3: defaultValues?.marzo_semana3 || false,
+      marzo_semana4: defaultValues?.marzo_semana4 || false,
+      abril_semana1: defaultValues?.abril_semana1 || false,
+      abril_semana2: defaultValues?.abril_semana2 || false,
+      abril_semana3: defaultValues?.abril_semana3 || false,
+      abril_semana4: defaultValues?.abril_semana4 || false,
+      mayo_semana1: defaultValues?.mayo_semana1 || false,
+      mayo_semana2: defaultValues?.mayo_semana2 || false,
+      mayo_semana3: defaultValues?.mayo_semana3 || false,
+      mayo_semana4: defaultValues?.mayo_semana4 || false,
+      junio_semana1: defaultValues?.junio_semana1 || false,
+      junio_semana2: defaultValues?.junio_semana2 || false,
+      junio_semana3: defaultValues?.junio_semana3 || false,
+      junio_semana4: defaultValues?.junio_semana4 || false,
+      julio_semana1: defaultValues?.julio_semana1 || false,
+      julio_semana2: defaultValues?.julio_semana2 || false,
+      julio_semana3: defaultValues?.julio_semana3 || false,
+      julio_semana4: defaultValues?.julio_semana4 || false,
+      agosto_semana1: defaultValues?.agosto_semana1 || false,
+      agosto_semana2: defaultValues?.agosto_semana2 || false,
+      agosto_semana3: defaultValues?.agosto_semana3 || false,
+      agosto_semana4: defaultValues?.agosto_semana4 || false,
+      septiembre_semana1: defaultValues?.septiembre_semana1 || false,
+      septiembre_semana2: defaultValues?.septiembre_semana2 || false,
+      septiembre_semana3: defaultValues?.septiembre_semana3 || false,
+      septiembre_semana4: defaultValues?.septiembre_semana4 || false,
+      octubre_semana1: defaultValues?.octubre_semana1 || false,
+      octubre_semana2: defaultValues?.octubre_semana2 || false,
+      octubre_semana3: defaultValues?.octubre_semana3 || false,
+      octubre_semana4: defaultValues?.octubre_semana4 || false,
+      noviembre_semana1: defaultValues?.noviembre_semana1 || false,
+      noviembre_semana2: defaultValues?.noviembre_semana2 || false,
+      noviembre_semana3: defaultValues?.noviembre_semana3 || false,
+      noviembre_semana4: defaultValues?.noviembre_semana4 || false,
+      diciembre_semana1: defaultValues?.diciembre_semana1 || false,
+      diciembre_semana2: defaultValues?.diciembre_semana2 || false,
+      diciembre_semana3: defaultValues?.diciembre_semana3 || false,
+      diciembre_semana4: defaultValues?.diciembre_semana4 || false,
+    },
+  });
+
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        elemento_id: defaultValues.elemento_id?.toString() || "",
+        frecuencia: defaultValues.frecuencia || "MENSUAL",
+        año: defaultValues.año?.toString() || new Date().getFullYear().toString(),
+        estado: defaultValues.estado || "PENDIENTE",
+        observaciones: defaultValues.observaciones || "",
+        enero_semana1: defaultValues.enero_semana1 || false,
+        enero_semana2: defaultValues.enero_semana2 || false,
+        enero_semana3: defaultValues.enero_semana3 || false,
+        enero_semana4: defaultValues.enero_semana4 || false,
+        febrero_semana1: defaultValues.febrero_semana1 || false,
+        febrero_semana2: defaultValues.febrero_semana2 || false,
+        febrero_semana3: defaultValues.febrero_semana3 || false,
+        febrero_semana4: defaultValues.febrero_semana4 || false,
+        marzo_semana1: defaultValues.marzo_semana1 || false,
+        marzo_semana2: defaultValues.marzo_semana2 || false,
+        marzo_semana3: defaultValues.marzo_semana3 || false,
+        marzo_semana4: defaultValues.marzo_semana4 || false,
+        abril_semana1: defaultValues.abril_semana1 || false,
+        abril_semana2: defaultValues.abril_semana2 || false,
+        abril_semana3: defaultValues.abril_semana3 || false,
+        abril_semana4: defaultValues.abril_semana4 || false,
+        mayo_semana1: defaultValues.mayo_semana1 || false,
+        mayo_semana2: defaultValues.mayo_semana2 || false,
+        mayo_semana3: defaultValues.mayo_semana3 || false,
+        mayo_semana4: defaultValues.mayo_semana4 || false,
+        junio_semana1: defaultValues.junio_semana1 || false,
+        junio_semana2: defaultValues.junio_semana2 || false,
+        junio_semana3: defaultValues.junio_semana3 || false,
+        junio_semana4: defaultValues.junio_semana4 || false,
+        julio_semana1: defaultValues.julio_semana1 || false,
+        julio_semana2: defaultValues.julio_semana2 || false,
+        julio_semana3: defaultValues.julio_semana3 || false,
+        julio_semana4: defaultValues.julio_semana4 || false,
+        agosto_semana1: defaultValues.agosto_semana1 || false,
+        agosto_semana2: defaultValues.agosto_semana2 || false,
+        agosto_semana3: defaultValues.agosto_semana3 || false,
+        agosto_semana4: defaultValues.agosto_semana4 || false,
+        septiembre_semana1: defaultValues.septiembre_semana1 || false,
+        septiembre_semana2: defaultValues.septiembre_semana2 || false,
+        septiembre_semana3: defaultValues.septiembre_semana3 || false,
+        septiembre_semana4: defaultValues.septiembre_semana4 || false,
+        octubre_semana1: defaultValues.octubre_semana1 || false,
+        octubre_semana2: defaultValues.octubre_semana2 || false,
+        octubre_semana3: defaultValues.octubre_semana3 || false,
+        octubre_semana4: defaultValues.octubre_semana4 || false,
+        noviembre_semana1: defaultValues.noviembre_semana1 || false,
+        noviembre_semana2: defaultValues.noviembre_semana2 || false,
+        noviembre_semana3: defaultValues.noviembre_semana3 || false,
+        noviembre_semana4: defaultValues.noviembre_semana4 || false,
+        diciembre_semana1: defaultValues.diciembre_semana1 || false,
+        diciembre_semana2: defaultValues.diciembre_semana2 || false,
+        diciembre_semana3: defaultValues.diciembre_semana3 || false,
+        diciembre_semana4: defaultValues.diciembre_semana4 || false,
+      });
+    }
+  }, [defaultValues, reset]);
+
+  const onSubmit = async (data: MantenimientoProgramadoFormData) => {
+    try {
+      const formData = new FormData();
+
+      formData.append("elemento_id", data.elemento_id);
+      formData.append("frecuencia", data.frecuencia);
+      formData.append("año", data.año);
+      formData.append("estado", data.estado);
+      if (data.observaciones) formData.append("observaciones", data.observaciones);
+
+      // Agregar todas las semanas
+      meses.forEach((mes) => {
+        for (let i = 1; i <= 4; i++) {
+          const fieldName = `${mes}_semana${i}` as keyof MantenimientoProgramadoFormData;
+          formData.append(fieldName, String(data[fieldName] || false));
+        }
+      });
+
+      if (hiddenFields) {
+        Object.entries(hiddenFields).forEach(([name, value]) => {
+          formData.append(name, String(value));
+        });
+      }
+
+      const promise = serverAction(formData);
+
+      await toast.promise(promise, {
+        loading: create ? "Creando mantenimiento..." : "Actualizando mantenimiento...",
+        success: create
+          ? "Mantenimiento programado creado exitosamente"
+          : "Mantenimiento programado actualizado exitosamente",
+        error: "Error al procesar el formulario",
+      });
+
+      reset();
+      setOpen(false);
+      if (onClose) onClose();
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const btnText = create ? "Crear" : "Editar";
+  const title = create ? "Crear Mantenimiento Programado" : "Editar Mantenimiento Programado";
+  const submitText = create ? "Crear" : "Guardar cambios";
+
+  return (
+    <>
+      {create && (
+        <Button onClick={() => setOpen(true)}>{btnText}</Button>
+      )}
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen && onClose) onClose();
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+            {/* Elemento */}
+            <div className="grid gap-1">
+              <Label htmlFor="elemento_id">Elemento</Label>
+              <Select
+                value={watch("elemento_id")}
+                onValueChange={(value) => setValue("elemento_id", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona elemento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {elementos.map((e) => (
+                    <SelectItem key={e.id} value={e.id.toString()}>
+                      {e.serie} - {e.marca || ""} {e.modelo || ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.elemento_id && (
+                <p className="text-red-500 text-sm">{errors.elemento_id.message}</p>
+              )}
+            </div>
+
+            {/* Frecuencia y Año */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="frecuencia">Frecuencia</Label>
+                <Select
+                  value={watch("frecuencia")}
+                  onValueChange={(value) => setValue("frecuencia", value as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona frecuencia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DIARIO">Diario</SelectItem>
+                    <SelectItem value="SEMANAL">Semanal</SelectItem>
+                    <SelectItem value="MENSUAL">Mensual</SelectItem>
+                    <SelectItem value="TRIMESTRAL">Trimestral</SelectItem>
+                    <SelectItem value="SEMESTRAL">Semestral</SelectItem>
+                    <SelectItem value="ANUAL">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.frecuencia && (
+                  <p className="text-red-500 text-sm">{errors.frecuencia.message}</p>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="año">Año</Label>
+                <Input
+                  id="año"
+                  type="number"
+                  min="2020"
+                  max="2100"
+                  {...register("año")}
+                />
+                {errors.año && (
+                  <p className="text-red-500 text-sm">{errors.año.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Estado */}
+            <div className="grid gap-1">
+              <Label htmlFor="estado">Estado</Label>
+              <Select
+                value={watch("estado")}
+                onValueChange={(value) => setValue("estado", value as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDIENTE">Pendiente</SelectItem>
+                  <SelectItem value="REALIZADO">Realizado</SelectItem>
+                  <SelectItem value="APLAZADO">Aplazado</SelectItem>
+                  <SelectItem value="CANCELADO">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.estado && (
+                <p className="text-red-500 text-sm">{errors.estado.message}</p>
+              )}
+            </div>
+
+            {/* Programación por Meses - Grid de 12 meses x 4 semanas */}
+            <div className="grid gap-4">
+              <Label>Programación Mensual (Selecciona las semanas)</Label>
+              <div className="grid grid-cols-3 gap-4 border rounded-lg p-4">
+                {meses.map((mes) => (
+                  <div key={mes} className="space-y-2">
+                    <Label className="font-semibold capitalize">{mes}</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[1, 2, 3, 4].map((semana) => {
+                        const fieldName = `${mes}_semana${semana}` as keyof MantenimientoProgramadoFormData;
+                        return (
+                          <div key={semana} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`${mes}_semana${semana}`}
+                              checked={watch(fieldName) || false}
+                              onCheckedChange={(checked) =>
+                                setValue(fieldName, checked as boolean)
+                              }
+                            />
+                            <Label
+                              htmlFor={`${mes}_semana${semana}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              Sem {semana}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Observaciones */}
+            <div className="grid gap-1">
+              <Label htmlFor="observaciones">Observaciones</Label>
+              <Textarea
+                id="observaciones"
+                placeholder="Observaciones adicionales..."
+                {...register("observaciones")}
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  if (onClose) onClose();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {submitText}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+

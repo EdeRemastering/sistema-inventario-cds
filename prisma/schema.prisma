@@ -30,8 +30,92 @@ enum EstadoCorto {
 }
 
 enum TipoMovimiento {
+  ENTRADA
   SALIDA
   DEVOLUCION
+  TRASLADO
+}
+
+enum FrecuenciaMantenimiento {
+  DIARIO
+  SEMANAL
+  MENSUAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum EstadoMantenimiento {
+  PENDIENTE
+  REALIZADO
+  APLAZADO
+  CANCELADO
+}
+
+enum TipoMantenimiento {
+  PREVENTIVO
+  CORRECTIVO
+  PREDICTIVO
+}
+
+enum TipoElementoHojaVida {
+  EQUIPO
+  RECURSO_DIDACTICO
+}
+
+enum TipoCambio {
+  ACTUALIZACION
+  REPARACION
+  MEJORA
+  REEMPLAZO
+}
+
+model sedes {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique @db.VarChar(100)
+  ciudad      String    @db.VarChar(100)
+  municipio   String?   @db.VarChar(100)
+  activo      Boolean   @default(true)
+  creado_en   DateTime  @default(now()) @db.Timestamp(0)
+  actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  ubicaciones ubicaciones[]
+
+  @@map("sedes")
+}
+
+model ubicaciones {
+  id          Int       @id @default(autoincrement())
+  codigo      String    @unique @db.VarChar(20)
+  nombre      String    @db.VarChar(100)
+  sede_id     Int
+  activo      Boolean   @default(true)
+  creado_en   DateTime  @default(now()) @db.Timestamp(0)
+  actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  sede sedes @relation(fields: [sede_id], references: [id], onDelete: Restrict)
+  elementos elementos[] @relation("ElementoUbicacion")
+  movimientos_anterior movimientos[] @relation("MovimientoUbicacionAnterior")
+  movimientos_nueva movimientos[] @relation("MovimientoUbicacionNueva")
+  historico_movimientos_anterior historico_movimientos[] @relation("HistoricoUbicacionAnterior")
+  historico_movimientos_nueva historico_movimientos[] @relation("HistoricoUbicacionNueva")
+
+  @@index([sede_id])
+  @@map("ubicaciones")
+}
+
+model configuracion_estados {
+  id          Int       @id @default(autoincrement())
+  tipo        String    @db.VarChar(10) // FUNCIONAL, FISICO
+  codigo      String    @db.VarChar(2)
+  nombre      String    @db.VarChar(20)
+  descripcion String?   @db.Text
+  creado_en   DateTime  @default(now()) @db.Timestamp(0)
+  actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@unique([tipo, codigo], map: "unique_estado_tipo_codigo")
+  @@index([tipo])
+  @@map("configuracion_estados")
 }
 
 model categorias {
@@ -73,23 +157,34 @@ model elementos {
   serie            String      @db.VarChar(100)
   marca            String?     @db.VarChar(100)
   modelo           String?     @db.VarChar(100)
-  ubicacion        String?     @db.VarChar(200)
+  ubicacion        String?     @db.VarChar(200) // Mantener para compatibilidad
+  ubicacion_id     Int?        // Nueva relación con ubicaciones
   estado_funcional EstadoCorto @default(B)
   estado_fisico    EstadoCorto @default(B)
   fecha_entrada    DateTime    @db.Date
-  codigo_equipo    String?     @db.VarChar(100)
+  fecha_salida     DateTime?   @db.Date
+  codigo_equipo    String?     @unique @db.VarChar(100) // Código estructurado SS02-EC-01-01
+  especificaciones Json?       // Para datos variables
   observaciones    String?     @db.Text
+  activo           Boolean     @default(true)
   creado_en        DateTime    @default(now()) @db.Timestamp(0)
   actualizado_en   DateTime    @default(now()) @updatedAt @db.Timestamp(0)
 
   categoria    categorias   @relation(fields: [categoria_id], references: [id])
   subcategoria subcategorias? @relation(fields: [subcategoria_id], references: [id], onDelete: SetNull)
+  ubicacion_rel ubicaciones? @relation("ElementoUbicacion", fields: [ubicacion_id], references: [id], onDelete: SetNull)
   movimientos  movimientos[]
   observaciones_rel observaciones[]
   ticket_elementos ticket_elementos[]
+  historico_movimientos historico_movimientos[]
+  mantenimientos_programados mantenimientos_programados[]
+  mantenimientos_realizados mantenimientos_realizados[]
+  hojas_vida hojas_vida[]
 
   @@index([categoria_id], map: "idx_elementos_categoria")
   @@index([subcategoria_id], map: "idx_elementos_subcategoria")
+  @@index([ubicacion_id], map: "idx_elementos_ubicacion")
+  @@index([codigo_equipo], map: "idx_elementos_codigo")
   @@map("elementos")
 }
 
@@ -114,36 +209,44 @@ model movimientos {
   orden_numero             String         @db.VarChar(50)
   fecha_movimiento         DateTime       @db.DateTime(0)
   dependencia_entrega      String         @db.VarChar(200)
-  firma_funcionario_entrega String?       @db.VarChar(500)
+  firma_funcionario_entrega String?       @db.Text
   cargo_funcionario_entrega String?       @db.VarChar(200)
   dependencia_recibe       String         @db.VarChar(200)
-  firma_funcionario_recibe String?        @db.VarChar(500)
+  firma_funcionario_recibe String?        @db.Text
   cargo_funcionario_recibe String?        @db.VarChar(200)
   motivo                   String         @db.Text
   fecha_estimada_devolucion DateTime      @db.Date
   fecha_real_devolucion    DateTime?      @db.DateTime(0)
   observaciones_entrega    String?        @db.Text
   observaciones_devolucion String?        @db.Text
-  firma_recepcion          String?        @db.VarChar(255)
+  firma_recepcion          String?        @db.Text
   tipo                     TipoMovimiento @default(SALIDA)
-  firma_entrega            String?        @db.VarChar(255)
-  firma_recibe             String?        @db.VarChar(255)
+  firma_entrega            String?        @db.Text
+  firma_recibe             String?        @db.Text
   codigo_equipo            String?        @db.VarChar(100)
   serial_equipo            String?        @db.VarChar(100)
   hora_entrega             DateTime?      @db.Time(0)
   hora_devolucion          DateTime?      @db.Time(0)
   numero_ticket            String         @unique @db.VarChar(100)
   creado_en                DateTime       @default(now()) @db.Timestamp(0)
-  firma_devuelve           String?        @db.VarChar(255)
-  firma_recibe_devolucion  String?        @db.VarChar(255)
+  firma_devuelve           String?        @db.Text
+  firma_recibe_devolucion  String?        @db.Text
   devuelto_por             String?        @db.VarChar(255)
   recibido_por             String?        @db.VarChar(255)
+  // Nuevos campos para el sistema de ubicaciones
+  ubicacion_anterior_id    Int?
+  ubicacion_nueva_id       Int?
+  usuario                  String?        @db.VarChar(50)
 
   elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+  ubicacion_anterior ubicaciones? @relation("MovimientoUbicacionAnterior", fields: [ubicacion_anterior_id], references: [id], onDelete: SetNull)
+  ubicacion_nueva ubicaciones? @relation("MovimientoUbicacionNueva", fields: [ubicacion_nueva_id], references: [id], onDelete: SetNull)
 
   @@index([elemento_id], map: "idx_movimientos_elemento")
   @@index([tipo], map: "idx_movimientos_tipo")
   @@index([fecha_movimiento], map: "idx_movimientos_fecha")
+  @@index([ubicacion_anterior_id], map: "idx_movimientos_ubicacion_anterior")
+  @@index([ubicacion_nueva_id], map: "idx_movimientos_ubicacion_nueva")
   @@map("movimientos")
 }
 
@@ -159,6 +262,27 @@ model observaciones {
   @@index([elemento_id], map: "idx_observaciones_elemento")
   @@index([fecha_observacion], map: "idx_observaciones_fecha")
   @@map("observaciones")
+}
+
+model historico_movimientos {
+  id                Int       @id @default(autoincrement())
+  elemento_id       Int
+  tipo_movimiento   String    @db.VarChar(10) // ENTRADA, SALIDA, TRASLADO
+  fecha_movimiento  DateTime  @db.Date
+  ubicacion_anterior_id Int?
+  ubicacion_nueva_id    Int?
+  observaciones     String?   @db.Text
+  usuario           String?   @db.VarChar(50)
+  creado_en         DateTime  @default(now()) @db.Timestamp(0)
+
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+  ubicacion_anterior ubicaciones? @relation("HistoricoUbicacionAnterior", fields: [ubicacion_anterior_id], references: [id], onDelete: SetNull)
+  ubicacion_nueva ubicaciones? @relation("HistoricoUbicacionNueva", fields: [ubicacion_nueva_id], references: [id], onDelete: SetNull)
+
+  @@index([elemento_id], map: "idx_historico_elemento")
+  @@index([tipo_movimiento], map: "idx_historico_tipo")
+  @@index([fecha_movimiento], map: "idx_historico_fecha")
+  @@map("historico_movimientos")
 }
 
 model reportes_generados {
@@ -184,11 +308,11 @@ model tickets_guardados {
   dependencia_entrega        String?   @db.VarChar(100)
   persona_entrega_nombre     String?   @db.VarChar(100)
   persona_entrega_apellido   String?   @db.VarChar(100)
-  firma_funcionario_entrega  String?   @db.VarChar(500)
+  firma_funcionario_entrega  String?   @db.Text
   dependencia_recibe         String?   @db.VarChar(100)
   persona_recibe_nombre      String?   @db.VarChar(100)
   persona_recibe_apellido    String?   @db.VarChar(100)
-  firma_funcionario_recibe   String?   @db.VarChar(500)
+  firma_funcionario_recibe   String?   @db.Text
   motivo                     String?   @db.VarChar(255)
   orden_numero               String?   @db.VarChar(50)
   fecha_guardado             DateTime? @default(now()) @db.DateTime(0)
@@ -259,4 +383,148 @@ model notifications {
 enum Rol {
   administrador
   usuario
+}
+
+model configuracion_frecuencias {
+  id            Int      @id @default(autoincrement())
+  codigo        String   @unique @db.VarChar(20)
+  nombre        String   @db.VarChar(50)
+  dias_intervalo Int?
+  descripcion   String?  @db.Text
+  creado_en     DateTime @default(now()) @db.Timestamp(0)
+  actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@map("configuracion_frecuencias")
+}
+
+model mantenimientos_programados {
+  id                Int                    @id @default(autoincrement())
+  elemento_id       Int
+  frecuencia        FrecuenciaMantenimiento
+  año               Int
+  enero_semana1     Boolean                @default(false)
+  enero_semana2     Boolean                @default(false)
+  enero_semana3     Boolean                @default(false)
+  enero_semana4     Boolean                @default(false)
+  febrero_semana1   Boolean                @default(false)
+  febrero_semana2   Boolean                @default(false)
+  febrero_semana3   Boolean                @default(false)
+  febrero_semana4   Boolean                @default(false)
+  marzo_semana1     Boolean                @default(false)
+  marzo_semana2     Boolean                @default(false)
+  marzo_semana3     Boolean                @default(false)
+  marzo_semana4     Boolean                @default(false)
+  abril_semana1     Boolean                @default(false)
+  abril_semana2     Boolean                @default(false)
+  abril_semana3     Boolean                @default(false)
+  abril_semana4     Boolean                @default(false)
+  mayo_semana1      Boolean                @default(false)
+  mayo_semana2      Boolean                @default(false)
+  mayo_semana3      Boolean                @default(false)
+  mayo_semana4      Boolean                @default(false)
+  junio_semana1     Boolean                @default(false)
+  junio_semana2     Boolean                @default(false)
+  junio_semana3     Boolean                @default(false)
+  junio_semana4     Boolean                @default(false)
+  julio_semana1     Boolean                @default(false)
+  julio_semana2     Boolean                @default(false)
+  julio_semana3     Boolean                @default(false)
+  julio_semana4     Boolean                @default(false)
+  agosto_semana1    Boolean                @default(false)
+  agosto_semana2     Boolean                @default(false)
+  agosto_semana3     Boolean                @default(false)
+  agosto_semana4     Boolean                @default(false)
+  septiembre_semana1 Boolean                @default(false)
+  septiembre_semana2 Boolean                @default(false)
+  septiembre_semana3 Boolean                @default(false)
+  septiembre_semana4 Boolean                @default(false)
+  octubre_semana1   Boolean                @default(false)
+  octubre_semana2   Boolean                @default(false)
+  octubre_semana3   Boolean                @default(false)
+  octubre_semana4   Boolean                @default(false)
+  noviembre_semana1 Boolean                @default(false)
+  noviembre_semana2 Boolean                @default(false)
+  noviembre_semana3 Boolean                @default(false)
+  noviembre_semana4 Boolean                @default(false)
+  diciembre_semana1  Boolean                @default(false)
+  diciembre_semana2  Boolean                @default(false)
+  diciembre_semana3  Boolean                @default(false)
+  diciembre_semana4  Boolean                @default(false)
+  estado            EstadoMantenimiento    @default(PENDIENTE)
+  observaciones     String?                @db.Text
+  creado_en         DateTime               @default(now()) @db.Timestamp(0)
+  actualizado_en    DateTime               @default(now()) @updatedAt @db.Timestamp(0)
+
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+  mantenimientos_realizados mantenimientos_realizados[]
+
+  @@index([elemento_id])
+  @@index([año])
+  @@index([estado])
+  @@map("mantenimientos_programados")
+}
+
+model mantenimientos_realizados {
+  id                Int                  @id @default(autoincrement())
+  elemento_id       Int
+  programacion_id   Int?
+  fecha_mantenimiento DateTime            @db.Date
+  tipo              TipoMantenimiento
+  descripcion       String               @db.Text
+  averias_encontradas String?            @db.Text
+  repuestos_utilizados String?           @db.Text
+  responsable       String               @db.VarChar(100)
+  costo             Decimal?             @db.Decimal(10, 2)
+  creado_por        String?              @db.VarChar(50)
+  creado_en         DateTime             @default(now()) @db.Timestamp(0)
+
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+  programacion mantenimientos_programados? @relation(fields: [programacion_id], references: [id], onDelete: SetNull)
+
+  @@index([elemento_id])
+  @@index([programacion_id])
+  @@index([fecha_mantenimiento])
+  @@index([tipo])
+  @@map("mantenimientos_realizados")
+}
+
+model hojas_vida {
+  id                        Int                    @id @default(autoincrement())
+  elemento_id               Int
+  fecha_dilegenciamiento    DateTime               @db.Date
+  tipo_elemento             TipoElementoHojaVida
+  area_ubicacion            String?                @db.VarChar(100)
+  responsable               String?                @db.VarChar(100)
+  especificaciones_tecnicas Json?                  // Para datos variables
+  descripcion               String?                @db.Text
+  requerimientos_funcionamiento String?            @db.Text
+  requerimientos_seguridad String?                @db.Text
+  rutina_mantenimiento      FrecuenciaMantenimiento?
+  fecha_actualizacion       DateTime?              @db.Date
+  activo                    Boolean                @default(true)
+  creado_en                 DateTime               @default(now()) @db.Timestamp(0)
+  actualizado_en            DateTime               @default(now()) @updatedAt @db.Timestamp(0)
+
+  elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
+  cambios cambios_elementos[]
+
+  @@index([elemento_id])
+  @@index([activo])
+  @@map("hojas_vida")
+}
+
+model cambios_elementos {
+  id            Int         @id @default(autoincrement())
+  hoja_vida_id  Int
+  fecha_cambio  DateTime    @db.Date
+  descripcion_cambio String @db.Text
+  tipo_cambio   TipoCambio
+  usuario       String?     @db.VarChar(50)
+  creado_en     DateTime    @default(now()) @db.Timestamp(0)
+
+  hoja_vida hojas_vida @relation(fields: [hoja_vida_id], references: [id], onDelete: Cascade)
+
+  @@index([hoja_vida_id])
+  @@index([fecha_cambio])
+  @@map("cambios_elementos")
 }

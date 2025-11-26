@@ -12,19 +12,6 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    rules: {
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-unused-vars": "error",
-      "no-unused-vars": "off", // Desactivar la regla base para usar la de TypeScript
-    },
-    overrides: [
-      {
-        files: ["**/*.test.*", "**/*.spec.*", "src/test/**/*"],
-        rules: {
-          "@typescript-eslint/no-explicit-any": "off",
-        },
-      },
-    ],
     ignores: [
       "node_modules/**",
       ".next/**",
@@ -43,6 +30,19 @@ const eslintConfig = [
       "**/*.test.*",
       "**/*.spec.*",
     ],
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": "error",
+      "no-unused-vars": "off", // Desactivar la regla base para usar la de TypeScript
+    },
+  },
+  {
+    files: ["**/*.test.*", "**/*.spec.*", "src/test/**/*"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
   },
 ];
 

@@ -38,6 +38,13 @@ export async function actionCreateMovimiento(formData: FormData) {
     firma_funcionario_entrega: null, // Se actualizará después
     firma_funcionario_recibe: null, // Se actualizará después
     ...parsed.data,
+    ubicacion_anterior_id: parsed.data.ubicacion_anterior_id === "" || parsed.data.ubicacion_anterior_id === undefined 
+      ? null 
+      : (typeof parsed.data.ubicacion_anterior_id === "number" ? parsed.data.ubicacion_anterior_id : Number(parsed.data.ubicacion_anterior_id) || null),
+    ubicacion_nueva_id: parsed.data.ubicacion_nueva_id === "" || parsed.data.ubicacion_nueva_id === undefined 
+      ? null 
+      : (typeof parsed.data.ubicacion_nueva_id === "number" ? parsed.data.ubicacion_nueva_id : Number(parsed.data.ubicacion_nueva_id) || null),
+    usuario: parsed.data.usuario === "" ? null : parsed.data.usuario || null,
   });
   
   // Guardar firmas como imágenes si son válidas
@@ -105,10 +112,25 @@ export async function actionUpdateMovimiento(formData: FormData) {
     }
   }
   
+  // Convertir ubicaciones de string a number si es necesario
+  const ubicacionAnteriorId = parsed.data.ubicacion_anterior_id === "" || parsed.data.ubicacion_anterior_id === undefined
+    ? null
+    : (typeof parsed.data.ubicacion_anterior_id === "number" 
+        ? parsed.data.ubicacion_anterior_id 
+        : Number(parsed.data.ubicacion_anterior_id) || null);
+  
+  const ubicacionNuevaId = parsed.data.ubicacion_nueva_id === "" || parsed.data.ubicacion_nueva_id === undefined
+    ? null
+    : (typeof parsed.data.ubicacion_nueva_id === "number" 
+        ? parsed.data.ubicacion_nueva_id 
+        : Number(parsed.data.ubicacion_nueva_id) || null);
+  
   await updateMovimiento(parsed.data.id, {
     ...parsed.data,
     firma_funcionario_entrega: firmaEntregaUrl || movimientoActual?.firma_funcionario_entrega || null,
     firma_funcionario_recibe: firmaRecibeUrl || movimientoActual?.firma_funcionario_recibe || null,
+    ubicacion_anterior_id: ubicacionAnteriorId,
+    ubicacion_nueva_id: ubicacionNuevaId,
   });
   revalidatePath("/movimientos");
 }

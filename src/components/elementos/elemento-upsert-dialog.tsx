@@ -24,6 +24,8 @@ import {
 } from "../ui/select";
 
 const schema = z.object({
+  sede_id: z.string().min(1, "Selecciona sede"),
+  ubicacion_id: z.string().min(1, "Selecciona ubicación"),
   categoria_id: z.string().min(1, "Selecciona categoría"),
   subcategoria_id: z.string().optional(),
   serie: z.string().min(1, "Serie requerida"),
@@ -36,12 +38,16 @@ type ElementoFormData = z.infer<typeof schema>;
 
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
+type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
 
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
+  sedes: SedeOption[];
   categorias: CategoriaOption[];
   subcategorias: SubcategoriaOption[];
+  ubicaciones: UbicacionOption[];
   defaultValues?: Partial<ElementoFormData>;
   hiddenFields?: Record<string, string | number>;
 };
@@ -49,8 +55,10 @@ type Props = {
 export function ElementoUpsertDialog({
   serverAction,
   create = true,
+  sedes,
   categorias,
   subcategorias,
+  ubicaciones,
   defaultValues,
   hiddenFields,
 }: Props) {
@@ -71,6 +79,12 @@ export function ElementoUpsertDialog({
     } as ElementoFormData,
   });
 
+  // Filtrar ubicaciones por sede seleccionada
+  const selectedSedeId = watch("sede_id");
+  const filteredUbicaciones = ubicaciones.filter(
+    (u) => u.sede_id === parseInt(selectedSedeId || "0")
+  );
+
   // Filtrar subcategorías por categoría seleccionada
   const selectedCategoriaId = watch("categoria_id");
   const filteredSubcategorias = subcategorias.filter(
@@ -81,7 +95,8 @@ export function ElementoUpsertDialog({
     try {
       const formData = new FormData();
 
-      // Agregar campos del formulario
+      // Agregar campos del formulario en el orden correcto
+      formData.append("ubicacion_id", data.ubicacion_id);
       formData.append("categoria_id", data.categoria_id);
       if (data.subcategoria_id)
         formData.append("subcategoria_id", data.subcategoria_id);
@@ -127,6 +142,62 @@ export function ElementoUpsertDialog({
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+            {/* Sede */}
+            <div className="grid gap-1">
+              <Label htmlFor="sede_id">Sede</Label>
+              <Select
+                value={watch("sede_id")}
+                onValueChange={(value) => {
+                  setValue("sede_id", value);
+                  setValue("ubicacion_id", ""); // Reset ubicación al cambiar sede
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona sede" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sedes.map((sede) => (
+                    <SelectItem key={sede.id} value={sede.id.toString()}>
+                      {sede.nombre} - {sede.ciudad}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.sede_id && (
+                <p className="text-red-500 text-sm">
+                  {errors.sede_id.message}
+                </p>
+              )}
+            </div>
+
+            {/* Ubicación */}
+            <div className="grid gap-1">
+              <Label htmlFor="ubicacion_id">Ubicación</Label>
+              <Select
+                value={watch("ubicacion_id") || undefined}
+                onValueChange={(value) =>
+                  setValue("ubicacion_id", value || "")
+                }
+                disabled={!selectedSedeId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona ubicación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredUbicaciones.map((u) => (
+                    <SelectItem key={u.id} value={u.id.toString()}>
+                      {u.codigo} - {u.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.ubicacion_id && (
+                <p className="text-red-500 text-sm">
+                  {errors.ubicacion_id.message}
+                </p>
+              )}
+            </div>
+
             {/* Categoría */}
             <div className="grid gap-1">
               <Label htmlFor="categoria_id">Categoría</Label>
@@ -242,6 +313,7 @@ export function ElementoUpsertDialog({
                 </p>
               )}
             </div>
+
 
             <DialogFooter>
               <Button

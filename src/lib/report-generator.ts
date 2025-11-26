@@ -856,7 +856,9 @@ export async function generateTicketsReport(data: TicketsReporteData): Promise<s
 
 /**
  * Función auxiliar para cargar y convertir imagen a base64
+ * @deprecated No se usa actualmente
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function loadImageAsBase64(imagePath: string): Promise<string> {
   try {
     const response = await fetch(imagePath);
