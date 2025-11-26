@@ -13,11 +13,19 @@ import {
 import { MantenimientoProgramadoUpsertDialog } from "./mantenimiento-programado-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
-import type { Elemento } from "../../modules/elementos/types";
+import type { ElementoWithRelations } from "../../modules/elementos/types";
+import type { Sede } from "../../modules/sedes/types";
+import type { Ubicacion } from "../../modules/ubicaciones/types";
+import type { Categoria } from "../../modules/categorias/types";
+import type { Subcategoria } from "../../modules/subcategorias/types";
 
 type Props = {
   mantenimientos: MantenimientoProgramado[];
-  elementos: Elemento[];
+  elementos: ElementoWithRelations[];
+  sedes: Sede[];
+  ubicaciones: Ubicacion[];
+  categorias: Categoria[];
+  subcategorias: Subcategoria[];
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
@@ -26,6 +34,10 @@ type Props = {
 export function MantenimientosProgramadosList({
   mantenimientos,
   elementos,
+  sedes,
+  ubicaciones,
+  categorias,
+  subcategorias,
   onCreateMantenimiento,
   onUpdateMantenimiento,
   onDeleteMantenimiento,
@@ -55,6 +67,10 @@ export function MantenimientosProgramadosList({
           serverAction={onCreateMantenimiento}
           create={true}
           elementos={elementos}
+          sedes={sedes}
+          ubicaciones={ubicaciones}
+          categorias={categorias}
+          subcategorias={subcategorias}
         />
       </div>
 
@@ -120,6 +136,10 @@ export function MantenimientosProgramadosList({
           create={false}
           defaultValues={editingMantenimiento}
           elementos={elementos}
+          sedes={sedes}
+          ubicaciones={ubicaciones}
+          categorias={categorias}
+          subcategorias={subcategorias}
           hiddenFields={{ id: editingMantenimiento.id }}
           onClose={() => setEditingMantenimiento(null)}
         />

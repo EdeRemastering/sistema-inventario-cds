@@ -24,10 +24,15 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Switch } from "../ui/switch";
+import { ElementoSearchSelect } from "../ui/elemento-search-select";
 import type { HojaVida } from "../../modules/hojas_vida/types";
 import type { Elemento } from "../../modules/elementos/types";
 
 const schema = z.object({
+  sede_id: z.string().min(1, "Selecciona sede"),
+  ubicacion_id: z.string().min(1, "Selecciona ubicación"),
+  categoria_id: z.string().min(1, "Selecciona categoría"),
+  subcategoria_id: z.string().optional(),
   elemento_id: z.string().min(1, "Selecciona elemento"),
   fecha_dilegenciamiento: z.string().min(1, "Fecha requerida"),
   tipo_elemento: z.enum(["EQUIPO", "RECURSO_DIDACTICO"]),
@@ -43,11 +48,36 @@ const schema = z.object({
 
 type HojaVidaFormData = z.infer<typeof schema>;
 
+type CategoriaOption = { id: number; nombre: string };
+type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
+type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type ElementoOption = Elemento & {
+  categoria_id: number;
+  subcategoria_id: number | null;
+  ubicacion_id: number | null;
+  ubicacion_rel?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    } | null;
+  } | null;
+};
+
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
   defaultValues?: Partial<HojaVida>;
-  elementos: Elemento[];
+  elementos: ElementoOption[];
+  sedes: SedeOption[];
+  ubicaciones: UbicacionOption[];
+  categorias: CategoriaOption[];
+  subcategorias: SubcategoriaOption[];
   hiddenFields?: Record<string, string | number>;
   onClose?: () => void;
 };
@@ -57,10 +87,19 @@ export function HojaVidaUpsertDialog({
   create = true,
   defaultValues,
   elementos,
+  sedes,
+  ubicaciones,
+  categorias,
+  subcategorias,
   hiddenFields,
   onClose,
 }: Props) {
   const [open, setOpen] = useState(!defaultValues);
+
+  // Obtener el elemento seleccionado para pre-llenar los filtros
+  const elementoSeleccionado = defaultValues?.elemento_id
+    ? elementos.find((e) => e.id === defaultValues.elemento_id)
+    : null;
 
   const {
     register,
@@ -72,6 +111,10 @@ export function HojaVidaUpsertDialog({
   } = useForm<HojaVidaFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      sede_id: elementoSeleccionado?.ubicacion_rel?.sede?.id?.toString() || "",
+      ubicacion_id: elementoSeleccionado?.ubicacion_id?.toString() || "",
+      categoria_id: elementoSeleccionado?.categoria_id?.toString() || "",
+      subcategoria_id: elementoSeleccionado?.subcategoria_id?.toString() || "",
       elemento_id: defaultValues?.elemento_id?.toString() || "",
       fecha_dilegenciamiento: defaultValues?.fecha_dilegenciamiento
         ? new Date(defaultValues.fecha_dilegenciamiento).toISOString().split("T")[0]
@@ -90,9 +133,37 @@ export function HojaVidaUpsertDialog({
     },
   });
 
+  // Filtrar ubicaciones por sede seleccionada
+  const selectedSedeId = watch("sede_id");
+  const filteredUbicaciones = ubicaciones.filter(
+    (u) => u.sede_id === parseInt(selectedSedeId || "0")
+  );
+
+  // Filtrar subcategorías por categoría seleccionada
+  const selectedCategoriaId = watch("categoria_id");
+  const filteredSubcategorias = subcategorias.filter(
+    (sub) => sub.categoria_id === parseInt(selectedCategoriaId || "0")
+  );
+
+  // Filtrar elementos por todas las selecciones
+  const selectedUbicacionId = watch("ubicacion_id");
+  const selectedSubcategoriaId = watch("subcategoria_id");
+  
+  const filteredElementos = elementos.filter((elemento) => {
+    const matchUbicacion = !selectedUbicacionId || elemento.ubicacion_id === parseInt(selectedUbicacionId);
+    const matchCategoria = !selectedCategoriaId || elemento.categoria_id === parseInt(selectedCategoriaId);
+    const matchSubcategoria = !selectedSubcategoriaId || elemento.subcategoria_id === parseInt(selectedSubcategoriaId);
+    return matchUbicacion && matchCategoria && matchSubcategoria;
+  });
+
   useEffect(() => {
     if (defaultValues) {
+      const elemento = elementos.find((e) => e.id === defaultValues.elemento_id);
       reset({
+        sede_id: elemento?.ubicacion_rel?.sede?.id?.toString() || "",
+        ubicacion_id: elemento?.ubicacion_id?.toString() || "",
+        categoria_id: elemento?.categoria_id?.toString() || "",
+        subcategoria_id: elemento?.subcategoria_id?.toString() || "",
         elemento_id: defaultValues.elemento_id?.toString() || "",
         fecha_dilegenciamiento: defaultValues.fecha_dilegenciamiento
           ? new Date(defaultValues.fecha_dilegenciamiento).toISOString().split("T")[0]
@@ -110,7 +181,7 @@ export function HojaVidaUpsertDialog({
         activo: defaultValues.activo ?? true,
       });
     }
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, elementos]);
 
   const onSubmit = async (data: HojaVidaFormData) => {
     try {
@@ -170,28 +241,125 @@ export function HojaVidaUpsertDialog({
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-            {/* Elemento */}
+            {/* Sede */}
             <div className="grid gap-1">
-              <Label htmlFor="elemento_id">Elemento</Label>
+              <Label htmlFor="sede_id">Sede</Label>
               <Select
-                value={watch("elemento_id")}
-                onValueChange={(value) => setValue("elemento_id", value)}
+                value={watch("sede_id")}
+                onValueChange={(value) => {
+                  setValue("sede_id", value);
+                  setValue("ubicacion_id", ""); // Reset ubicación al cambiar sede
+                  setValue("categoria_id", ""); // Reset categoría
+                  setValue("subcategoria_id", ""); // Reset subcategoría
+                  setValue("elemento_id", ""); // Reset elemento
+                }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona elemento" />
+                  <SelectValue placeholder="Selecciona sede" />
                 </SelectTrigger>
                 <SelectContent>
-                  {elementos.map((e) => (
-                    <SelectItem key={e.id} value={e.id.toString()}>
-                      {e.serie} - {e.marca || ""} {e.modelo || ""}
+                  {sedes.map((sede) => (
+                    <SelectItem key={sede.id} value={sede.id.toString()}>
+                      {sede.nombre} - {sede.ciudad}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.elemento_id && (
-                <p className="text-red-500 text-sm">{errors.elemento_id.message}</p>
+              {errors.sede_id && (
+                <p className="text-red-500 text-sm">{errors.sede_id.message}</p>
               )}
             </div>
+
+            {/* Ubicación */}
+            <div className="grid gap-1">
+              <Label htmlFor="ubicacion_id">Ubicación</Label>
+              <Select
+                value={watch("ubicacion_id") || undefined}
+                onValueChange={(value) => {
+                  setValue("ubicacion_id", value || "");
+                  setValue("categoria_id", ""); // Reset categoría
+                  setValue("subcategoria_id", ""); // Reset subcategoría
+                  setValue("elemento_id", ""); // Reset elemento
+                }}
+                disabled={!selectedSedeId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona ubicación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredUbicaciones.map((u) => (
+                    <SelectItem key={u.id} value={u.id.toString()}>
+                      {u.codigo} - {u.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.ubicacion_id && (
+                <p className="text-red-500 text-sm">{errors.ubicacion_id.message}</p>
+              )}
+            </div>
+
+            {/* Categoría */}
+            <div className="grid gap-1">
+              <Label htmlFor="categoria_id">Categoría</Label>
+              <Select
+                value={watch("categoria_id")}
+                onValueChange={(value) => {
+                  setValue("categoria_id", value);
+                  setValue("subcategoria_id", ""); // Reset subcategoría
+                  setValue("elemento_id", ""); // Reset elemento
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={c.id.toString()}>
+                      {c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.categoria_id && (
+                <p className="text-red-500 text-sm">{errors.categoria_id.message}</p>
+              )}
+            </div>
+
+            {/* Subcategoría */}
+            <div className="grid gap-1">
+              <Label htmlFor="subcategoria_id">Subcategoría</Label>
+              <Select
+                value={watch("subcategoria_id") || undefined}
+                onValueChange={(value) => {
+                  setValue("subcategoria_id", value || "");
+                  setValue("elemento_id", ""); // Reset elemento
+                }}
+                disabled={!selectedCategoriaId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona subcategoría (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredSubcategorias.map((s) => (
+                    <SelectItem key={s.id} value={s.id.toString()}>
+                      {s.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Elemento con búsqueda */}
+            <ElementoSearchSelect
+              elementos={filteredElementos}
+              value={watch("elemento_id") || undefined}
+              onValueChange={(value) => setValue("elemento_id", value)}
+              label="Elemento"
+              placeholder="Buscar por ID, código, serie, marca o modelo..."
+              disabled={!selectedUbicacionId || !selectedCategoriaId}
+              error={errors.elemento_id?.message}
+            />
 
             {/* Fecha Diligenciamiento y Tipo */}
             <div className="grid grid-cols-2 gap-4">
@@ -286,14 +454,17 @@ export function HojaVidaUpsertDialog({
               <div className="grid gap-1">
                 <Label htmlFor="rutina_mantenimiento">Rutina de Mantenimiento</Label>
                 <Select
-                  value={watch("rutina_mantenimiento") || ""}
-                  onValueChange={(value) => setValue("rutina_mantenimiento", value || "")}
+                  value={watch("rutina_mantenimiento") || "NONE"}
+                  onValueChange={(value) => {
+                    // Si se selecciona "NONE", establecer como cadena vacía para que sea null en el backend
+                    setValue("rutina_mantenimiento", value === "NONE" ? "" : value);
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona frecuencia" />
+                    <SelectValue placeholder="Selecciona frecuencia (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin rutina</SelectItem>
+                    <SelectItem value="NONE">Sin rutina</SelectItem>
                     <SelectItem value="DIARIO">Diario</SelectItem>
                     <SelectItem value="SEMANAL">Semanal</SelectItem>
                     <SelectItem value="MENSUAL">Mensual</SelectItem>

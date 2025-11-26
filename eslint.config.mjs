@@ -29,20 +29,20 @@ const eslintConfig = [
       "src/generated/**/*",
     ],
   },
-  
+
   // Configuración base de Next.js
   ...compat.extends("next/core-web-vitals", "next/typescript"),
-  
+
   // Reglas estrictas para todo el proyecto
   {
     rules: {
       // Variables no usadas = ERROR (sin excepciones)
       "@typescript-eslint/no-unused-vars": "error",
       "no-unused-vars": "off", // Desactivar la regla base
-      
+
       // Tipo any = ERROR
       "@typescript-eslint/no-explicit-any": "error",
-      
+
       // Otras reglas útiles
       "@typescript-eslint/no-empty-function": "warn",
       "@typescript-eslint/no-inferrable-types": "off",
@@ -50,10 +50,16 @@ const eslintConfig = [
       "no-var": "error",
     },
   },
-  
+
   // Excepciones para archivos de test
   {
-    files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/test/**/*"],
+    files: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.spec.ts",
+      "**/*.spec.tsx",
+      "src/test/**/*",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off", // Permitir any en tests
       "@typescript-eslint/no-unused-vars": "warn", // Solo advertencia en tests

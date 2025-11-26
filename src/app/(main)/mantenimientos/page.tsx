@@ -1,5 +1,9 @@
 import { listMantenimientosProgramados, listMantenimientosRealizados } from "../../../modules/mantenimientos/services";
-import { listElementos } from "../../../modules/elementos/services";
+import { listElementosWithRelations } from "../../../modules/elementos/services";
+import { listSedesActivas } from "../../../modules/sedes/services";
+import { listUbicacionesActivas } from "../../../modules/ubicaciones/services";
+import { listCategorias } from "../../../modules/categorias/services";
+import { listSubcategorias } from "../../../modules/subcategorias/services";
 import {
   actionCreateMantenimientoProgramado,
   actionUpdateMantenimientoProgramado,
@@ -15,10 +19,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui
 
 // Componente que maneja la lógica de datos
 async function MantenimientosContent() {
-  const [programados, realizados, elementos] = await Promise.all([
+  const [programados, realizados, elementos, sedes, ubicaciones, categorias, subcategorias] = await Promise.all([
     listMantenimientosProgramados(),
     listMantenimientosRealizados(),
-    listElementos(),
+    listElementosWithRelations(),
+    listSedesActivas(),
+    listUbicacionesActivas(),
+    listCategorias(),
+    listSubcategorias(),
   ]);
 
   return (
@@ -33,6 +41,10 @@ async function MantenimientosContent() {
           <MantenimientosProgramadosList
             mantenimientos={programados}
             elementos={elementos}
+            sedes={sedes}
+            ubicaciones={ubicaciones}
+            categorias={categorias}
+            subcategorias={subcategorias}
             onCreateMantenimiento={actionCreateMantenimientoProgramado}
             onUpdateMantenimiento={actionUpdateMantenimientoProgramado}
             onDeleteMantenimiento={actionDeleteMantenimientoProgramado}
@@ -42,6 +54,10 @@ async function MantenimientosContent() {
           <MantenimientosRealizadosList
             mantenimientos={realizados}
             elementos={elementos}
+            sedes={sedes}
+            ubicaciones={ubicaciones}
+            categorias={categorias}
+            subcategorias={subcategorias}
             onCreateMantenimiento={actionCreateMantenimientoRealizado}
             onUpdateMantenimiento={actionUpdateMantenimientoRealizado}
             onDeleteMantenimiento={actionDeleteMantenimientoRealizado}

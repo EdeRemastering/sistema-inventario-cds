@@ -13,13 +13,21 @@ import {
 import { HojaVidaUpsertDialog } from "./hoja-vida-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { HojaVida } from "../../modules/hojas_vida/types";
-import type { Elemento } from "../../modules/elementos/types";
+import type { ElementoWithRelations } from "../../modules/elementos/types";
+import type { Sede } from "../../modules/sedes/types";
+import type { Ubicacion } from "../../modules/ubicaciones/types";
+import type { Categoria } from "../../modules/categorias/types";
+import type { Subcategoria } from "../../modules/subcategorias/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 type Props = {
   hojasVida: HojaVida[];
-  elementos: Elemento[];
+  elementos: ElementoWithRelations[];
+  sedes: Sede[];
+  ubicaciones: Ubicacion[];
+  categorias: Categoria[];
+  subcategorias: Subcategoria[];
   onCreateHojaVida: (formData: FormData) => Promise<void>;
   onUpdateHojaVida: (formData: FormData) => Promise<void>;
   onDeleteHojaVida: (id: number) => Promise<void>;
@@ -28,6 +36,10 @@ type Props = {
 export function HojasVidaList({
   hojasVida,
   elementos,
+  sedes,
+  ubicaciones,
+  categorias,
+  subcategorias,
   onCreateHojaVida,
   onUpdateHojaVida,
   onDeleteHojaVida,
@@ -42,6 +54,10 @@ export function HojasVidaList({
           serverAction={onCreateHojaVida}
           create={true}
           elementos={elementos}
+          sedes={sedes}
+          ubicaciones={ubicaciones}
+          categorias={categorias}
+          subcategorias={subcategorias}
         />
       </div>
 
@@ -119,6 +135,10 @@ export function HojasVidaList({
           create={false}
           defaultValues={editingHojaVida}
           elementos={elementos}
+          sedes={sedes}
+          ubicaciones={ubicaciones}
+          categorias={categorias}
+          subcategorias={subcategorias}
           hiddenFields={{ id: editingHojaVida.id }}
           onClose={() => setEditingHojaVida(null)}
         />

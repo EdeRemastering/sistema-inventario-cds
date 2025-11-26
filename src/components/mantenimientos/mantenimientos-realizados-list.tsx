@@ -13,13 +13,21 @@ import {
 import { MantenimientoRealizadoUpsertDialog } from "./mantenimiento-realizado-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { MantenimientoRealizado } from "../../modules/mantenimientos/types";
-import type { Elemento } from "../../modules/elementos/types";
+import type { ElementoWithRelations } from "../../modules/elementos/types";
+import type { Sede } from "../../modules/sedes/types";
+import type { Ubicacion } from "../../modules/ubicaciones/types";
+import type { Categoria } from "../../modules/categorias/types";
+import type { Subcategoria } from "../../modules/subcategorias/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 type Props = {
   mantenimientos: MantenimientoRealizado[];
-  elementos: Elemento[];
+  elementos: ElementoWithRelations[];
+  sedes: Sede[];
+  ubicaciones: Ubicacion[];
+  categorias: Categoria[];
+  subcategorias: Subcategoria[];
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
@@ -28,6 +36,10 @@ type Props = {
 export function MantenimientosRealizadosList({
   mantenimientos,
   elementos,
+  sedes,
+  ubicaciones,
+  categorias,
+  subcategorias,
   onCreateMantenimiento,
   onUpdateMantenimiento,
   onDeleteMantenimiento,
@@ -55,6 +67,10 @@ export function MantenimientosRealizadosList({
           serverAction={onCreateMantenimiento}
           create={true}
           elementos={elementos}
+          sedes={sedes}
+          ubicaciones={ubicaciones}
+          categorias={categorias}
+          subcategorias={subcategorias}
         />
       </div>
 
@@ -131,6 +147,10 @@ export function MantenimientosRealizadosList({
           create={false}
           defaultValues={editingMantenimiento}
           elementos={elementos}
+          sedes={sedes}
+          ubicaciones={ubicaciones}
+          categorias={categorias}
+          subcategorias={subcategorias}
           hiddenFields={{ id: editingMantenimiento.id }}
           onClose={() => setEditingMantenimiento(null)}
         />
