@@ -87,19 +87,37 @@ export function ElementoSearchSelect({
             onValueChange(val);
             setSearchQuery(""); // Limpiar búsqueda al seleccionar
           }}
-          disabled={disabled}
+          disabled={disabled || elementos.length === 0}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona elemento">
+            <SelectValue 
+              placeholder={
+                elementos.length === 0 
+                  ? "No hay elementos disponibles" 
+                  : "Selecciona elemento"
+              }
+            >
               {selectedElemento
                 ? `${selectedElemento.serie} - ${selectedElemento.marca || ""} ${selectedElemento.modelo || ""}`.trim()
-                : "Selecciona elemento"}
+                : elementos.length === 0 
+                  ? "No hay elementos disponibles" 
+                  : "Selecciona elemento"}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {filteredElementos.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                No se encontraron elementos
+            {elementos.length === 0 ? (
+              <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                <p className="font-medium">No hay elementos disponibles</p>
+                <p className="text-xs mt-1">
+                  Crea elementos en el inventario para poder seleccionarlos aquí
+                </p>
+              </div>
+            ) : filteredElementos.length === 0 ? (
+              <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                <p className="font-medium">No se encontraron elementos</p>
+                <p className="text-xs mt-1">
+                  Intenta con otro término de búsqueda
+                </p>
               </div>
             ) : (
               filteredElementos.map((e) => (

@@ -147,16 +147,30 @@ export function SubcategoriaUpsertDialog({
               <Select
                 value={watch("categoria_id")}
                 onValueChange={(value) => setValue("categoria_id", value)}
+                disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una categoría" />
+                  <SelectValue placeholder={
+                    categorias.length === 0 
+                      ? "No hay categorías disponibles" 
+                      : "Selecciona una categoría"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorias.map((c) => (
-                    <SelectItem key={c.id} value={c.id.toString()}>
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
+                  {categorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea categorías primero antes de crear subcategorías
+                      </p>
+                    </div>
+                  ) : (
+                    categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.categoria_id && (

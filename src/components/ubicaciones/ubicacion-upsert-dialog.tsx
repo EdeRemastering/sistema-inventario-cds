@@ -169,16 +169,30 @@ export function UbicacionUpsertDialog({
                 onValueChange={(value) =>
                   setValue("sede_id", value || "")
                 }
+                disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una sede" />
+                  <SelectValue placeholder={
+                    sedes.length === 0 
+                      ? "No hay sedes disponibles" 
+                      : "Selecciona una sede"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {sedes.map((sede) => (
-                    <SelectItem key={sede.id} value={sede.id.toString()}>
-                      {sede.nombre} - {sede.ciudad}
-                    </SelectItem>
-                  ))}
+                  {sedes.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay sedes disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea sedes en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    sedes.map((sede) => (
+                      <SelectItem key={sede.id} value={sede.id.toString()}>
+                        {sede.nombre} - {sede.ciudad}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.sede_id && (

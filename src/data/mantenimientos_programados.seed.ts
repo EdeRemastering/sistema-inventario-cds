@@ -68,7 +68,6 @@ export async function seedMantenimientosProgramados(prisma: PrismaClient) {
         },
       });
     }
-    });
     count++;
   }
   

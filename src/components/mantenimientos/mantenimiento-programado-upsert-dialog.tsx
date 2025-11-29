@@ -48,54 +48,54 @@ const schema = z.object({
   estado: z.enum(["PENDIENTE", "REALIZADO", "APLAZADO", "CANCELADO"]),
   observaciones: z.string().optional(),
   // Semanas de cada mes
-  enero_semana1: z.boolean().default(false),
-  enero_semana2: z.boolean().default(false),
-  enero_semana3: z.boolean().default(false),
-  enero_semana4: z.boolean().default(false),
-  febrero_semana1: z.boolean().default(false),
-  febrero_semana2: z.boolean().default(false),
-  febrero_semana3: z.boolean().default(false),
-  febrero_semana4: z.boolean().default(false),
-  marzo_semana1: z.boolean().default(false),
-  marzo_semana2: z.boolean().default(false),
-  marzo_semana3: z.boolean().default(false),
-  marzo_semana4: z.boolean().default(false),
-  abril_semana1: z.boolean().default(false),
-  abril_semana2: z.boolean().default(false),
-  abril_semana3: z.boolean().default(false),
-  abril_semana4: z.boolean().default(false),
-  mayo_semana1: z.boolean().default(false),
-  mayo_semana2: z.boolean().default(false),
-  mayo_semana3: z.boolean().default(false),
-  mayo_semana4: z.boolean().default(false),
-  junio_semana1: z.boolean().default(false),
-  junio_semana2: z.boolean().default(false),
-  junio_semana3: z.boolean().default(false),
-  junio_semana4: z.boolean().default(false),
-  julio_semana1: z.boolean().default(false),
-  julio_semana2: z.boolean().default(false),
-  julio_semana3: z.boolean().default(false),
-  julio_semana4: z.boolean().default(false),
-  agosto_semana1: z.boolean().default(false),
-  agosto_semana2: z.boolean().default(false),
-  agosto_semana3: z.boolean().default(false),
-  agosto_semana4: z.boolean().default(false),
-  septiembre_semana1: z.boolean().default(false),
-  septiembre_semana2: z.boolean().default(false),
-  septiembre_semana3: z.boolean().default(false),
-  septiembre_semana4: z.boolean().default(false),
-  octubre_semana1: z.boolean().default(false),
-  octubre_semana2: z.boolean().default(false),
-  octubre_semana3: z.boolean().default(false),
-  octubre_semana4: z.boolean().default(false),
-  noviembre_semana1: z.boolean().default(false),
-  noviembre_semana2: z.boolean().default(false),
-  noviembre_semana3: z.boolean().default(false),
-  noviembre_semana4: z.boolean().default(false),
-  diciembre_semana1: z.boolean().default(false),
-  diciembre_semana2: z.boolean().default(false),
-  diciembre_semana3: z.boolean().default(false),
-  diciembre_semana4: z.boolean().default(false),
+  enero_semana1: z.boolean(),
+  enero_semana2: z.boolean(),
+  enero_semana3: z.boolean(),
+  enero_semana4: z.boolean(),
+  febrero_semana1: z.boolean(),
+  febrero_semana2: z.boolean(),
+  febrero_semana3: z.boolean(),
+  febrero_semana4: z.boolean(),
+  marzo_semana1: z.boolean(),
+  marzo_semana2: z.boolean(),
+  marzo_semana3: z.boolean(),
+  marzo_semana4: z.boolean(),
+  abril_semana1: z.boolean(),
+  abril_semana2: z.boolean(),
+  abril_semana3: z.boolean(),
+  abril_semana4: z.boolean(),
+  mayo_semana1: z.boolean(),
+  mayo_semana2: z.boolean(),
+  mayo_semana3: z.boolean(),
+  mayo_semana4: z.boolean(),
+  junio_semana1: z.boolean(),
+  junio_semana2: z.boolean(),
+  junio_semana3: z.boolean(),
+  junio_semana4: z.boolean(),
+  julio_semana1: z.boolean(),
+  julio_semana2: z.boolean(),
+  julio_semana3: z.boolean(),
+  julio_semana4: z.boolean(),
+  agosto_semana1: z.boolean(),
+  agosto_semana2: z.boolean(),
+  agosto_semana3: z.boolean(),
+  agosto_semana4: z.boolean(),
+  septiembre_semana1: z.boolean(),
+  septiembre_semana2: z.boolean(),
+  septiembre_semana3: z.boolean(),
+  septiembre_semana4: z.boolean(),
+  octubre_semana1: z.boolean(),
+  octubre_semana2: z.boolean(),
+  octubre_semana3: z.boolean(),
+  octubre_semana4: z.boolean(),
+  noviembre_semana1: z.boolean(),
+  noviembre_semana2: z.boolean(),
+  noviembre_semana3: z.boolean(),
+  noviembre_semana4: z.boolean(),
+  diciembre_semana1: z.boolean(),
+  diciembre_semana2: z.boolean(),
+  diciembre_semana3: z.boolean(),
+  diciembre_semana4: z.boolean(),
 });
 
 type MantenimientoProgramadoFormData = z.infer<typeof schema>;
@@ -362,16 +362,30 @@ export function MantenimientoProgramadoUpsertDialog({
                   setValue("subcategoria_id", "");
                   setValue("elemento_id", "");
                 }}
+                disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona sede" />
+                  <SelectValue placeholder={
+                    sedes.length === 0 
+                      ? "No hay sedes disponibles" 
+                      : "Selecciona sede"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {sedes.map((sede) => (
-                    <SelectItem key={sede.id} value={sede.id.toString()}>
-                      {sede.nombre} - {sede.ciudad}
-                    </SelectItem>
-                  ))}
+                  {sedes.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay sedes disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea sedes en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    sedes.map((sede) => (
+                      <SelectItem key={sede.id} value={sede.id.toString()}>
+                        {sede.nombre} - {sede.ciudad}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.sede_id && (
@@ -390,17 +404,38 @@ export function MantenimientoProgramadoUpsertDialog({
                   setValue("subcategoria_id", "");
                   setValue("elemento_id", "");
                 }}
-                disabled={!selectedSedeId}
+                disabled={!selectedSedeId || filteredUbicaciones.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona ubicación" />
+                  <SelectValue placeholder={
+                    !selectedSedeId 
+                      ? "Primero selecciona una sede" 
+                      : filteredUbicaciones.length === 0 
+                        ? "No hay ubicaciones disponibles" 
+                        : "Selecciona ubicación"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredUbicaciones.map((u) => (
-                    <SelectItem key={u.id} value={u.id.toString()}>
-                      {u.codigo} - {u.nombre}
-                    </SelectItem>
-                  ))}
+                  {filteredUbicaciones.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">
+                        {!selectedSedeId 
+                          ? "Selecciona una sede primero" 
+                          : "No hay ubicaciones disponibles"}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {!selectedSedeId 
+                          ? "Debes seleccionar una sede para ver sus ubicaciones" 
+                          : "Crea ubicaciones para esta sede en la configuración"}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredUbicaciones.map((u) => (
+                      <SelectItem key={u.id} value={u.id.toString()}>
+                        {u.codigo} - {u.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.ubicacion_id && (
@@ -418,16 +453,30 @@ export function MantenimientoProgramadoUpsertDialog({
                   setValue("subcategoria_id", "");
                   setValue("elemento_id", "");
                 }}
+                disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona categoría" />
+                  <SelectValue placeholder={
+                    categorias.length === 0 
+                      ? "No hay categorías disponibles" 
+                      : "Selecciona categoría"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorias.map((c) => (
-                    <SelectItem key={c.id} value={c.id.toString()}>
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
+                  {categorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea categorías en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.categoria_id && (
@@ -444,17 +493,38 @@ export function MantenimientoProgramadoUpsertDialog({
                   setValue("subcategoria_id", value || "");
                   setValue("elemento_id", "");
                 }}
-                disabled={!selectedCategoriaId}
+                disabled={!selectedCategoriaId || filteredSubcategorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona subcategoría (opcional)" />
+                  <SelectValue placeholder={
+                    !selectedCategoriaId 
+                      ? "Primero selecciona una categoría" 
+                      : filteredSubcategorias.length === 0 
+                        ? "No hay subcategorías (opcional)" 
+                        : "Selecciona subcategoría (opcional)"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubcategorias.map((s) => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
-                      {s.nombre}
-                    </SelectItem>
-                  ))}
+                  {filteredSubcategorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">
+                        {!selectedCategoriaId 
+                          ? "Selecciona una categoría primero" 
+                          : "No hay subcategorías disponibles"}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {!selectedCategoriaId 
+                          ? "Debes seleccionar una categoría para ver sus subcategorías" 
+                          : "Este campo es opcional, puedes continuar sin seleccionar"}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredSubcategorias.map((s) => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -476,7 +546,7 @@ export function MantenimientoProgramadoUpsertDialog({
                 <Label htmlFor="frecuencia">Frecuencia</Label>
                 <Select
                   value={watch("frecuencia")}
-                  onValueChange={(value) => setValue("frecuencia", value as any)}
+                  onValueChange={(value) => setValue("frecuencia", value as "DIARIO" | "SEMANAL" | "MENSUAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona frecuencia" />
@@ -514,7 +584,7 @@ export function MantenimientoProgramadoUpsertDialog({
               <Label htmlFor="estado">Estado</Label>
               <Select
                 value={watch("estado")}
-                onValueChange={(value) => setValue("estado", value as any)}
+                onValueChange={(value) => setValue("estado", value as "PENDIENTE" | "REALIZADO")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona estado" />

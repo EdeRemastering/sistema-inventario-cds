@@ -25,6 +25,7 @@ import {
 } from "../ui/select";
 import { Switch } from "../ui/switch";
 import { ElementoSearchSelect } from "../ui/elemento-search-select";
+import { DatePicker } from "../ui/date-picker";
 import type { HojaVida } from "../../modules/hojas_vida/types";
 import type { Elemento } from "../../modules/elementos/types";
 
@@ -43,7 +44,7 @@ const schema = z.object({
   requerimientos_seguridad: z.string().optional(),
   rutina_mantenimiento: z.enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"]).optional().or(z.literal("")),
   fecha_actualizacion: z.string().optional(),
-  activo: z.boolean().default(true),
+  activo: z.boolean(),
 });
 
 type HojaVidaFormData = z.infer<typeof schema>;
@@ -133,6 +134,18 @@ export function HojaVidaUpsertDialog({
     },
   });
 
+  // Estados para las fechas
+  const [fechaDiligenciamiento, setFechaDiligenciamiento] = useState<Date | undefined>(
+    defaultValues?.fecha_dilegenciamiento 
+      ? new Date(defaultValues.fecha_dilegenciamiento) 
+      : new Date()
+  );
+  const [fechaActualizacion, setFechaActualizacion] = useState<Date | undefined>(
+    defaultValues?.fecha_actualizacion 
+      ? new Date(defaultValues.fecha_actualizacion) 
+      : undefined
+  );
+
   // Filtrar ubicaciones por sede seleccionada
   const selectedSedeId = watch("sede_id");
   const filteredUbicaciones = ubicaciones.filter(
@@ -159,6 +172,19 @@ export function HojaVidaUpsertDialog({
   useEffect(() => {
     if (defaultValues) {
       const elemento = elementos.find((e) => e.id === defaultValues.elemento_id);
+      
+      // Actualizar estados de fecha
+      setFechaDiligenciamiento(
+        defaultValues.fecha_dilegenciamiento 
+          ? new Date(defaultValues.fecha_dilegenciamiento) 
+          : new Date()
+      );
+      setFechaActualizacion(
+        defaultValues.fecha_actualizacion 
+          ? new Date(defaultValues.fecha_actualizacion) 
+          : undefined
+      );
+
       reset({
         sede_id: elemento?.ubicacion_rel?.sede?.id?.toString() || "",
         ubicacion_id: elemento?.ubicacion_id?.toString() || "",
@@ -188,7 +214,12 @@ export function HojaVidaUpsertDialog({
       const formData = new FormData();
 
       formData.append("elemento_id", data.elemento_id);
-      formData.append("fecha_dilegenciamiento", data.fecha_dilegenciamiento);
+      
+      // Convertir fecha de diligenciamiento al formato correcto
+      if (fechaDiligenciamiento) {
+        formData.append("fecha_dilegenciamiento", fechaDiligenciamiento.toISOString().split("T")[0]);
+      }
+      
       formData.append("tipo_elemento", data.tipo_elemento);
       if (data.area_ubicacion) formData.append("area_ubicacion", data.area_ubicacion);
       if (data.responsable) formData.append("responsable", data.responsable);
@@ -196,7 +227,12 @@ export function HojaVidaUpsertDialog({
       if (data.requerimientos_funcionamiento) formData.append("requerimientos_funcionamiento", data.requerimientos_funcionamiento);
       if (data.requerimientos_seguridad) formData.append("requerimientos_seguridad", data.requerimientos_seguridad);
       if (data.rutina_mantenimiento) formData.append("rutina_mantenimiento", data.rutina_mantenimiento);
-      if (data.fecha_actualizacion) formData.append("fecha_actualizacion", data.fecha_actualizacion);
+      
+      // Convertir fecha de actualización al formato correcto
+      if (fechaActualizacion) {
+        formData.append("fecha_actualizacion", fechaActualizacion.toISOString().split("T")[0]);
+      }
+      
       formData.append("activo", String(data.activo));
 
       if (hiddenFields) {
@@ -253,16 +289,30 @@ export function HojaVidaUpsertDialog({
                   setValue("subcategoria_id", ""); // Reset subcategoría
                   setValue("elemento_id", ""); // Reset elemento
                 }}
+                disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona sede" />
+                  <SelectValue placeholder={
+                    sedes.length === 0 
+                      ? "No hay sedes disponibles" 
+                      : "Selecciona sede"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {sedes.map((sede) => (
-                    <SelectItem key={sede.id} value={sede.id.toString()}>
-                      {sede.nombre} - {sede.ciudad}
-                    </SelectItem>
-                  ))}
+                  {sedes.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay sedes disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea sedes en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    sedes.map((sede) => (
+                      <SelectItem key={sede.id} value={sede.id.toString()}>
+                        {sede.nombre} - {sede.ciudad}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.sede_id && (
@@ -281,17 +331,38 @@ export function HojaVidaUpsertDialog({
                   setValue("subcategoria_id", ""); // Reset subcategoría
                   setValue("elemento_id", ""); // Reset elemento
                 }}
-                disabled={!selectedSedeId}
+                disabled={!selectedSedeId || filteredUbicaciones.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona ubicación" />
+                  <SelectValue placeholder={
+                    !selectedSedeId 
+                      ? "Primero selecciona una sede" 
+                      : filteredUbicaciones.length === 0 
+                        ? "No hay ubicaciones disponibles" 
+                        : "Selecciona ubicación"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredUbicaciones.map((u) => (
-                    <SelectItem key={u.id} value={u.id.toString()}>
-                      {u.codigo} - {u.nombre}
-                    </SelectItem>
-                  ))}
+                  {filteredUbicaciones.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">
+                        {!selectedSedeId 
+                          ? "Selecciona una sede primero" 
+                          : "No hay ubicaciones disponibles"}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {!selectedSedeId 
+                          ? "Debes seleccionar una sede para ver sus ubicaciones" 
+                          : "Crea ubicaciones para esta sede en la configuración"}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredUbicaciones.map((u) => (
+                      <SelectItem key={u.id} value={u.id.toString()}>
+                        {u.codigo} - {u.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.ubicacion_id && (
@@ -309,16 +380,30 @@ export function HojaVidaUpsertDialog({
                   setValue("subcategoria_id", ""); // Reset subcategoría
                   setValue("elemento_id", ""); // Reset elemento
                 }}
+                disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona categoría" />
+                  <SelectValue placeholder={
+                    categorias.length === 0 
+                      ? "No hay categorías disponibles" 
+                      : "Selecciona categoría"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorias.map((c) => (
-                    <SelectItem key={c.id} value={c.id.toString()}>
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
+                  {categorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea categorías en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.categoria_id && (
@@ -335,17 +420,38 @@ export function HojaVidaUpsertDialog({
                   setValue("subcategoria_id", value || "");
                   setValue("elemento_id", ""); // Reset elemento
                 }}
-                disabled={!selectedCategoriaId}
+                disabled={!selectedCategoriaId || filteredSubcategorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona subcategoría (opcional)" />
+                  <SelectValue placeholder={
+                    !selectedCategoriaId 
+                      ? "Primero selecciona una categoría" 
+                      : filteredSubcategorias.length === 0 
+                        ? "No hay subcategorías (opcional)" 
+                        : "Selecciona subcategoría (opcional)"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubcategorias.map((s) => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
-                      {s.nombre}
-                    </SelectItem>
-                  ))}
+                  {filteredSubcategorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">
+                        {!selectedCategoriaId 
+                          ? "Selecciona una categoría primero" 
+                          : "No hay subcategorías disponibles"}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {!selectedCategoriaId 
+                          ? "Debes seleccionar una categoría para ver sus subcategorías" 
+                          : "Este campo es opcional, puedes continuar sin seleccionar"}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredSubcategorias.map((s) => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -365,10 +471,15 @@ export function HojaVidaUpsertDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
                 <Label htmlFor="fecha_dilegenciamiento">Fecha Diligenciamiento</Label>
-                <Input
-                  id="fecha_dilegenciamiento"
-                  type="date"
-                  {...register("fecha_dilegenciamiento")}
+                <DatePicker
+                  date={fechaDiligenciamiento}
+                  onDateChange={(date) => {
+                    setFechaDiligenciamiento(date);
+                    if (date) {
+                      setValue("fecha_dilegenciamiento", date.toISOString().split("T")[0]);
+                    }
+                  }}
+                  placeholder="Selecciona fecha de diligenciamiento"
                 />
                 {errors.fecha_dilegenciamiento && (
                   <p className="text-red-500 text-sm">{errors.fecha_dilegenciamiento.message}</p>
@@ -378,7 +489,7 @@ export function HojaVidaUpsertDialog({
                 <Label htmlFor="tipo_elemento">Tipo de Elemento</Label>
                 <Select
                   value={watch("tipo_elemento")}
-                  onValueChange={(value) => setValue("tipo_elemento", value as any)}
+                  onValueChange={(value) => setValue("tipo_elemento", value as "EQUIPO" | "RECURSO_DIDACTICO")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona tipo" />
@@ -457,7 +568,7 @@ export function HojaVidaUpsertDialog({
                   value={watch("rutina_mantenimiento") || "NONE"}
                   onValueChange={(value) => {
                     // Si se selecciona "NONE", establecer como cadena vacía para que sea null en el backend
-                    setValue("rutina_mantenimiento", value === "NONE" ? "" : value);
+                    setValue("rutina_mantenimiento", value === "NONE" ? "" : value as "" | "DIARIO" | "SEMANAL" | "MENSUAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL");
                   }}
                 >
                   <SelectTrigger>
@@ -475,11 +586,18 @@ export function HojaVidaUpsertDialog({
                 </Select>
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="fecha_actualizacion">Fecha de Actualización</Label>
-                <Input
-                  id="fecha_actualizacion"
-                  type="date"
-                  {...register("fecha_actualizacion")}
+                <Label htmlFor="fecha_actualizacion">Fecha de Actualización (opcional)</Label>
+                <DatePicker
+                  date={fechaActualizacion}
+                  onDateChange={(date) => {
+                    setFechaActualizacion(date);
+                    if (date) {
+                      setValue("fecha_actualizacion", date.toISOString().split("T")[0]);
+                    } else {
+                      setValue("fecha_actualizacion", "");
+                    }
+                  }}
+                  placeholder="Seleccionar fecha"
                 />
               </div>
             </div>

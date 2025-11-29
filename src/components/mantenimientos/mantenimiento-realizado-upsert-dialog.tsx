@@ -222,16 +222,30 @@ export function MantenimientoRealizadoUpsertDialog({
                   setValue("subcategoria_id", "");
                   setValue("elemento_id", "");
                 }}
+                disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona sede" />
+                  <SelectValue placeholder={
+                    sedes.length === 0 
+                      ? "No hay sedes disponibles" 
+                      : "Selecciona sede"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {sedes.map((sede) => (
-                    <SelectItem key={sede.id} value={sede.id.toString()}>
-                      {sede.nombre} - {sede.ciudad}
-                    </SelectItem>
-                  ))}
+                  {sedes.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay sedes disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea sedes en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    sedes.map((sede) => (
+                      <SelectItem key={sede.id} value={sede.id.toString()}>
+                        {sede.nombre} - {sede.ciudad}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.sede_id && (
@@ -250,17 +264,38 @@ export function MantenimientoRealizadoUpsertDialog({
                   setValue("subcategoria_id", "");
                   setValue("elemento_id", "");
                 }}
-                disabled={!selectedSedeId}
+                disabled={!selectedSedeId || filteredUbicaciones.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona ubicación" />
+                  <SelectValue placeholder={
+                    !selectedSedeId 
+                      ? "Primero selecciona una sede" 
+                      : filteredUbicaciones.length === 0 
+                        ? "No hay ubicaciones disponibles" 
+                        : "Selecciona ubicación"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredUbicaciones.map((u) => (
-                    <SelectItem key={u.id} value={u.id.toString()}>
-                      {u.codigo} - {u.nombre}
-                    </SelectItem>
-                  ))}
+                  {filteredUbicaciones.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">
+                        {!selectedSedeId 
+                          ? "Selecciona una sede primero" 
+                          : "No hay ubicaciones disponibles"}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {!selectedSedeId 
+                          ? "Debes seleccionar una sede para ver sus ubicaciones" 
+                          : "Crea ubicaciones para esta sede en la configuración"}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredUbicaciones.map((u) => (
+                      <SelectItem key={u.id} value={u.id.toString()}>
+                        {u.codigo} - {u.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.ubicacion_id && (
@@ -278,16 +313,30 @@ export function MantenimientoRealizadoUpsertDialog({
                   setValue("subcategoria_id", "");
                   setValue("elemento_id", "");
                 }}
+                disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona categoría" />
+                  <SelectValue placeholder={
+                    categorias.length === 0 
+                      ? "No hay categorías disponibles" 
+                      : "Selecciona categoría"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorias.map((c) => (
-                    <SelectItem key={c.id} value={c.id.toString()}>
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
+                  {categorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="text-xs mt-1">
+                        Crea categorías en la configuración del sistema
+                      </p>
+                    </div>
+                  ) : (
+                    categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.categoria_id && (
@@ -304,17 +353,38 @@ export function MantenimientoRealizadoUpsertDialog({
                   setValue("subcategoria_id", value || "");
                   setValue("elemento_id", "");
                 }}
-                disabled={!selectedCategoriaId}
+                disabled={!selectedCategoriaId || filteredSubcategorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona subcategoría (opcional)" />
+                  <SelectValue placeholder={
+                    !selectedCategoriaId 
+                      ? "Primero selecciona una categoría" 
+                      : filteredSubcategorias.length === 0 
+                        ? "No hay subcategorías (opcional)" 
+                        : "Selecciona subcategoría (opcional)"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubcategorias.map((s) => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
-                      {s.nombre}
-                    </SelectItem>
-                  ))}
+                  {filteredSubcategorias.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      <p className="font-medium">
+                        {!selectedCategoriaId 
+                          ? "Selecciona una categoría primero" 
+                          : "No hay subcategorías disponibles"}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {!selectedCategoriaId 
+                          ? "Debes seleccionar una categoría para ver sus subcategorías" 
+                          : "Este campo es opcional, puedes continuar sin seleccionar"}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredSubcategorias.map((s) => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -347,7 +417,7 @@ export function MantenimientoRealizadoUpsertDialog({
                 <Label htmlFor="tipo">Tipo</Label>
                 <Select
                   value={watch("tipo")}
-                  onValueChange={(value) => setValue("tipo", value as any)}
+                  onValueChange={(value) => setValue("tipo", value as "PREVENTIVO" | "CORRECTIVO")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona tipo" />

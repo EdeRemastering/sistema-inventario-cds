@@ -50,6 +50,8 @@ export function SelectField({
     if (value !== undefined) setInternalValue(value);
   }, [value]);
 
+  const hasOptions = options.length > 0;
+
   return (
     <div className={cn("grid gap-1", className)}>
       <input
@@ -62,19 +64,30 @@ export function SelectField({
         disabled={internalValue === undefined}
       />
       <Select
-        disabled={disabled}
+        disabled={disabled || !hasOptions}
         value={internalValue}
         onValueChange={handleChange}
       >
         <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
+          <SelectValue 
+            placeholder={hasOptions ? placeholder : "No hay opciones disponibles"} 
+          />
         </SelectTrigger>
         <SelectContent>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
+          {hasOptions ? (
+            options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))
+          ) : (
+            <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+              <p className="font-medium">No hay opciones disponibles</p>
+              <p className="text-xs mt-1">
+                Es posible que necesites crear o cargar datos primero
+              </p>
+            </div>
+          )}
         </SelectContent>
       </Select>
     </div>

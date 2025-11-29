@@ -10,13 +10,17 @@ export const categoriasSeed = [
 ];
 
 export async function seedCategorias(prisma: PrismaClient) {
+  console.log("🌱 Sembrando categorías...");
+  
   for (const c of categoriasSeed) {
     await prisma.categorias.upsert({
-      where: { id: c.id },
-      update: { nombre: c.nombre, descripcion: c.descripcion, estado: c.estado },
-      create: { id: c.id, nombre: c.nombre, descripcion: c.descripcion, estado: c.estado },
+      where: { nombre: c.nombre },
+      update: { descripcion: c.descripcion, estado: c.estado },
+      create: { nombre: c.nombre, descripcion: c.descripcion, estado: c.estado },
     });
   }
+  
+  console.log(`✅ ${categoriasSeed.length} categorías sembradas correctamente`);
 }
 
 

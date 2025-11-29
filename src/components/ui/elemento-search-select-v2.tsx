@@ -67,6 +67,8 @@ export function ElementoSearchSelectV2({
     setOpen(false);
   };
 
+  const hasElementos = elementos.length > 0;
+
   return (
     <div className={cn("space-y-2", className)}>
       <Label htmlFor={id}>
@@ -80,11 +82,11 @@ export function ElementoSearchSelectV2({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            disabled={disabled}
+            disabled={disabled || !hasElementos}
             className={cn(
               "w-full justify-between border-input bg-background px-3 font-normal outline-offset-0 outline-none hover:bg-background hover:text-foreground focus-visible:outline-[3px]",
               error && "border-red-500 focus-visible:ring-red-500",
-              disabled && "opacity-50 cursor-not-allowed"
+              (disabled || !hasElementos) && "opacity-50 cursor-not-allowed"
             )}
           >
             <span
@@ -101,7 +103,9 @@ export function ElementoSearchSelectV2({
                       ? ` - ${selectedElemento.subcategoria.nombre}`
                       : ""
                   }`
-                : placeholder}
+                : hasElementos 
+                  ? placeholder 
+                  : "No hay elementos disponibles"}
             </span>
             <ChevronDownIcon
               size={16}
@@ -117,7 +121,14 @@ export function ElementoSearchSelectV2({
           <Command>
             <CommandInput placeholder="Buscar elemento..." />
             <CommandList>
-              <CommandEmpty>No se encontraron elementos.</CommandEmpty>
+              <CommandEmpty>
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  <p className="font-medium">No se encontraron elementos</p>
+                  <p className="text-xs mt-1">
+                    Intenta con otro término de búsqueda
+                  </p>
+                </div>
+              </CommandEmpty>
               <CommandGroup>
                 {elementos.map((elemento) => (
                   <CommandItem

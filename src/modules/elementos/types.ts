@@ -20,6 +20,26 @@ export type Elemento = {
   activo: boolean;
   creado_en: Date;
   actualizado_en: Date;
+  // Relaciones opcionales
+  ubicacion_rel?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede_id: number;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+    };
+  } | null;
+  categoria?: {
+    id: number;
+    nombre: string;
+  };
+  subcategoria?: {
+    id: number;
+    nombre: string;
+  } | null;
 };
 
 export type CreateElementoInput = Omit<Elemento, "id" | "creado_en" | "actualizado_en">;

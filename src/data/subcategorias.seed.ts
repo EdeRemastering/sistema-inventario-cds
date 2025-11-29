@@ -67,13 +67,51 @@ export const subcategoriasSeed = [
 ];
 
 export async function seedSubcategorias(prisma: PrismaClient) {
+  console.log("🌱 Sembrando subcategorías...");
+  
+  // Mapeo de IDs antiguos a nombres de categorías
+  const categoriaMap: Record<number, string> = {
+    1: "MUEBLES Y ENSERES",
+    2: "REFRIGERACION",
+    3: "SEGURIDAD",
+    4: "APOYO",
+    5: "COMPUTO",
+    6: "HERRAMIENTAS VIAL",
+  };
+  
+  // Obtener las categorías reales de la BD
+  const categorias = await prisma.categorias.findMany();
+  const categoriasById = new Map(
+    Object.entries(categoriaMap).map(([oldId, nombre]) => {
+      const categoria = categorias.find(c => c.nombre === nombre);
+      return [parseInt(oldId), categoria?.id];
+    })
+  );
+  
+  let count = 0;
+  
   for (const s of subcategoriasSeed) {
+    const realCategoriaId = categoriasById.get(s.categoria_id);
+    
+    if (!realCategoriaId) {
+      console.warn(`⚠️  Categoría con ID ${s.categoria_id} no encontrada para subcategoría "${s.nombre}"`);
+      continue;
+    }
+    
     await prisma.subcategorias.upsert({
-      where: { id: s.id },
-      update: { nombre: s.nombre, categoria_id: s.categoria_id },
-      create: { id: s.id, nombre: s.nombre, categoria_id: s.categoria_id },
+      where: { 
+        nombre_categoria_id: {
+          nombre: s.nombre,
+          categoria_id: realCategoriaId,
+        }
+      },
+      update: { nombre: s.nombre },
+      create: { nombre: s.nombre, categoria_id: realCategoriaId },
     });
+    count++;
   }
+  
+  console.log(`✅ ${count} subcategorías sembradas correctamente`);
 }
 
 
