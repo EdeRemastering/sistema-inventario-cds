@@ -98,17 +98,24 @@ export async function seedSubcategorias(prisma: PrismaClient) {
       continue;
     }
     
-    await prisma.subcategorias.upsert({
-      where: { 
-        nombre_categoria_id: {
-          nombre: s.nombre,
-          categoria_id: realCategoriaId,
-        }
-      },
-      update: { nombre: s.nombre },
-      create: { nombre: s.nombre, categoria_id: realCategoriaId },
-    });
-    count++;
+    try {
+      await prisma.subcategorias.upsert({
+        where: { 
+          nombre_categoria_id: {
+            nombre: s.nombre,
+            categoria_id: realCategoriaId,
+          }
+        },
+        update: {},
+        create: { nombre: s.nombre, categoria_id: realCategoriaId },
+      });
+      count++;
+      if (count % 10 === 0) {
+        console.log(`  → ${count}/${subcategoriasSeed.length} subcategorías procesadas...`);
+      }
+    } catch (error) {
+      console.error(`Error creando subcategoría ${s.nombre}:`, error);
+    }
   }
   
   console.log(`✅ ${count} subcategorías sembradas correctamente`);

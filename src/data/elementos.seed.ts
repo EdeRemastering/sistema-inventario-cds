@@ -23,14 +23,16 @@ export async function seedElementos(prisma: PrismaClient) {
   };
   
   // Para cada ubicación, crear elementos de diferentes categorías
+  let ubicacionIndex = 0;
   for (const ubicacion of ubicaciones) {
-    console.log(`  → Procesando ubicación: ${ubicacion.nombre}...`);
+    ubicacionIndex++;
+    console.log(`  → Procesando ubicación ${ubicacionIndex}/${ubicaciones.length}: ${ubicacion.nombre}...`);
     
     // COMPUTO - Equipos de cómputo (más equipos en salas de sistemas)
     const categoriaComputo = categorias.find(c => c.nombre === "COMPUTO");
     if (categoriaComputo) {
-      const cantidadPC = ubicacion.nombre.includes("SISTEMAS") ? 25 : 
-                        ubicacion.nombre.includes("ADMIN") ? 8 : 3;
+      const cantidadPC = ubicacion.nombre.includes("SISTEMAS") ? 10 : 
+                        ubicacion.nombre.includes("ADMIN") ? 5 : 2;
       
       // Monitores
       const subcatMonitor = categoriaComputo.subcategorias.find(s => s.nombre === "MONITOR");
