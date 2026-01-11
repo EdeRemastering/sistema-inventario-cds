@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +50,7 @@ type Props = {
   ubicaciones: UbicacionOption[];
   defaultValues?: Partial<ElementoFormData>;
   hiddenFields?: Record<string, string | number>;
+  onClose?: () => void;
 };
 
 export function ElementoUpsertDialog({
@@ -61,7 +62,9 @@ export function ElementoUpsertDialog({
   ubicaciones,
   defaultValues,
   hiddenFields,
+  onClose,
 }: Props) {
+  // El modal siempre empieza cerrado, se abre al hacer clic en el botón
   const [open, setOpen] = useState(false);
 
   const {
@@ -74,10 +77,32 @@ export function ElementoUpsertDialog({
   } = useForm<ElementoFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      cantidad: "1",
-      ...defaultValues,
-    } as ElementoFormData,
+      sede_id: defaultValues?.sede_id || "",
+      ubicacion_id: defaultValues?.ubicacion_id || "",
+      categoria_id: defaultValues?.categoria_id || "",
+      subcategoria_id: defaultValues?.subcategoria_id || "",
+      serie: defaultValues?.serie || "",
+      marca: defaultValues?.marca || "",
+      modelo: defaultValues?.modelo || "",
+      cantidad: defaultValues?.cantidad || "1",
+    },
   });
+
+  // Reinicializar formulario cuando cambian los defaultValues
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        sede_id: defaultValues.sede_id || "",
+        ubicacion_id: defaultValues.ubicacion_id || "",
+        categoria_id: defaultValues.categoria_id || "",
+        subcategoria_id: defaultValues.subcategoria_id || "",
+        serie: defaultValues.serie || "",
+        marca: defaultValues.marca || "",
+        modelo: defaultValues.modelo || "",
+        cantidad: defaultValues.cantidad || "1",
+      });
+    }
+  }, [defaultValues, reset]);
 
   // Filtrar ubicaciones por sede seleccionada
   const selectedSedeId = watch("sede_id");
@@ -124,6 +149,7 @@ export function ElementoUpsertDialog({
 
       reset();
       setOpen(false);
+      if (onClose) onClose();
     } catch (error) {
       console.error("Error:", error);
     }
@@ -135,8 +161,12 @@ export function ElementoUpsertDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{btnText}</Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      {create && <Button onClick={() => setOpen(true)}>{btnText}</Button>}
+      {!create && <Button variant="outline" size="sm" onClick={() => setOpen(true)}>{btnText}</Button>}
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen && onClose) onClose();
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -389,7 +419,10 @@ export function ElementoUpsertDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  if (onClose) onClose();
+                }}
               >
                 Cancelar
               </Button>

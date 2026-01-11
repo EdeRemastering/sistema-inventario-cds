@@ -15,6 +15,8 @@ import {
   createMantenimientoRealizado,
   updateMantenimientoRealizado,
   deleteMantenimientoRealizado,
+  countMantenimientosPendientes,
+  updateEstadoMantenimiento,
 } from "./services";
 import { logAction } from "../../lib/audit-logger";
 
@@ -102,5 +104,26 @@ export async function actionDeleteMantenimientoRealizado(id: number) {
     details: `Mantenimiento realizado eliminado: ${id}`,
   });
   revalidatePath("/mantenimientos");
+}
+
+// Obtener conteo de mantenimientos pendientes
+export async function actionGetMantenimientosPendientes(): Promise<number> {
+  return countMantenimientosPendientes();
+}
+
+// Cambiar estado de mantenimiento (acción rápida)
+export async function actionCambiarEstadoMantenimiento(
+  id: number,
+  estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
+) {
+  await updateEstadoMantenimiento(id, estado);
+  await logAction({
+    action: "UPDATE",
+    entity: "mantenimiento_programado",
+    entityId: id,
+    details: `Estado de mantenimiento cambiado a: ${estado}`,
+  });
+  revalidatePath("/mantenimientos");
+  revalidatePath("/cronograma");
 }
 

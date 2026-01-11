@@ -61,6 +61,29 @@ export function listUbicacionesActivas(): Promise<Ubicacion[]> {
   }) as Promise<Ubicacion[]>;
 }
 
+// Solo ubicaciones que tienen elementos
+export function listUbicacionesConElementos(): Promise<Ubicacion[]> {
+  return prisma.ubicaciones.findMany({
+    where: {
+      activo: true,
+      elementos: {
+        some: {} // Al menos un elemento
+      }
+    },
+    include: {
+      sede: {
+        select: {
+          id: true,
+          nombre: true,
+          ciudad: true,
+          municipio: true,
+        },
+      },
+    },
+    orderBy: { codigo: "asc" },
+  }) as Promise<Ubicacion[]>;
+}
+
 export function getUbicacion(id: number): Promise<Ubicacion | null> {
   return prisma.ubicaciones.findUnique({
     where: { id },

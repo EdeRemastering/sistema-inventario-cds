@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { elementoCreateSchema, elementoUpdateSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
 import { createElemento, deleteElemento, updateElemento, getElemento, listElementosWithRelations } from "./services";
@@ -31,6 +31,7 @@ export async function actionCreateElemento(formData: FormData) {
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
     activo: parsed.data.activo ?? true,
   });
+  revalidateTag("elementos");
   revalidatePath("/elementos");
 }
 
@@ -50,11 +51,13 @@ export async function actionUpdateElemento(formData: FormData) {
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
     activo: parsed.data.activo,
   });
+  revalidateTag("elementos");
   revalidatePath("/elementos");
 }
 
 export async function actionDeleteElemento(id: number) {
   await deleteElemento(id);
+  revalidateTag("elementos");
   revalidatePath("/elementos");
 }
 
@@ -72,30 +75,42 @@ export async function actionGetLowStockElementos(): Promise<LowStockElement[]> {
   // Filtrar elementos con stock bajo (cantidad < 3)
   const lowStockElements = elementos.filter(elemento => elemento.cantidad < 3);
   
-  // Calcular stock disponible y total prestado para cada elemento
-  const elementsWithStock = await Promise.all(
-    lowStockElements.map(async (elemento) => {
-      // Calcular total prestado (movimientos de tipo SALIDA sin devolución)
-      const totalPrestado = await prisma.movimientos.aggregate({
-        where: {
-          elemento_id: elemento.id,
-          tipo: 'SALIDA',
-          fecha_real_devolucion: null
-        },
-        _sum: {
-          cantidad: true
-        }
-      });
-      
-      const availableStock = elemento.cantidad - (totalPrestado._sum.cantidad || 0);
-      
-      return {
-        ...elemento,
-        availableStock,
-        totalPrestado: totalPrestado._sum.cantidad || 0
-      };
-    })
+  if (lowStockElements.length === 0) {
+    return [];
+  }
+  
+  // Obtener IDs de elementos con stock bajo
+  const elementoIds = lowStockElements.map(e => e.id);
+  
+  // Una sola consulta agrupada para obtener todos los préstamos pendientes
+  const prestadosPorElemento = await prisma.movimientos.groupBy({
+    by: ['elemento_id'],
+    where: {
+      elemento_id: { in: elementoIds },
+      tipo: 'SALIDA',
+      fecha_real_devolucion: null
+    },
+    _sum: {
+      cantidad: true
+    }
+  });
+  
+  // Crear un mapa para acceso rápido
+  const prestadosMap = new Map(
+    prestadosPorElemento.map(p => [p.elemento_id, p._sum.cantidad || 0])
   );
+  
+  // Calcular stock disponible para cada elemento
+  const elementsWithStock = lowStockElements.map((elemento) => {
+    const totalPrestado = prestadosMap.get(elemento.id) || 0;
+    const availableStock = elemento.cantidad - totalPrestado;
+    
+    return {
+      ...elemento,
+      availableStock,
+      totalPrestado
+    };
+  });
   
   return elementsWithStock;
 }

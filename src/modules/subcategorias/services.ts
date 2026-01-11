@@ -8,6 +8,20 @@ export async function listSubcategorias(): Promise<Subcategoria[]> {
   });
 }
 
+// Solo subcategorías que tienen elementos
+export async function listSubcategoriasConElementos(): Promise<Subcategoria[]> {
+  return withDatabaseRetry(async () => {
+    return await prisma.subcategorias.findMany({
+      where: {
+        elementos: {
+          some: {} // Al menos un elemento
+        }
+      },
+      orderBy: { nombre: "asc" }
+    }) as unknown as Promise<Subcategoria[]>;
+  });
+}
+
 export async function getSubcategoria(id: number): Promise<Subcategoria | null> {
   return withDatabaseRetry(async () => {
     return await prisma.subcategorias.findUnique({ where: { id } }) as unknown as Promise<Subcategoria | null>;

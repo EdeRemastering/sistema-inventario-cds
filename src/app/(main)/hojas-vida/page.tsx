@@ -1,9 +1,5 @@
 import { listHojasVida } from "../../../modules/hojas_vida/services";
-import { listElementosWithRelations } from "../../../modules/elementos/services";
-import { listSedesActivas } from "../../../modules/sedes/services";
-import { listUbicacionesActivas } from "../../../modules/ubicaciones/services";
-import { listCategorias } from "../../../modules/categorias/services";
-import { listSubcategorias } from "../../../modules/subcategorias/services";
+import { getFormSelectOptions } from "../../../lib/form-options";
 import {
   actionCreateHojaVida,
   actionUpdateHojaVida,
@@ -14,23 +10,20 @@ import { Suspense } from "react";
 
 // Componente que maneja la lógica de datos
 async function HojasVidaContent() {
-  const [hojasVida, elementos, sedes, ubicaciones, categorias, subcategorias] = await Promise.all([
+  // Cargar hojas de vida y opciones filtradas en paralelo
+  const [hojasVida, options] = await Promise.all([
     listHojasVida(),
-    listElementosWithRelations(),
-    listSedesActivas(),
-    listUbicacionesActivas(),
-    listCategorias(),
-    listSubcategorias(),
+    getFormSelectOptions(), // Solo trae opciones con datos relacionados
   ]);
 
   return (
     <HojasVidaList
       hojasVida={hojasVida}
-      elementos={elementos}
-      sedes={sedes}
-      ubicaciones={ubicaciones}
-      categorias={categorias}
-      subcategorias={subcategorias}
+      elementos={options.elementos}
+      sedes={options.sedes}
+      ubicaciones={options.ubicaciones}
+      categorias={options.categorias}
+      subcategorias={options.subcategorias}
       onCreateHojaVida={actionCreateHojaVida}
       onUpdateHojaVida={actionUpdateHojaVida}
       onDeleteHojaVida={actionDeleteHojaVida}

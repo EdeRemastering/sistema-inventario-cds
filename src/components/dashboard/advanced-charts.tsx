@@ -77,6 +77,11 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
       "hsl(var(--chart-3))",
       "hsl(var(--chart-4))",
       "hsl(var(--chart-5))",
+      "hsl(142, 76%, 36%)",  // Verde
+      "hsl(280, 65%, 60%)",  // Púrpura
+      "hsl(30, 80%, 55%)",   // Naranja
+      "hsl(190, 70%, 50%)",  // Cyan
+      "hsl(340, 75%, 55%)",  // Rosa
     ];
   };
 
@@ -158,12 +163,12 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={400}>
             <PieChart>
               <Pie
                 data={categoriasData.filter(item => (item.value || 0) > 0)}
                 cx="50%"
-                cy="50%"
+                cy="35%"
                 labelLine={false}
                 label={({ name, percent }) => {
                   const percentage = ((percent as number) * 100).toFixed(0);
@@ -172,7 +177,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                     ? `${name} ${percentage}%` 
                     : '';
                 }}
-                outerRadius={80}
+                outerRadius={70}
                 fill="hsl(var(--chart-1))"
                 dataKey="value"
               >
@@ -191,7 +196,12 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
               />
               <Legend 
                 verticalAlign="bottom" 
-                height={36}
+                layout="horizontal"
+                wrapperStyle={{
+                  paddingTop: '20px',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}
                 formatter={(value) => `${value} (${categoriasData.find(item => item.name === value)?.value || 0})`}
               />
             </PieChart>

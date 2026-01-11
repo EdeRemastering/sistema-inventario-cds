@@ -21,6 +21,22 @@ import type { Subcategoria } from "../../modules/subcategorias/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+// Función para parsear fecha del servidor de forma segura (evita problemas de timezone)
+const parseServerDate = (dateValue: Date | string | null | undefined): Date => {
+  if (!dateValue) return new Date();
+  
+  const dateStr = typeof dateValue === 'string' 
+    ? dateValue 
+    : dateValue.toISOString();
+  
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return new Date();
+  
+  const [, year, month, day] = match;
+  // Crear fecha directamente sin hora para mostrar correctamente
+  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+};
+
 type Props = {
   hojasVida: HojaVida[];
   elementos: ElementoWithRelations[];
@@ -94,7 +110,7 @@ export function HojasVidaList({
                     </span>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(hoja.fecha_dilegenciamiento), "dd/MM/yyyy", { locale: es })}
+                    {format(parseServerDate(hoja.fecha_dilegenciamiento), "dd/MM/yyyy", { locale: es })}
                   </TableCell>
                   <TableCell>{hoja.responsable || "N/A"}</TableCell>
                   <TableCell>

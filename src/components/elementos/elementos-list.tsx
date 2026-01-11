@@ -1,20 +1,30 @@
 "use client";
 
-import { Package2 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "../ui/card";
-import { SearchInput } from "../ui/search-input";
+import { useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Package2, ChevronLeft, ChevronRight, Search, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardFooter } from "../ui/card";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { EmptyState } from "../ui/empty-state";
-import { useSearch } from "../../hooks/use-search";
 import { ElementoUpsertDialog } from "./elemento-upsert-dialog";
 import { DeleteButton } from "../delete-button";
-import type { Elemento } from "../../modules/elementos/types";
+import type { ElementoListItem } from "../../modules/elementos/services";
 import type { Categoria } from "../../modules/categorias/types";
 import type { Subcategoria } from "../../modules/subcategorias/types";
 import type { Ubicacion } from "../../modules/ubicaciones/types";
 import type { Sede } from "../../modules/sedes/types";
 
+type PaginationInfo = {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 type ElementosListProps = {
-  elementos: Elemento[];
+  elementos: ElementoListItem[];
+  pagination: PaginationInfo;
   sedes: Sede[];
   categorias: Categoria[];
   subcategorias: Subcategoria[];
@@ -26,6 +36,7 @@ type ElementosListProps = {
 
 export function ElementosList({
   elementos,
+  pagination,
   sedes,
   categorias,
   subcategorias,
@@ -34,25 +45,69 @@ export function ElementosList({
   onUpdateElemento,
   onDeleteElemento,
 }: ElementosListProps) {
-  const { searchQuery, filteredData, handleSearch, hasResults, hasData } =
-    useSearch({
-      data: elementos,
-      searchFields: ["serie", "marca", "modelo"],
-    });
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
 
-  const showEmptyState = !hasData || !hasResults;
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      const params = new URLSearchParams();
+      if (searchValue) params.set("search", searchValue);
+      params.set("page", "1");
+      router.push(`/elementos?${params.toString()}`);
+    });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", newPage.toString());
+      router.push(`/elementos?${params.toString()}`);
+    });
+  };
+
+  const clearSearch = () => {
+    setSearchValue("");
+    startTransition(() => {
+      router.push("/elementos");
+    });
+  };
+
+  const showEmptyState = elementos.length === 0;
+  const currentSearch = searchParams.get("search");
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Elementos</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Elementos</h1>
+        <span className="text-sm text-muted-foreground">
+          {pagination.total.toLocaleString()} elementos totales
+        </span>
+      </div>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <SearchInput
-              placeholder="Buscar elementos..."
-              onSearch={handleSearch}
-              className="max-w-sm"
-            />
+            <form onSubmit={handleSearch} className="flex gap-2 max-w-md flex-1">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por serie, marca o modelo..."
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+              </Button>
+              {currentSearch && (
+                <Button type="button" variant="outline" onClick={clearSearch}>
+                  Limpiar
+                </Button>
+              )}
+            </form>
             <ElementoUpsertDialog
               create
               serverAction={onCreateElemento}
@@ -63,35 +118,35 @@ export function ElementosList({
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className={isPending ? "opacity-50 pointer-events-none" : ""}>
           {showEmptyState ? (
             <EmptyState
               icon={<Package2 className="h-8 w-8 text-muted-foreground" />}
               title={
-                !hasData
-                  ? "No hay elementos registrados"
-                  : `No se encontraron elementos que coincidan con "${searchQuery}"`
+                currentSearch
+                  ? `No se encontraron elementos que coincidan con "${currentSearch}"`
+                  : "No hay elementos registrados"
               }
               description={
-                !hasData
-                  ? "Comienza creando tu primer elemento para gestionar el inventario."
-                  : "Intenta con un término de búsqueda diferente o más general."
+                currentSearch
+                  ? "Intenta con un término de búsqueda diferente o más general."
+                  : "Comienza creando tu primer elemento para gestionar el inventario."
               }
             />
           ) : (
-            <div className="space-y-3">
-              {filteredData.map((elemento) => (
+            <div className="space-y-2">
+              {elementos.map((elemento) => (
                 <div
                   key={elemento.id}
-                  className="flex items-center justify-between gap-3 rounded border p-3"
+                  className="flex items-center justify-between gap-3 rounded border p-3 hover:bg-muted/50 transition-colors"
                 >
-                  <div className="text-sm">
-                    <div className="font-medium">{elemento.serie}</div>
-                    <div className="text-muted-foreground">
-                      Cantidad: {elemento.cantidad}
+                  <div className="text-sm flex-1 min-w-0">
+                    <div className="font-medium truncate">{elemento.serie}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {elemento.marca} {elemento.modelo} • Cantidad: {elemento.cantidad}
                     </div>
                   </div>
-                  <div className="ml-auto flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <ElementoUpsertDialog
                       create={false}
                       serverAction={onUpdateElemento}
@@ -130,6 +185,38 @@ export function ElementosList({
             </div>
           )}
         </CardContent>
+        
+        {/* Paginación */}
+        {pagination.totalPages > 1 && (
+          <CardFooter className="flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1 || isPending}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Button>
+              <span className="text-sm px-2">
+                Página {pagination.page} de {pagination.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages || isPending}
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

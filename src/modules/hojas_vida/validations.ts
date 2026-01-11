@@ -1,8 +1,24 @@
 import { z } from "zod";
 
+// Transformador para convertir string de fecha a Date de forma segura para MySQL
+// Usamos Date.UTC para crear la fecha exacta que queremos sin conversiones de timezone
+const dateStringToDate = z.string().transform((val) => {
+  if (!val) return undefined;
+  // Parsear la fecha como YYYY-MM-DD y crear Date en UTC al mediodía
+  // Esto asegura que MySQL guarde la fecha correcta
+  const [year, month, day] = val.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+});
+
+const optionalDateStringToDate = z.string().optional().transform((val) => {
+  if (!val) return undefined;
+  const [year, month, day] = val.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+});
+
 export const hojaVidaCreateSchema = z.object({
   elemento_id: z.coerce.number().int().positive(),
-  fecha_dilegenciamiento: z.coerce.date(),
+  fecha_dilegenciamiento: dateStringToDate,
   tipo_elemento: z.enum(["EQUIPO", "RECURSO_DIDACTICO"]),
   area_ubicacion: z.string().max(100).optional().or(z.literal("")),
   responsable: z.string().max(100).optional().or(z.literal("")),
@@ -14,7 +30,7 @@ export const hojaVidaCreateSchema = z.object({
     .enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"])
     .optional()
     .or(z.literal("")),
-  fecha_actualizacion: z.coerce.date().optional(),
+  fecha_actualizacion: optionalDateStringToDate,
   activo: z.coerce.boolean().default(true),
 });
 

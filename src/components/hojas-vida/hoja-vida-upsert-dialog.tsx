@@ -26,8 +26,33 @@ import {
 import { Switch } from "../ui/switch";
 import { ElementoSearchSelect } from "../ui/elemento-search-select";
 import { DatePicker } from "../ui/date-picker";
+import { format } from "date-fns";
 import type { HojaVida } from "../../modules/hojas_vida/types";
 import type { Elemento } from "../../modules/elementos/types";
+
+// Función para formatear fecha en zona horaria local (evita problemas con UTC)
+const formatLocalDate = (date: Date): string => {
+  return format(date, "yyyy-MM-dd");
+};
+
+// Función para parsear fecha del servidor de forma segura (evita problemas de timezone)
+const parseServerDate = (dateValue: Date | string | null | undefined): Date | undefined => {
+  if (!dateValue) return undefined;
+  
+  // Si es string ISO o Date, extraer solo la parte de fecha
+  const dateStr = typeof dateValue === 'string' 
+    ? dateValue 
+    : dateValue.toISOString();
+  
+  // Extraer YYYY-MM-DD de la fecha
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return undefined;
+  
+  const [, year, month, day] = match;
+  // Crear fecha directamente con los componentes (año, mes-1, día)
+  // Esto evita cualquier interpretación de timezone
+  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+};
 
 const schema = z.object({
   sede_id: z.string().min(1, "Selecciona sede"),
@@ -95,7 +120,7 @@ export function HojaVidaUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
-  const [open, setOpen] = useState(!defaultValues);
+  const [open, setOpen] = useState(!create);
 
   // Obtener el elemento seleccionado para pre-llenar los filtros
   const elementoSeleccionado = defaultValues?.elemento_id
@@ -118,8 +143,8 @@ export function HojaVidaUpsertDialog({
       subcategoria_id: elementoSeleccionado?.subcategoria_id?.toString() || "",
       elemento_id: defaultValues?.elemento_id?.toString() || "",
       fecha_dilegenciamiento: defaultValues?.fecha_dilegenciamiento
-        ? new Date(defaultValues.fecha_dilegenciamiento).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
+        ? formatLocalDate(parseServerDate(defaultValues.fecha_dilegenciamiento) || new Date())
+        : formatLocalDate(new Date()),
       tipo_elemento: defaultValues?.tipo_elemento || "EQUIPO",
       area_ubicacion: defaultValues?.area_ubicacion || "",
       responsable: defaultValues?.responsable || "",
@@ -128,21 +153,21 @@ export function HojaVidaUpsertDialog({
       requerimientos_seguridad: defaultValues?.requerimientos_seguridad || "",
       rutina_mantenimiento: defaultValues?.rutina_mantenimiento || "",
       fecha_actualizacion: defaultValues?.fecha_actualizacion
-        ? new Date(defaultValues.fecha_actualizacion).toISOString().split("T")[0]
+        ? formatLocalDate(parseServerDate(defaultValues.fecha_actualizacion) || new Date())
         : "",
       activo: defaultValues?.activo ?? true,
     },
   });
 
-  // Estados para las fechas
+  // Estados para las fechas (usar parseServerDate para evitar problemas de timezone)
   const [fechaDiligenciamiento, setFechaDiligenciamiento] = useState<Date | undefined>(
     defaultValues?.fecha_dilegenciamiento 
-      ? new Date(defaultValues.fecha_dilegenciamiento) 
+      ? parseServerDate(defaultValues.fecha_dilegenciamiento) 
       : new Date()
   );
   const [fechaActualizacion, setFechaActualizacion] = useState<Date | undefined>(
     defaultValues?.fecha_actualizacion 
-      ? new Date(defaultValues.fecha_actualizacion) 
+      ? parseServerDate(defaultValues.fecha_actualizacion) 
       : undefined
   );
 
@@ -173,15 +198,15 @@ export function HojaVidaUpsertDialog({
     if (defaultValues) {
       const elemento = elementos.find((e) => e.id === defaultValues.elemento_id);
       
-      // Actualizar estados de fecha
+      // Actualizar estados de fecha (usar parseServerDate para evitar problemas de timezone)
       setFechaDiligenciamiento(
         defaultValues.fecha_dilegenciamiento 
-          ? new Date(defaultValues.fecha_dilegenciamiento) 
+          ? parseServerDate(defaultValues.fecha_dilegenciamiento) 
           : new Date()
       );
       setFechaActualizacion(
         defaultValues.fecha_actualizacion 
-          ? new Date(defaultValues.fecha_actualizacion) 
+          ? parseServerDate(defaultValues.fecha_actualizacion) 
           : undefined
       );
 
@@ -192,8 +217,8 @@ export function HojaVidaUpsertDialog({
         subcategoria_id: elemento?.subcategoria_id?.toString() || "",
         elemento_id: defaultValues.elemento_id?.toString() || "",
         fecha_dilegenciamiento: defaultValues.fecha_dilegenciamiento
-          ? new Date(defaultValues.fecha_dilegenciamiento).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
+          ? formatLocalDate(parseServerDate(defaultValues.fecha_dilegenciamiento) || new Date())
+          : formatLocalDate(new Date()),
         tipo_elemento: defaultValues.tipo_elemento || "EQUIPO",
         area_ubicacion: defaultValues.area_ubicacion || "",
         responsable: defaultValues.responsable || "",
@@ -202,7 +227,7 @@ export function HojaVidaUpsertDialog({
         requerimientos_seguridad: defaultValues.requerimientos_seguridad || "",
         rutina_mantenimiento: defaultValues.rutina_mantenimiento || "",
         fecha_actualizacion: defaultValues.fecha_actualizacion
-          ? new Date(defaultValues.fecha_actualizacion).toISOString().split("T")[0]
+          ? formatLocalDate(parseServerDate(defaultValues.fecha_actualizacion) || new Date())
           : "",
         activo: defaultValues.activo ?? true,
       });
@@ -215,9 +240,9 @@ export function HojaVidaUpsertDialog({
 
       formData.append("elemento_id", data.elemento_id);
       
-      // Convertir fecha de diligenciamiento al formato correcto
+      // Convertir fecha de diligenciamiento al formato correcto (zona horaria local)
       if (fechaDiligenciamiento) {
-        formData.append("fecha_dilegenciamiento", fechaDiligenciamiento.toISOString().split("T")[0]);
+        formData.append("fecha_dilegenciamiento", formatLocalDate(fechaDiligenciamiento));
       }
       
       formData.append("tipo_elemento", data.tipo_elemento);
@@ -228,9 +253,9 @@ export function HojaVidaUpsertDialog({
       if (data.requerimientos_seguridad) formData.append("requerimientos_seguridad", data.requerimientos_seguridad);
       if (data.rutina_mantenimiento) formData.append("rutina_mantenimiento", data.rutina_mantenimiento);
       
-      // Convertir fecha de actualización al formato correcto
+      // Convertir fecha de actualización al formato correcto (zona horaria local)
       if (fechaActualizacion) {
-        formData.append("fecha_actualizacion", fechaActualizacion.toISOString().split("T")[0]);
+        formData.append("fecha_actualizacion", formatLocalDate(fechaActualizacion));
       }
       
       formData.append("activo", String(data.activo));
@@ -476,7 +501,7 @@ export function HojaVidaUpsertDialog({
                   onDateChange={(date) => {
                     setFechaDiligenciamiento(date);
                     if (date) {
-                      setValue("fecha_dilegenciamiento", date.toISOString().split("T")[0]);
+                      setValue("fecha_dilegenciamiento", formatLocalDate(date));
                     }
                   }}
                   placeholder="Selecciona fecha de diligenciamiento"
@@ -592,7 +617,7 @@ export function HojaVidaUpsertDialog({
                   onDateChange={(date) => {
                     setFechaActualizacion(date);
                     if (date) {
-                      setValue("fecha_actualizacion", date.toISOString().split("T")[0]);
+                      setValue("fecha_actualizacion", formatLocalDate(date));
                     } else {
                       setValue("fecha_actualizacion", "");
                     }

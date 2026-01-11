@@ -417,3 +417,59 @@ export function deleteMantenimientoRealizado(id: number): Promise<MantenimientoR
   }) as Promise<MantenimientoRealizado>;
 }
 
+// Contar mantenimientos pendientes del año actual
+export async function countMantenimientosPendientes(): Promise<number> {
+  const currentYear = new Date().getFullYear();
+  
+  return prisma.mantenimientos_programados.count({
+    where: {
+      año: currentYear,
+      estado: "PENDIENTE",
+    },
+  });
+}
+
+// Contar mantenimientos por estado
+export async function countMantenimientosPorEstado(): Promise<{
+  pendientes: number;
+  realizados: number;
+  aplazados: number;
+}> {
+  const currentYear = new Date().getFullYear();
+  
+  const [pendientes, realizados, aplazados] = await Promise.all([
+    prisma.mantenimientos_programados.count({
+      where: { año: currentYear, estado: "PENDIENTE" },
+    }),
+    prisma.mantenimientos_programados.count({
+      where: { año: currentYear, estado: "REALIZADO" },
+    }),
+    prisma.mantenimientos_programados.count({
+      where: { año: currentYear, estado: "APLAZADO" },
+    }),
+  ]);
+  
+  return { pendientes, realizados, aplazados };
+}
+
+// Actualizar estado de mantenimiento programado
+export function updateEstadoMantenimiento(
+  id: number,
+  estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
+): Promise<MantenimientoProgramado> {
+  return prisma.mantenimientos_programados.update({
+    where: { id },
+    data: { estado },
+    include: {
+      elemento: {
+        select: {
+          id: true,
+          serie: true,
+          marca: true,
+          modelo: true,
+        },
+      },
+    },
+  }) as Promise<MantenimientoProgramado>;
+}
+

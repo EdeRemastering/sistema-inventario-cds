@@ -1,31 +1,193 @@
 import { prisma } from "../../lib/prisma";
 import { Prisma } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import type { Elemento, CreateElementoInput, UpdateElementoInput, ElementoWithRelations } from "./types";
+
+// Tipo ligero para la lista (solo campos necesarios)
+export type ElementoListItem = {
+  id: number;
+  serie: string;
+  marca: string | null;
+  modelo: string | null;
+  cantidad: number;
+  categoria_id: number;
+  subcategoria_id: number | null;
+  ubicacion_id: number | null;
+  categoria: { id: number; nombre: string };
+  subcategoria: { id: number; nombre: string } | null;
+  ubicacion_rel: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede: { id: number; nombre: string; ciudad: string; municipio: string | null } | null;
+  } | null;
+};
 
 export function listElementos(): Promise<Elemento[]> {
   return prisma.elementos.findMany({ orderBy: { id: "desc" } }) as unknown as Promise<Elemento[]>;
 }
 
-export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
-  return prisma.elementos.findMany({ 
-    include: {
-      categoria: true,
-      subcategoria: true,
+// Tipo para respuesta paginada
+export type PaginatedElementos = {
+  data: ElementoListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+// Función base para obtener elementos paginados
+async function fetchElementosPaginated(
+  page: number = 1,
+  pageSize: number = 50,
+  search?: string
+): Promise<PaginatedElementos> {
+  const skip = (page - 1) * pageSize;
+  
+  // Condición de búsqueda
+  const whereClause = search ? {
+    OR: [
+      { serie: { contains: search } },
+      { marca: { contains: search } },
+      { modelo: { contains: search } },
+    ]
+  } : {};
+
+  // Ejecutar consultas en paralelo
+  const [data, total] = await Promise.all([
+    prisma.elementos.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        serie: true,
+        marca: true,
+        modelo: true,
+        cantidad: true,
+        categoria_id: true,
+        subcategoria_id: true,
+        ubicacion_id: true,
+        categoria: {
+          select: { id: true, nombre: true }
+        },
+        subcategoria: {
+          select: { id: true, nombre: true }
+        },
+        ubicacion_rel: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+            sede: {
+              select: { id: true, nombre: true, ciudad: true, municipio: true }
+            }
+          }
+        }
+      },
+      orderBy: { id: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.elementos.count({ where: whereClause })
+  ]);
+
+  return {
+    data: data as unknown as ElementoListItem[],
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize)
+  };
+}
+
+// Versión paginada (sin caché para datos frescos con paginación)
+export async function listElementosPaginated(
+  page: number = 1,
+  pageSize: number = 50,
+  search?: string
+): Promise<PaginatedElementos> {
+  return fetchElementosPaginated(page, pageSize, search);
+}
+
+// Versión simple para compatibilidad (limitada a 100 elementos)
+async function fetchElementosForList(): Promise<ElementoListItem[]> {
+  return prisma.elementos.findMany({
+    select: {
+      id: true,
+      serie: true,
+      marca: true,
+      modelo: true,
+      cantidad: true,
+      categoria_id: true,
+      subcategoria_id: true,
+      ubicacion_id: true,
+      categoria: {
+        select: { id: true, nombre: true }
+      },
+      subcategoria: {
+        select: { id: true, nombre: true }
+      },
       ubicacion_rel: {
         select: {
           id: true,
           codigo: true,
           nombre: true,
           sede: {
-            select: {
-              id: true,
-              nombre: true,
-              ciudad: true,
-              municipio: true,
-            },
-          },
-        },
+            select: { id: true, nombre: true, ciudad: true, municipio: true }
+          }
+        }
+      }
+    },
+    orderBy: { id: "desc" },
+    take: 100 // Limitar a 100 para carga inicial rápida
+  }) as unknown as Promise<ElementoListItem[]>;
+}
+
+// Versión optimizada con caché
+export const listElementosForList = unstable_cache(
+  fetchElementosForList,
+  ["elementos-list"],
+  { revalidate: 60, tags: ["elementos"] }
+);
+
+// Versión completa con todas las relaciones (para cuando se necesiten todos los datos)
+export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
+  return prisma.elementos.findMany({ 
+    select: {
+      id: true,
+      categoria_id: true,
+      subcategoria_id: true,
+      cantidad: true,
+      serie: true,
+      marca: true,
+      modelo: true,
+      ubicacion: true,
+      ubicacion_id: true,
+      estado_funcional: true,
+      estado_fisico: true,
+      fecha_entrada: true,
+      fecha_salida: true,
+      codigo_equipo: true,
+      especificaciones: true,
+      observaciones: true,
+      activo: true,
+      creado_en: true,
+      actualizado_en: true,
+      categoria: {
+        select: { id: true, nombre: true, descripcion: true, estado: true, created_at: true, updated_at: true }
       },
+      subcategoria: {
+        select: { id: true, nombre: true, descripcion: true, categoria_id: true, estado: true, created_at: true, updated_at: true }
+      },
+      ubicacion_rel: {
+        select: {
+          id: true,
+          codigo: true,
+          nombre: true,
+          sede: {
+            select: { id: true, nombre: true, ciudad: true, municipio: true }
+          }
+        }
+      }
     },
     orderBy: { id: "desc" } 
   }) as unknown as Promise<ElementoWithRelations[]>;

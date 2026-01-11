@@ -5,6 +5,18 @@ export function listCategorias(): Promise<Categoria[]> {
     return prisma.categorias.findMany({ orderBy: { id: "desc" } }) as unknown as Promise<Categoria[]>;
 }
 
+// Solo categorías que tienen elementos (directos o via subcategorías)
+export async function listCategoriasConElementos(): Promise<Categoria[]> {
+    return prisma.categorias.findMany({
+        where: {
+            elementos: {
+                some: {} // Al menos un elemento
+            }
+        },
+        orderBy: { nombre: "asc" }
+    }) as unknown as Promise<Categoria[]>;
+}
+
 export function getCategoria(id: number): Promise<Categoria | null> {
     return prisma.categorias.findUnique({ where: { id } }) as unknown as Promise<Categoria | null>;
 }
