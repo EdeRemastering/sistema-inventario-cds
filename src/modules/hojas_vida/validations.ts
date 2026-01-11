@@ -22,7 +22,7 @@ export const hojaVidaCreateSchema = z.object({
   tipo_elemento: z.enum(["EQUIPO", "RECURSO_DIDACTICO"]),
   area_ubicacion: z.string().max(100).optional().or(z.literal("")),
   responsable: z.string().max(100).optional().or(z.literal("")),
-  especificaciones_tecnicas: z.record(z.unknown()).optional(),
+  especificaciones_tecnicas: z.record(z.string(), z.unknown()).optional(),
   descripcion: z.string().optional(),
   requerimientos_funcionamiento: z.string().optional(),
   requerimientos_seguridad: z.string().optional(),

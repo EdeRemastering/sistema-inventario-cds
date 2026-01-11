@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Check, Loader2, Download } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -93,13 +93,6 @@ const FRECUENCIAS = [
   { value: "TRIMESTRAL", label: "Trimestral" },
   { value: "SEMESTRAL", label: "Semestral" },
   { value: "ANUAL", label: "Anual" },
-];
-
-const ESTADOS = [
-  { value: "PENDIENTE", label: "Pendiente", color: "bg-gray-200" },
-  { value: "REALIZADO", label: "Realizado", color: "bg-cyan-400" },
-  { value: "APLAZADO", label: "Aplazado", color: "bg-red-500" },
-  { value: "CANCELADO", label: "Cancelado", color: "bg-gray-400" },
 ];
 
 export function CronogramaView({

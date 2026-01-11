@@ -28,7 +28,12 @@ export async function actionCreateMantenimientoProgramado(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
-  const mantenimiento = await createMantenimientoProgramado(parsed.data);
+  const createData = {
+    ...parsed.data,
+    observaciones: parsed.data.observaciones ?? null,
+  };
+
+  const mantenimiento = await createMantenimientoProgramado(createData);
   await logAction({
     action: "CREATE",
     entity: "mantenimiento_programado",
@@ -42,7 +47,12 @@ export async function actionUpdateMantenimientoProgramado(formData: FormData) {
   const parsed = mantenimientoProgramadoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
-  await updateMantenimientoProgramado(parsed.data.id!, parsed.data);
+  const updateData = {
+    ...parsed.data,
+    observaciones: parsed.data.observaciones ?? null,
+  };
+
+  await updateMantenimientoProgramado(parsed.data.id!, updateData);
   await logAction({
     action: "UPDATE",
     entity: "mantenimiento_programado",
@@ -71,7 +81,16 @@ export async function actionCreateMantenimientoRealizado(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
-  const mantenimiento = await createMantenimientoRealizado(parsed.data);
+  const createData = {
+    ...parsed.data,
+    programacion_id: parsed.data.programacion_id === "" ? null : (parsed.data.programacion_id ?? null),
+    averias_encontradas: parsed.data.averias_encontradas ?? null,
+    repuestos_utilizados: parsed.data.repuestos_utilizados ?? null,
+    costo: parsed.data.costo === "" ? null : (parsed.data.costo ?? null),
+    creado_por: parsed.data.creado_por ?? null,
+  };
+
+  const mantenimiento = await createMantenimientoRealizado(createData);
   await logAction({
     action: "CREATE",
     entity: "mantenimiento_realizado",
@@ -85,7 +104,16 @@ export async function actionUpdateMantenimientoRealizado(formData: FormData) {
   const parsed = mantenimientoRealizadoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
-  await updateMantenimientoRealizado(parsed.data.id!, parsed.data);
+  const updateData = {
+    ...parsed.data,
+    programacion_id: parsed.data.programacion_id === "" ? null : (parsed.data.programacion_id ?? null),
+    averias_encontradas: parsed.data.averias_encontradas ?? null,
+    repuestos_utilizados: parsed.data.repuestos_utilizados ?? null,
+    costo: parsed.data.costo === "" ? null : (parsed.data.costo ?? null),
+    creado_por: parsed.data.creado_por ?? null,
+  };
+
+  await updateMantenimientoRealizado(parsed.data.id!, updateData);
   await logAction({
     action: "UPDATE",
     entity: "mantenimiento_realizado",

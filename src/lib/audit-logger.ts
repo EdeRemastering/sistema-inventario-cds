@@ -23,7 +23,12 @@ export type LogEntity =
   | "observacion"
   | "reporte"
   | "ticket"
-  | "sistema";
+  | "sistema"
+  | "sede"
+  | "hoja_vida"
+  | "cambio_elemento"
+  | "mantenimiento_programado"
+  | "mantenimiento_realizado";
 
 export interface AuditLogData {
   action: LogAction;

@@ -26,11 +26,31 @@ import {
 import { Checkbox } from "../ui/checkbox";
 import { ElementoSearchSelect } from "../ui/elemento-search-select";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
-import type { ElementoWithRelations } from "../../modules/elementos/types";
-import type { Sede } from "../../modules/sedes/types";
-import type { Ubicacion } from "../../modules/ubicaciones/types";
-import type { Categoria } from "../../modules/categorias/types";
-import type { Subcategoria } from "../../modules/subcategorias/types";
+
+type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type CategoriaOption = { id: number; nombre: string };
+type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
+type ElementoOption = {
+  id: number;
+  serie: string;
+  marca: string | null;
+  modelo: string | null;
+  categoria_id: number;
+  subcategoria_id: number | null;
+  ubicacion_id: number | null;
+  ubicacion_rel?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    } | null;
+  } | null;
+};
 
 const meses = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -104,11 +124,11 @@ type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
   defaultValues?: Partial<MantenimientoProgramado>;
-  elementos: ElementoWithRelations[];
-  sedes: Sede[];
-  ubicaciones: Ubicacion[];
-  categorias: Categoria[];
-  subcategorias: Subcategoria[];
+  elementos: ElementoOption[];
+  sedes: SedeOption[];
+  ubicaciones: UbicacionOption[];
+  categorias: CategoriaOption[];
+  subcategorias: SubcategoriaOption[];
   hiddenFields?: Record<string, string | number>;
   onClose?: () => void;
 };
@@ -615,7 +635,7 @@ export function MantenimientoProgramadoUpsertDialog({
                           <div key={semana} className="flex items-center space-x-2">
                             <Checkbox
                               id={`${mes}_semana${semana}`}
-                              checked={watch(fieldName) || false}
+                              checked={Boolean(watch(fieldName))}
                               onCheckedChange={(checked) =>
                                 setValue(fieldName, checked as boolean)
                               }

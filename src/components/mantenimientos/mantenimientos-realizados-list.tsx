@@ -13,21 +13,41 @@ import {
 import { MantenimientoRealizadoUpsertDialog } from "./mantenimiento-realizado-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { MantenimientoRealizado } from "../../modules/mantenimientos/types";
-import type { ElementoWithRelations } from "../../modules/elementos/types";
-import type { Sede } from "../../modules/sedes/types";
-import type { Ubicacion } from "../../modules/ubicaciones/types";
-import type { Categoria } from "../../modules/categorias/types";
-import type { Subcategoria } from "../../modules/subcategorias/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type CategoriaOption = { id: number; nombre: string };
+type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
+type ElementoOption = {
+  id: number;
+  serie: string;
+  marca: string | null;
+  modelo: string | null;
+  categoria_id: number;
+  subcategoria_id: number | null;
+  ubicacion_id: number | null;
+  ubicacion_rel?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    } | null;
+  } | null;
+};
+
 type Props = {
   mantenimientos: MantenimientoRealizado[];
-  elementos: ElementoWithRelations[];
-  sedes: Sede[];
-  ubicaciones: Ubicacion[];
-  categorias: Categoria[];
-  subcategorias: Subcategoria[];
+  elementos: ElementoOption[];
+  sedes: SedeOption[];
+  ubicaciones: UbicacionOption[];
+  categorias: CategoriaOption[];
+  subcategorias: SubcategoriaOption[];
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;

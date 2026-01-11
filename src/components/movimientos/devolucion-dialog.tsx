@@ -97,8 +97,8 @@ export function DevolucionDialog({ onDevolver, trigger }: Props) {
         elemento: {
           id: prestamo.elemento.id,
           serie: prestamo.elemento.serie,
-          marca: prestamo.elemento.marca,
-          modelo: prestamo.elemento.modelo,
+          marca: prestamo.elemento.marca ?? null,
+          modelo: prestamo.elemento.modelo ?? null,
         },
         dependencia_entrega: prestamo.dependencia_entrega,
         funcionario_entrega: prestamo.funcionario_entrega,

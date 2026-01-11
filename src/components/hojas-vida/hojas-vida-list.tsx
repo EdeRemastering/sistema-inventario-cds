@@ -13,11 +13,31 @@ import {
 import { HojaVidaUpsertDialog } from "./hoja-vida-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { HojaVida } from "../../modules/hojas_vida/types";
-import type { ElementoWithRelations } from "../../modules/elementos/types";
-import type { Sede } from "../../modules/sedes/types";
-import type { Ubicacion } from "../../modules/ubicaciones/types";
-import type { Categoria } from "../../modules/categorias/types";
-import type { Subcategoria } from "../../modules/subcategorias/types";
+
+type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type CategoriaOption = { id: number; nombre: string };
+type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
+type ElementoOption = {
+  id: number;
+  serie: string;
+  marca: string | null;
+  modelo: string | null;
+  categoria_id: number;
+  subcategoria_id: number | null;
+  ubicacion_id: number | null;
+  ubicacion_rel?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    } | null;
+  } | null;
+};
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -39,11 +59,11 @@ const parseServerDate = (dateValue: Date | string | null | undefined): Date => {
 
 type Props = {
   hojasVida: HojaVida[];
-  elementos: ElementoWithRelations[];
-  sedes: Sede[];
-  ubicaciones: Ubicacion[];
-  categorias: Categoria[];
-  subcategorias: Subcategoria[];
+  elementos: ElementoOption[];
+  sedes: SedeOption[];
+  ubicaciones: UbicacionOption[];
+  categorias: CategoriaOption[];
+  subcategorias: SubcategoriaOption[];
   onCreateHojaVida: (formData: FormData) => Promise<void>;
   onUpdateHojaVida: (formData: FormData) => Promise<void>;
   onDeleteHojaVida: (id: number) => Promise<void>;

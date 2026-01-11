@@ -188,6 +188,10 @@ export async function actionBuscarPrestamoPorTicket(numero_ticket: string) {
     if (!movimiento) {
       throw new Error("Préstamo no encontrado o ya fue devuelto");
     }
+
+    if (!movimiento.elemento) {
+      throw new Error("Elemento del préstamo no encontrado");
+    }
     
     return {
       id: movimiento.id,

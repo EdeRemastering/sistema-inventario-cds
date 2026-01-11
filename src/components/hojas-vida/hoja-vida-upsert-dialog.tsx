@@ -28,7 +28,6 @@ import { ElementoSearchSelect } from "../ui/elemento-search-select";
 import { DatePicker } from "../ui/date-picker";
 import { format } from "date-fns";
 import type { HojaVida } from "../../modules/hojas_vida/types";
-import type { Elemento } from "../../modules/elementos/types";
 
 // Función para formatear fecha en zona horaria local (evita problemas con UTC)
 const formatLocalDate = (date: Date): string => {
@@ -78,7 +77,11 @@ type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
 type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
 type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
-type ElementoOption = Elemento & {
+type ElementoOption = {
+  id: number;
+  serie: string;
+  marca: string | null;
+  modelo: string | null;
   categoria_id: number;
   subcategoria_id: number | null;
   ubicacion_id: number | null;

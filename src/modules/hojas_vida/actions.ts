@@ -17,6 +17,8 @@ import {
   deleteCambioElemento,
 } from "./services";
 import { logAction } from "../../lib/audit-logger";
+import type { CreateHojaVidaInput } from "./types";
+import type { Prisma } from "@prisma/client";
 
 // Actions para Hojas de Vida
 export async function actionCreateHojaVida(formData: FormData) {
@@ -26,7 +28,23 @@ export async function actionCreateHojaVida(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
-  const hojaVida = await createHojaVida(parsed.data);
+  // Transformar undefined a null para compatibilidad con el tipo
+  const data: CreateHojaVidaInput = {
+    elemento_id: parsed.data.elemento_id,
+    fecha_dilegenciamiento: parsed.data.fecha_dilegenciamiento!,
+    tipo_elemento: parsed.data.tipo_elemento,
+    area_ubicacion: parsed.data.area_ubicacion || null,
+    responsable: parsed.data.responsable || null,
+    especificaciones_tecnicas: (parsed.data.especificaciones_tecnicas as Prisma.JsonValue) ?? null,
+    descripcion: parsed.data.descripcion ?? null,
+    requerimientos_funcionamiento: parsed.data.requerimientos_funcionamiento ?? null,
+    requerimientos_seguridad: parsed.data.requerimientos_seguridad ?? null,
+    rutina_mantenimiento: (parsed.data.rutina_mantenimiento === "" ? null : parsed.data.rutina_mantenimiento) ?? null,
+    fecha_actualizacion: parsed.data.fecha_actualizacion ?? null,
+    activo: parsed.data.activo,
+  };
+
+  const hojaVida = await createHojaVida(data);
   await logAction({
     action: "CREATE",
     entity: "hoja_vida",
@@ -40,7 +58,20 @@ export async function actionUpdateHojaVida(formData: FormData) {
   const parsed = hojaVidaUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
-  await updateHojaVida(parsed.data.id!, parsed.data);
+  // Transformar los datos para compatibilidad con los tipos
+  const updateData = {
+    ...parsed.data,
+    area_ubicacion: parsed.data.area_ubicacion || null,
+    responsable: parsed.data.responsable || null,
+    especificaciones_tecnicas: (parsed.data.especificaciones_tecnicas as Prisma.JsonValue) ?? null,
+    descripcion: parsed.data.descripcion ?? null,
+    requerimientos_funcionamiento: parsed.data.requerimientos_funcionamiento ?? null,
+    requerimientos_seguridad: parsed.data.requerimientos_seguridad ?? null,
+    rutina_mantenimiento: (parsed.data.rutina_mantenimiento === "" ? null : parsed.data.rutina_mantenimiento) ?? null,
+    fecha_actualizacion: parsed.data.fecha_actualizacion ?? null,
+  };
+
+  await updateHojaVida(parsed.data.id!, updateData);
   await logAction({
     action: "UPDATE",
     entity: "hoja_vida",
@@ -69,7 +100,12 @@ export async function actionCreateCambioElemento(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
-  const cambio = await createCambioElemento(parsed.data);
+  const createData = {
+    ...parsed.data,
+    usuario: parsed.data.usuario || null,
+  };
+
+  const cambio = await createCambioElemento(createData);
   await logAction({
     action: "CREATE",
     entity: "cambio_elemento",
@@ -83,7 +119,12 @@ export async function actionUpdateCambioElemento(formData: FormData) {
   const parsed = cambioElementoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
-  await updateCambioElemento(parsed.data.id!, parsed.data);
+  const updateData = {
+    ...parsed.data,
+    usuario: parsed.data.usuario || null,
+  };
+
+  await updateCambioElemento(parsed.data.id!, updateData);
   await logAction({
     action: "UPDATE",
     entity: "cambio_elemento",

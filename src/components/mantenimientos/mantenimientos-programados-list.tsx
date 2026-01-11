@@ -18,22 +18,41 @@ import {
   DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { MantenimientoProgramadoUpsertDialog } from "./mantenimiento-programado-upsert-dialog";
-import { DeleteButton } from "../delete-button";
-import { Check, Clock, MoreHorizontal, Pencil, RotateCcw, X } from "lucide-react";
+import { Check, Clock, MoreHorizontal, Pencil, RotateCcw, X, Trash2 } from "lucide-react";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
-import type { ElementoWithRelations } from "../../modules/elementos/types";
-import type { Sede } from "../../modules/sedes/types";
-import type { Ubicacion } from "../../modules/ubicaciones/types";
-import type { Categoria } from "../../modules/categorias/types";
-import type { Subcategoria } from "../../modules/subcategorias/types";
+
+type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type CategoriaOption = { id: number; nombre: string };
+type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
+type ElementoOption = {
+  id: number;
+  serie: string;
+  marca: string | null;
+  modelo: string | null;
+  categoria_id: number;
+  subcategoria_id: number | null;
+  ubicacion_id: number | null;
+  ubicacion_rel?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    } | null;
+  } | null;
+};
 
 type Props = {
   mantenimientos: MantenimientoProgramado[];
-  elementos: ElementoWithRelations[];
-  sedes: Sede[];
-  ubicaciones: Ubicacion[];
-  categorias: Categoria[];
-  subcategorias: Subcategoria[];
+  elementos: ElementoOption[];
+  sedes: SedeOption[];
+  ubicaciones: UbicacionOption[];
+  categorias: CategoriaOption[];
+  subcategorias: SubcategoriaOption[];
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
@@ -222,12 +241,15 @@ export function MantenimientosProgramadosList({
                             )}
                             
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                              <DeleteButton
-                                onConfirm={() => onDeleteMantenimiento(mantenimiento.id)}
-                                variant="ghost"
-                                className="w-full justify-start text-destructive hover:text-destructive cursor-pointer"
-                              />
+                            <DropdownMenuItem
+                              className="text-destructive hover:text-destructive cursor-pointer"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await onDeleteMantenimiento(mantenimiento.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

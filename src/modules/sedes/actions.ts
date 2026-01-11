@@ -13,7 +13,12 @@ export async function actionCreateSede(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
-  const sede = await createSede(parsed.data);
+  const createData = {
+    ...parsed.data,
+    municipio: parsed.data.municipio ?? null,
+  };
+
+  const sede = await createSede(createData);
   await logAction({
     action: "CREATE",
     entity: "sede",
@@ -26,8 +31,13 @@ export async function actionCreateSede(formData: FormData) {
 export async function actionUpdateSede(formData: FormData) {
   const parsed = sedeUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
+
+  const updateData = {
+    ...parsed.data,
+    municipio: parsed.data.municipio ?? null,
+  };
   
-  await updateSede(parsed.data.id!, parsed.data);
+  await updateSede(parsed.data.id!, updateData);
   await logAction({
     action: "UPDATE",
     entity: "sede",
