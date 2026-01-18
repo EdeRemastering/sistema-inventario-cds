@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { elementoCreateSchema, elementoUpdateSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
 import { createElemento, deleteElemento, updateElemento, getElemento, listElementosWithRelations } from "./services";
@@ -31,7 +31,6 @@ export async function actionCreateElemento(formData: FormData) {
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
     activo: parsed.data.activo ?? true,
   });
-  revalidateTag("elementos");
   revalidatePath("/elementos");
 }
 
@@ -51,13 +50,11 @@ export async function actionUpdateElemento(formData: FormData) {
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
     activo: parsed.data.activo,
   });
-  revalidateTag("elementos");
   revalidatePath("/elementos");
 }
 
 export async function actionDeleteElemento(id: number) {
   await deleteElemento(id);
-  revalidateTag("elementos");
   revalidatePath("/elementos");
 }
 
