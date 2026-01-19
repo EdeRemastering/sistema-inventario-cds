@@ -123,7 +123,16 @@ export function HojaVidaUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
-  const [open, setOpen] = useState(!create);
+  // Para crear: empieza cerrado (el botón lo abre)
+  // Para editar: empieza abierto cuando hay defaultValues
+  const [open, setOpen] = useState(false);
+
+  // Abrir automáticamente cuando es modo edición y hay valores
+  useEffect(() => {
+    if (!create && defaultValues) {
+      setOpen(true);
+    }
+  }, [create, defaultValues]);
 
   // Obtener el elemento seleccionado para pre-llenar los filtros
   const elementoSeleccionado = defaultValues?.elemento_id

@@ -29,6 +29,7 @@ export async function actionCreateElemento(formData: FormData) {
     especificaciones: parsed.data.especificaciones || null,
     observaciones: parsed.data.observaciones === "" ? null : parsed.data.observaciones || null,
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
+    imagen_url: parsed.data.imagen_url === "" ? null : parsed.data.imagen_url || null,
     activo: parsed.data.activo ?? true,
   });
   revalidateTag("elementos");

@@ -52,7 +52,16 @@ export function UbicacionUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
-  const [open, setOpen] = useState(!defaultValues);
+  // Para crear: empieza cerrado (el botón lo abre)
+  // Para editar: empieza abierto inmediatamente
+  const [open, setOpen] = useState(false);
+
+  // Abrir automáticamente cuando es modo edición y hay valores
+  useEffect(() => {
+    if (!create && defaultValues) {
+      setOpen(true);
+    }
+  }, [create, defaultValues]);
 
   const {
     register,

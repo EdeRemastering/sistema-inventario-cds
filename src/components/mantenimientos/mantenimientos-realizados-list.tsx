@@ -82,7 +82,7 @@ export function MantenimientosRealizadosList({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Mantenimientos Realizados</h1>
+        <h1 className="text-2xl font-bold">Mantenimientos Ejecutados</h1>
         <MantenimientoRealizadoUpsertDialog
           serverAction={onCreateMantenimiento}
           create={true}

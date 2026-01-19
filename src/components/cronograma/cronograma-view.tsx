@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Check, Loader2, Clock, X, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -69,6 +69,7 @@ type Props = {
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
+  onCambiarEstado?: (id: number, estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO") => Promise<void>;
 };
 
 const MESES = [
@@ -103,6 +104,7 @@ export function CronogramaView({
   onCreateMantenimiento,
   onUpdateMantenimiento,
   onDeleteMantenimiento,
+  onCambiarEstado,
 }: Props) {
   const [selectedSedeId, setSelectedSedeId] = useState<string>("");
   const [selectedUbicacionId, setSelectedUbicacionId] = useState<string>("");
@@ -335,7 +337,7 @@ export function CronogramaView({
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-cyan-400 border border-cyan-500"></div>
-                <span>Realizados</span>
+                <span>Ejecutados</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-500 border border-red-600"></div>
@@ -349,13 +351,13 @@ export function CronogramaView({
       {/* Cronograma estilo Excel */}
       {selectedUbicacionId ? (
         <Card className="overflow-hidden">
-          <CardHeader className="pb-2 bg-[#92D050] text-black">
+          <CardHeader className="pb-2 bg-green-500 dark:bg-green-600 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className="font-bold">AÑO:</span>
                 <span className="font-bold text-xl">{selectedYear}</span>
               </div>
-              <Badge variant="secondary" className="bg-white text-black">
+              <Badge variant="secondary" className="bg-white/90 dark:bg-white/80 text-black">
                 {filteredElementos.length} elementos
               </Badge>
             </div>
@@ -370,35 +372,35 @@ export function CronogramaView({
               <table className="w-full border-collapse text-xs">
                 <thead>
                   {/* Primera fila: Headers principales y meses */}
-                  <tr className="bg-[#FFFF99]">
-                    <th rowSpan={2} className="border border-black p-1 font-bold text-center w-8 bg-[#92D050]">
+                  <tr className="bg-amber-100 dark:bg-amber-900/50 text-foreground">
+                    <th rowSpan={2} className="border border-border dark:border-border/50 p-1 font-bold text-center w-8 bg-green-400 dark:bg-green-600 text-black dark:text-white">
                       <div className="writing-mode-vertical transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
                         ÁREA
                       </div>
                     </th>
-                    <th rowSpan={2} className="border border-black p-1 font-bold text-center min-w-[120px] bg-[#FFFF99]">
+                    <th rowSpan={2} className="border border-border dark:border-border/50 p-1 font-bold text-center min-w-[120px] bg-amber-100 dark:bg-amber-900/50">
                       ELEMENTO DE LA<br/>INFRAESTRUCTURA O<br/>RECURSO DIDÁCTICO
                     </th>
-                    <th rowSpan={2} className="border border-black p-1 font-bold text-center min-w-[100px] bg-[#FFFF99]">
+                    <th rowSpan={2} className="border border-border dark:border-border/50 p-1 font-bold text-center min-w-[100px] bg-amber-100 dark:bg-amber-900/50">
                       CÓDIGO
                     </th>
-                    <th rowSpan={2} className="border border-black p-1 font-bold text-center w-20 bg-[#FFFF99]">
+                    <th rowSpan={2} className="border border-border dark:border-border/50 p-1 font-bold text-center w-20 bg-amber-100 dark:bg-amber-900/50">
                       FRECUENCIA
                     </th>
                     {MESES.map(mes => (
-                      <th key={mes.key} colSpan={4} className="border border-black p-1 font-bold text-center bg-[#FFFF99]">
+                      <th key={mes.key} colSpan={4} className="border border-border dark:border-border/50 p-1 font-bold text-center bg-amber-100 dark:bg-amber-900/50">
                         {mes.short}
                       </th>
                     ))}
-                    <th rowSpan={2} className="border border-black p-1 font-bold text-center min-w-[150px] bg-[#FFFF99]">
+                    <th rowSpan={2} className="border border-border dark:border-border/50 p-1 font-bold text-center min-w-[150px] bg-amber-100 dark:bg-amber-900/50">
                       OBSERVACIONES
                     </th>
                   </tr>
                   {/* Segunda fila: Semanas */}
-                  <tr className="bg-[#FFFF99]">
+                  <tr className="bg-amber-100 dark:bg-amber-900/50 text-foreground">
                     {MESES.map(mes => (
                       [1, 2, 3, 4].map(semana => (
-                        <th key={`${mes.key}-${semana}`} className="border border-black p-0.5 font-bold text-center w-5 bg-[#FFFF99]">
+                        <th key={`${mes.key}-${semana}`} className="border border-border dark:border-border/50 p-0.5 font-bold text-center w-5 bg-amber-100 dark:bg-amber-900/50">
                           {semana}
                         </th>
                       ))
@@ -412,29 +414,29 @@ export function CronogramaView({
                     return (
                       <tr 
                         key={elemento.id}
-                        className="hover:bg-gray-50 cursor-pointer"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
                         onClick={() => handleElementoClick(elemento)}
                       >
                         {/* Área - solo en primera fila con rowSpan */}
                         {index === 0 && (
                           <td 
                             rowSpan={filteredElementos.length} 
-                            className="border border-black p-1 bg-[#FFFF99] font-bold text-center align-middle"
+                            className="border border-border dark:border-border/50 p-1 bg-amber-100 dark:bg-amber-900/50 font-bold text-center align-middle text-foreground"
                             style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                           >
                             {ubicacionSeleccionada?.nombre.toUpperCase()}
                           </td>
                         )}
                         {/* Tipo de elemento */}
-                        <td className="border border-black p-1 bg-[#FFFF99] font-medium">
+                        <td className="border border-border dark:border-border/50 p-1 bg-amber-50 dark:bg-amber-950/30 font-medium text-foreground">
                           {elemento.marca?.toUpperCase() || "EQUIPO"}
                         </td>
                         {/* Código */}
-                        <td className="border border-black p-1 bg-[#FFFF99]">
+                        <td className="border border-border dark:border-border/50 p-1 bg-amber-50 dark:bg-amber-950/30 text-foreground">
                           {elemento.serie}
                         </td>
                         {/* Frecuencia */}
-                        <td className="border border-black p-1 text-center bg-[#FFFF99]" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                        <td className="border border-border dark:border-border/50 p-1 text-center bg-amber-50 dark:bg-amber-950/30 text-foreground" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                           {mantenimiento?.frecuencia || "-"}
                         </td>
                         {/* Celdas de semanas */}
@@ -444,7 +446,7 @@ export function CronogramaView({
                             return (
                               <td 
                                 key={`${mes.key}-${semana}`}
-                                className={`border border-black p-0 w-5 h-6 ${cellColor}`}
+                                className={`border border-border dark:border-border/50 p-0 w-5 h-6 ${cellColor || 'bg-background'}`}
                               >
                                 &nbsp;
                               </td>
@@ -452,7 +454,7 @@ export function CronogramaView({
                           })
                         ))}
                         {/* Observaciones */}
-                        <td className="border border-black p-1 text-xs bg-white">
+                        <td className="border border-border dark:border-border/50 p-1 text-xs bg-background text-foreground">
                           {mantenimiento?.observaciones || ""}
                         </td>
                       </tr>
@@ -509,21 +511,21 @@ export function CronogramaView({
             </div>
 
             {/* Grid de meses y semanas estilo Excel */}
-            <div className="border rounded overflow-hidden">
+            <div className="border border-border rounded overflow-hidden">
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="bg-[#FFFF99]">
-                    <th className="border border-black p-2 font-bold">MES</th>
-                    <th className="border border-black p-2 font-bold text-center w-20">SEM 1</th>
-                    <th className="border border-black p-2 font-bold text-center w-20">SEM 2</th>
-                    <th className="border border-black p-2 font-bold text-center w-20">SEM 3</th>
-                    <th className="border border-black p-2 font-bold text-center w-20">SEM 4</th>
+                  <tr className="bg-amber-200 dark:bg-amber-800">
+                    <th className="border border-border p-2 font-bold text-foreground">MES</th>
+                    <th className="border border-border p-2 font-bold text-center w-20 text-foreground">SEM 1</th>
+                    <th className="border border-border p-2 font-bold text-center w-20 text-foreground">SEM 2</th>
+                    <th className="border border-border p-2 font-bold text-center w-20 text-foreground">SEM 3</th>
+                    <th className="border border-border p-2 font-bold text-center w-20 text-foreground">SEM 4</th>
                   </tr>
                 </thead>
                 <tbody>
                   {MESES.map((mes, i) => (
-                    <tr key={mes.key} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="border border-black p-2 font-medium bg-[#FFFF99]">
+                    <tr key={mes.key} className={i % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+                      <td className="border border-border p-2 font-medium bg-amber-200 dark:bg-amber-800 text-foreground">
                         {mes.nombre}
                       </td>
                       {[1, 2, 3, 4].map(semana => {
@@ -533,8 +535,10 @@ export function CronogramaView({
                         return (
                           <td 
                             key={semana}
-                            className={`border border-black p-2 text-center cursor-pointer transition-colors ${
-                              isChecked ? "bg-yellow-400" : "hover:bg-yellow-100"
+                            className={`border border-border p-2 text-center cursor-pointer transition-colors ${
+                              isChecked 
+                                ? "bg-yellow-400 dark:bg-yellow-500 text-black" 
+                                : "hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
                             }`}
                             onClick={() => toggleSemana(mes.key, semana)}
                           >
@@ -558,6 +562,100 @@ export function CronogramaView({
                 rows={2}
               />
             </div>
+
+            {/* Cambio rápido de estado - solo si existe el mantenimiento */}
+            {selectedMantenimiento && onCambiarEstado && (
+              <div className="space-y-2">
+                <Label>Estado actual: <Badge className={
+                  selectedMantenimiento.estado === "REALIZADO" ? "bg-cyan-500" :
+                  selectedMantenimiento.estado === "APLAZADO" ? "bg-red-500" :
+                  selectedMantenimiento.estado === "CANCELADO" ? "bg-gray-500" :
+                  "bg-yellow-500"
+                }>{selectedMantenimiento.estado === "REALIZADO" ? "EJECUTADO" : selectedMantenimiento.estado}</Badge></Label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedMantenimiento.estado !== "REALIZADO" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950"
+                      disabled={isPending}
+                      onClick={() => {
+                        startTransition(async () => {
+                          await toast.promise(
+                            onCambiarEstado(selectedMantenimiento.id, "REALIZADO"),
+                            { loading: "Cambiando estado...", success: "Marcado como ejecutado", error: "Error al cambiar estado" }
+                          );
+                          setIsDialogOpen(false);
+                        });
+                      }}
+                    >
+                      <Check className="h-4 w-4" />
+                      Marcar Ejecutado
+                    </Button>
+                  )}
+                  {selectedMantenimiento.estado !== "APLAZADO" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                      disabled={isPending}
+                      onClick={() => {
+                        startTransition(async () => {
+                          await toast.promise(
+                            onCambiarEstado(selectedMantenimiento.id, "APLAZADO"),
+                            { loading: "Cambiando estado...", success: "Marcado como aplazado", error: "Error al cambiar estado" }
+                          );
+                          setIsDialogOpen(false);
+                        });
+                      }}
+                    >
+                      <Clock className="h-4 w-4" />
+                      Aplazar
+                    </Button>
+                  )}
+                  {selectedMantenimiento.estado !== "PENDIENTE" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-yellow-600 border-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950"
+                      disabled={isPending}
+                      onClick={() => {
+                        startTransition(async () => {
+                          await toast.promise(
+                            onCambiarEstado(selectedMantenimiento.id, "PENDIENTE"),
+                            { loading: "Cambiando estado...", success: "Restaurado a pendiente", error: "Error al cambiar estado" }
+                          );
+                          setIsDialogOpen(false);
+                        });
+                      }}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Restaurar Pendiente
+                    </Button>
+                  )}
+                  {selectedMantenimiento.estado !== "CANCELADO" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-gray-600 border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900"
+                      disabled={isPending}
+                      onClick={() => {
+                        startTransition(async () => {
+                          await toast.promise(
+                            onCambiarEstado(selectedMantenimiento.id, "CANCELADO"),
+                            { loading: "Cambiando estado...", success: "Cancelado", error: "Error al cambiar estado" }
+                          );
+                          setIsDialogOpen(false);
+                        });
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="gap-2 mt-6">

@@ -78,7 +78,7 @@ export function MantenimientosProgramadosList({
     switch (estado) {
       case "PENDIENTE":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "REALIZADO":
+      case "REALIZADO": // Ejecutado
         return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400";
       case "APLAZADO":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
@@ -154,7 +154,7 @@ export function MantenimientosProgramadosList({
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(mantenimiento.estado)}`}
                       >
-                        {mantenimiento.estado}
+                        {mantenimiento.estado === "REALIZADO" ? "EJECUTADO" : mantenimiento.estado}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -168,7 +168,7 @@ export function MantenimientosProgramadosList({
                               className="text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
                               disabled={isLoading}
                               onClick={() => handleCambiarEstado(mantenimiento.id, "REALIZADO")}
-                              title="Marcar como realizado"
+                              title="Marcar como ejecutado"
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -207,7 +207,7 @@ export function MantenimientosProgramadosList({
                                     className="text-cyan-600"
                                   >
                                     <Check className="h-4 w-4 mr-2" />
-                                    Marcar Realizado
+                                    Marcar Ejecutado
                                   </DropdownMenuItem>
                                 )}
                                 {mantenimiento.estado !== "APLAZADO" && (

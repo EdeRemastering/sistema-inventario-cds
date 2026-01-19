@@ -60,8 +60,8 @@ async function MantenimientosContent() {
           </TabsTrigger>
           <TabsTrigger value="realizados" className="flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Realizados</span>
-            <span className="sm:hidden">Real.</span>
+            <span className="hidden sm:inline">Ejecutados</span>
+            <span className="sm:hidden">Ejec.</span>
           </TabsTrigger>
           <TabsTrigger value="cronograma" className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4" />
@@ -116,6 +116,7 @@ async function MantenimientosContent() {
             onCreateMantenimiento={actionCreateMantenimientoProgramado}
             onUpdateMantenimiento={actionUpdateMantenimientoProgramado}
             onDeleteMantenimiento={actionDeleteMantenimientoProgramado}
+            onCambiarEstado={actionCambiarEstadoMantenimiento}
           />
         </TabsContent>
       </Tabs>

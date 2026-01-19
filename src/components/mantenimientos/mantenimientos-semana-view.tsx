@@ -141,7 +141,7 @@ export function MantenimientosSemanaView({
         case "PENDIENTE":
           return <Badge className="bg-yellow-500 text-black">Pendiente</Badge>;
         case "REALIZADO":
-          return <Badge className="bg-cyan-500 text-white">Realizado</Badge>;
+          return <Badge className="bg-cyan-500 text-white">Ejecutado</Badge>;
         case "APLAZADO":
           return <Badge className="bg-red-500 text-white">Aplazado</Badge>;
         default:
@@ -267,7 +267,7 @@ export function MantenimientosSemanaView({
               <Check className="h-5 w-5 text-cyan-500" />
               <div>
                 <div className="text-2xl font-bold">{realizados.length}</div>
-                <div className="text-sm text-muted-foreground">Realizados</div>
+                <div className="text-sm text-muted-foreground">Ejecutados</div>
               </div>
             </div>
           </CardContent>
@@ -313,12 +313,12 @@ export function MantenimientosSemanaView({
             </div>
           )}
 
-          {/* Realizados */}
+          {/* Ejecutados */}
           {realizados.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-medium text-cyan-600 flex items-center gap-2">
                 <Check className="h-4 w-4" />
-                Realizados ({realizados.length})
+                Ejecutados ({realizados.length})
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {realizados.map(m => (

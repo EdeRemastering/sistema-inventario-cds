@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { ImageUpload } from "../ui/image-upload";
 
 const schema = z.object({
   sede_id: z.string().min(1, "Selecciona sede"),
@@ -32,6 +33,7 @@ const schema = z.object({
   marca: z.string().optional(),
   modelo: z.string().optional(),
   cantidad: z.string().min(1, "Cantidad requerida"),
+  imagen_url: z.string().optional().nullable(),
 });
 
 type ElementoFormData = z.infer<typeof schema>;
@@ -85,6 +87,7 @@ export function ElementoUpsertDialog({
       marca: defaultValues?.marca || "",
       modelo: defaultValues?.modelo || "",
       cantidad: defaultValues?.cantidad || "1",
+      imagen_url: defaultValues?.imagen_url || null,
     },
   });
 
@@ -100,6 +103,7 @@ export function ElementoUpsertDialog({
         marca: defaultValues.marca || "",
         modelo: defaultValues.modelo || "",
         cantidad: defaultValues.cantidad || "1",
+        imagen_url: defaultValues.imagen_url || null,
       });
     }
   }, [defaultValues, reset]);
@@ -129,6 +133,7 @@ export function ElementoUpsertDialog({
       if (data.marca) formData.append("marca", data.marca);
       if (data.modelo) formData.append("modelo", data.modelo);
       formData.append("cantidad", data.cantidad);
+      if (data.imagen_url) formData.append("imagen_url", data.imagen_url);
 
       // Agregar campos ocultos
       if (hiddenFields) {
@@ -414,6 +419,15 @@ export function ElementoUpsertDialog({
               )}
             </div>
 
+            {/* Imagen del elemento */}
+            <div className="grid gap-1">
+              <Label>Foto del elemento</Label>
+              <ImageUpload
+                value={watch("imagen_url")}
+                onChange={(url) => setValue("imagen_url", url)}
+                disabled={isSubmitting}
+              />
+            </div>
 
             <DialogFooter>
               <Button
