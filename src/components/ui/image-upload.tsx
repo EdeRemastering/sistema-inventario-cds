@@ -29,7 +29,8 @@ export function ImageUpload({ value, onChange, disabled, className = "" }: Props
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload", {
+      // Subida obligatoria a Cloudflare R2 (endpoint interno)
+      const response = await fetch("/api/uploads/images", {
         method: "POST",
         body: formData,
       });
@@ -40,8 +41,11 @@ export function ImageUpload({ value, onChange, disabled, className = "" }: Props
         throw new Error(data.error || "Error al subir imagen");
       }
 
-      setPreviewUrl(data.url);
-      onChange(data.url);
+      const url = (data?.url as string | undefined) ?? null;
+      if (!url) throw new Error("No se recibió la URL de la imagen");
+
+      setPreviewUrl(url);
+      onChange(url);
       toast.success("Imagen subida correctamente");
     } catch (error) {
       console.error("Error uploading:", error);
