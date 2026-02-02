@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 import { Calendar, TrendingUp, Package, Users } from "lucide-react";
 import {
   getMovimientosDataAction,
@@ -34,9 +35,9 @@ type DashboardStats = {
   totalElementos: number;
   totalCategorias: number;
   totalUsuarios: number;
-  totalMovimientos: number;
+  totalTickets: number;
   elementosEnStock: number;
-  elementosPrestados: number;
+  ticketsActivos: number;
   ticketsPendientes: number;
   reportesGenerados: number;
 };
@@ -88,33 +89,35 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
   if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Cargando gráficos...
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-            </div>
-          </CardContent>
-        </Card>
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-5 w-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[260px] w-full" />
+              <div className="mt-3 grid gap-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {/* Gráfico de Movimientos por Mes */}
+      {/* Gráfico de Tickets (Préstamos) por Mes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Movimientos por Mes
+            Tickets por Mes
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -131,7 +134,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 stackId="1"
                 stroke="hsl(var(--chart-1))"
                 fill="hsl(var(--chart-1))"
-                name="Total Movimientos"
+                name="Total Tickets"
               />
               <Area
                 type="monotone"
@@ -139,7 +142,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 stackId="2"
                 stroke="hsl(var(--chart-2))"
                 fill="hsl(var(--chart-2))"
-                name="Préstamos"
+                name="Préstamos (Tickets creados)"
               />
               <Area
                 type="monotone"
@@ -147,7 +150,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 stackId="3"
                 stroke="hsl(var(--chart-3))"
                 fill="hsl(var(--chart-3))"
-                name="Devoluciones"
+                name="Tickets cerrados"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -267,10 +270,10 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
             <div className="flex items-center justify-between p-3 bg-accent rounded-lg border border-accent-foreground/20">
               <div>
                 <p className="text-sm font-medium text-accent-foreground">
-                  Prestados
+                  Tickets Activos
                 </p>
                 <p className="text-2xl font-bold text-accent-foreground">
-                  {stats.elementosPrestados}
+                  {stats.ticketsActivos}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-accent-foreground" />

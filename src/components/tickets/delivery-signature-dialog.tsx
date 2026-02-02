@@ -28,26 +28,25 @@ export function DeliverySignatureDialog({
   ticketNumber,
   onSuccess,
 }: DeliverySignatureDialogProps) {
-  const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
   const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!firmaEntrega || !firmaRecibe) {
-      toast.error("Se requieren ambas firmas para completar la entrega");
+    if (!firmaRecibe) {
+      toast.error("Se requiere la firma del solicitante para completar la entrega");
       return;
     }
 
     setIsSubmitting(true);
     try {
       console.log("Iniciando proceso de devolución para ticket:", ticketId);
-      await actionMarkTicketAsReturned(ticketId, firmaEntrega, firmaRecibe);
+      // La firma de "quien resuelve" se toma del perfil del usuario logueado.
+      await actionMarkTicketAsReturned(ticketId, undefined, firmaRecibe);
       console.log("Devolución completada exitosamente");
       toast.success("Ticket marcado como entregado exitosamente");
       onSuccess?.();
       onOpenChange(false);
       // Limpiar firmas
-      setFirmaEntrega(null);
       setFirmaRecibe(null);
     } catch (error) {
       console.error("Error detallado marcando ticket como entregado:", error);
@@ -65,7 +64,6 @@ export function DeliverySignatureDialog({
   };
 
   const handleCancel = () => {
-    setFirmaEntrega(null);
     setFirmaRecibe(null);
     onOpenChange(false);
   };
@@ -83,24 +81,15 @@ export function DeliverySignatureDialog({
               ⚠️ Requisitos para la Entrega
             </h3>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Se requiere la firma de quien entrega el elemento</li>
-              <li>• Se requiere la firma de quien recibe el elemento</li>
-              <li>• Ambas firmas son obligatorias para completar la entrega</li>
+              <li>• Se requiere la firma del solicitante</li>
+              <li>• La firma de quien resuelve se toma del perfil del usuario autenticado</li>
             </ul>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-2">
               <SignaturePadComponent
-                label="Firma de quien Entrega"
-                onSignatureChange={setFirmaEntrega}
-                required={true}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <SignaturePadComponent
-                label="Firma de quien Recibe"
+                label="Firma del solicitante"
                 onSignatureChange={setFirmaRecibe}
                 required={true}
               />
@@ -119,7 +108,7 @@ export function DeliverySignatureDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !firmaEntrega || !firmaRecibe}
+            disabled={isSubmitting || !firmaRecibe}
             className="bg-green-600 hover:bg-green-700"
           >
             {isSubmitting ? "Procesando..." : "Confirmar Entrega"}

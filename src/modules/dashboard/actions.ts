@@ -9,33 +9,36 @@ export async function getMovimientosDataAction() {
     const last6Months = new Date();
     last6Months.setMonth(now.getMonth() - 6);
 
-    // Obtener movimientos de los últimos 6 meses agrupados por mes
-    const movimientos = await prisma.movimientos.findMany({
+    // Movimientos quedó deprecado: el préstamo vive en Tickets.
+    // Agrupamos tickets por mes (fecha_salida) y consideramos "devoluciones"
+    // como tickets cerrados (por ejemplo: motivo contiene "devuelto"/"completado").
+    const tickets = await prisma.tickets_guardados.findMany({
       where: {
-        fecha_movimiento: {
+        fecha_salida: {
           gte: last6Months
         }
       },
       select: {
-        fecha_movimiento: true,
-        tipo: true
+        fecha_salida: true,
+        motivo: true
       }
     });
 
     // Agrupar por mes
     const movimientosPorMes: { [key: string]: { movimientos: number; prestamos: number; devoluciones: number } } = {};
     
-    movimientos.forEach(movimiento => {
-      const mes = movimiento.fecha_movimiento.toLocaleDateString('es-ES', { month: 'short' });
+    tickets.forEach(ticket => {
+      const mes = ticket.fecha_salida.toLocaleDateString('es-ES', { month: 'short' });
       if (!movimientosPorMes[mes]) {
         movimientosPorMes[mes] = { movimientos: 0, prestamos: 0, devoluciones: 0 };
       }
       movimientosPorMes[mes].movimientos++;
-      if (movimiento.tipo === 'SALIDA') {
-        movimientosPorMes[mes].prestamos++;
-      } else {
-        movimientosPorMes[mes].devoluciones++;
-      }
+      movimientosPorMes[mes].prestamos++;
+
+      const motivo = (ticket.motivo ?? "").toLowerCase();
+      const cerrrado =
+        motivo.includes("devuelto") || motivo.includes("completado") || motivo.includes("entregado");
+      if (cerrrado) movimientosPorMes[mes].devoluciones++;
     });
 
     return Object.entries(movimientosPorMes).map(([name, data]) => ({
@@ -57,13 +60,17 @@ export async function getDashboardStatsAction() {
     ] = await Promise.all([
       prisma.elementos.count(),
       prisma.categorias.count(),
-      prisma.movimientos.count(),
-      prisma.movimientos.count({
+      // Movimientos quedó deprecado: usamos Tickets como "transacciones de préstamo".
+      prisma.tickets_guardados.count(),
+      prisma.tickets_guardados.count({
         where: {
-          tipo: 'SALIDA',
-          fecha_real_devolucion: null
-        }
-      })
+          NOT: [
+            { motivo: { contains: "devuelto" } },
+            { motivo: { contains: "completado" } },
+            { motivo: { contains: "entregado" } },
+          ],
+        },
+      }),
     ]);
 
     return {
@@ -77,25 +84,19 @@ export async function getDashboardStatsAction() {
 
 export async function getRecentActivityAction() {
   return withDatabaseRetry(async () => {
-    const [movimientos, elementos, categorias] = await Promise.all([
-      prisma.movimientos.findMany({
+    const [tickets, elementos, categorias] = await Promise.all([
+      // Movimientos quedó deprecado: actividad reciente basada en tickets.
+      prisma.tickets_guardados.findMany({
         take: 10,
-        orderBy: { fecha_movimiento: 'desc' },
+        orderBy: { fecha_salida: "desc" },
         select: {
           id: true,
-          fecha_movimiento: true,
-          tipo: true,
           numero_ticket: true,
-          elemento: {
-            select: {
-              serie: true,
-              categoria: {
-                select: {
-                  nombre: true
-                }
-              }
-            }
-          }
+          fecha_salida: true,
+          fecha_estimada_devolucion: true,
+          dependencia_entrega: true,
+          dependencia_recibe: true,
+          motivo: true,
         }
       }),
       prisma.elementos.findMany({
@@ -130,13 +131,17 @@ export async function getRecentActivityAction() {
       fecha: Date;
     }> = [];
 
-    // Agregar movimientos como actividades
-    movimientos.forEach(mov => {
+    // Agregar tickets como actividades (préstamo / devolución)
+    tickets.forEach((t) => {
+      const motivo = (t.motivo ?? "").toLowerCase();
+      const cerrado =
+        motivo.includes("devuelto") || motivo.includes("completado") || motivo.includes("entregado");
+
       actividades.push({
-        id: `mov-${mov.id}`,
-        tipo: mov.tipo === 'SALIDA' ? 'prestamo' : 'devolucion',
-        descripcion: `${mov.tipo === 'SALIDA' ? 'Préstamo' : 'Devolución'} - ${mov.elemento.serie} (${mov.elemento.categoria.nombre}) - Ticket: ${mov.numero_ticket}`,
-        fecha: mov.fecha_movimiento
+        id: `ticket-${t.id}`,
+        tipo: cerrado ? "devolucion" : "prestamo",
+        descripcion: `${cerrado ? "Devolución" : "Préstamo"} - Ticket: ${t.numero_ticket} (${t.dependencia_entrega} → ${t.dependencia_recibe})`,
+        fecha: t.fecha_salida,
       });
     });
 
@@ -198,10 +203,9 @@ export async function getEstadosDataAction() {
         }
       }),
       
-      // Prestados: movimientos activos
-      prisma.movimientos.count({
+      // Prestados: tickets activos (movimientos quedó deprecado)
+      prisma.tickets_guardados.count({
         where: {
-          tipo: 'SALIDA',
           fecha_estimada_devolucion: {
             gte: now
           }

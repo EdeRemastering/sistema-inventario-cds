@@ -52,7 +52,9 @@ export function UbicacionUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
-  const [open, setOpen] = useState(!defaultValues);
+  // En creación se abre con el botón. En edición debe abrirse al renderizarse
+  // (la lista renderiza este componente al hacer click en "Editar").
+  const [open, setOpen] = useState(false);
 
   const {
     register,
@@ -81,6 +83,11 @@ export function UbicacionUpsertDialog({
       });
     }
   }, [defaultValues, reset]);
+
+  // Si este componente se renderiza para edición, lo abrimos automáticamente.
+  useEffect(() => {
+    if (!create && defaultValues) setOpen(true);
+  }, [create, defaultValues]);
 
   const onSubmit = async (data: UbicacionFormData) => {
     try {
@@ -122,24 +129,26 @@ export function UbicacionUpsertDialog({
   return (
     <>
       {create && (
-        <Button onClick={() => setOpen(true)}>{btnText}</Button>
+        <Button onClick={() => setOpen(true)} data-tour="ubicaciones-create-button">
+          {btnText}
+        </Button>
       )}
       <Dialog open={open} onOpenChange={(isOpen) => {
         setOpen(isOpen);
         if (!isOpen && onClose) onClose();
       }}>
-        <DialogContent>
+        <DialogContent data-tour="ubicacion-form">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
             {/* Código */}
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="ubicacion-form-codigo">
               <Label htmlFor="codigo">Código</Label>
               <Input
                 id="codigo"
                 type="text"
-                placeholder="Ej: SS02"
+                placeholder="Ej: SAL-02 / SS02"
                 {...register("codigo")}
               />
               {errors.codigo && (
@@ -148,12 +157,12 @@ export function UbicacionUpsertDialog({
             </div>
 
             {/* Nombre */}
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="ubicacion-form-nombre">
               <Label htmlFor="nombre">Nombre</Label>
               <Input
                 id="nombre"
                 type="text"
-                placeholder="Ej: SALA DE SISTEMAS N°2"
+                placeholder="Ej: Sala de Sistemas 2 / Auditorio Principal"
                 {...register("nombre")}
               />
               {errors.nombre && (
@@ -162,7 +171,7 @@ export function UbicacionUpsertDialog({
             </div>
 
             {/* Sede */}
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="ubicacion-form-sede">
               <Label htmlFor="sede_id">Sede</Label>
               <Select
                 value={watch("sede_id") || undefined}
@@ -221,7 +230,11 @@ export function UbicacionUpsertDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-tour="ubicacion-form-submit"
+              >
                 {submitText}
               </Button>
             </DialogFooter>

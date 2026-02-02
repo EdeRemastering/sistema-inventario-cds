@@ -20,6 +20,21 @@ type DeleteButtonProps = {
   description?: string;
   confirmText?: string;
   cancelText?: string;
+  /**
+   * Identificador base para el tutorial (driver.js).
+   * Si se provee, se generan selectores estables:
+   * - `${tourId}-trigger`
+   * - `${tourId}-dialog`
+   * - `${tourId}-confirm`
+   * - `${tourId}-cancel`
+   */
+  tourId?: string;
+  /**
+   * El botón se usa mucho en columnas "Acciones" (tablas).
+   * Por defecto lo ponemos en tamaño pequeño para que coincida con "Editar".
+   */
+  size?: React.ComponentProps<typeof Button>["size"];
+  className?: string;
 };
 
 export function DeleteButton({
@@ -32,6 +47,9 @@ export function DeleteButton({
   description = "Esta acción no se puede deshacer.",
   confirmText = "Sí, eliminar",
   cancelText = "Cancelar",
+  tourId,
+  size = "sm",
+  className,
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -91,11 +109,14 @@ export function DeleteButton({
         variant="destructive"
         onClick={() => setOpen(true)}
         disabled={disabled || submitting}
+        size={size}
+        className={className}
+        data-tour={tourId ? `${tourId}-trigger` : undefined}
       >
         {children}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent data-tour={tourId ? `${tourId}-dialog` : undefined}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
@@ -105,6 +126,8 @@ export function DeleteButton({
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={submitting}
+              size={size}
+              data-tour={tourId ? `${tourId}-cancel` : undefined}
             >
               {cancelText}
             </Button>
@@ -112,6 +135,8 @@ export function DeleteButton({
               variant="destructive"
               onClick={handleConfirm}
               disabled={submitting}
+              size={size}
+              data-tour={tourId ? `${tourId}-confirm` : undefined}
             >
               {confirmText}
             </Button>

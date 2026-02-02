@@ -8,9 +8,11 @@ import { TicketUpsertDialog } from "./ticket-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import { DeliverySignatureDialog } from "./delivery-signature-dialog";
 import type { TicketGuardado } from "../../modules/tickets_guardados/types";
+import type { Ubicacion } from "../../modules/ubicaciones/types";
 
 type TicketActionsProps = {
   ticket: TicketGuardado;
+  ubicaciones: Ubicacion[];
   onUpdateTicket: (formData: FormData) => Promise<void>;
   onDeleteTicket: (id: number) => Promise<void>;
   onMarkAsCompleted?: (id: number) => Promise<void>;
@@ -18,6 +20,7 @@ type TicketActionsProps = {
 
 export function TicketActions({
   ticket,
+  ubicaciones,
   onUpdateTicket,
   onDeleteTicket,
 }: TicketActionsProps) {
@@ -71,6 +74,7 @@ export function TicketActions({
         <TicketUpsertDialog
           create={false}
           serverAction={onUpdateTicket}
+          ubicaciones={ubicaciones}
           defaultValues={{
             numero_ticket: ticket.numero_ticket,
             fecha_salida: new Date(ticket.fecha_salida)
@@ -81,10 +85,7 @@ export function TicketActions({
                   .toISOString()
                   .slice(0, 16) as unknown as Date)
               : ("" as unknown as Date),
-            dependencia_entrega: ticket.dependencia_entrega ?? "",
-            persona_entrega_nombre: ticket.persona_entrega_nombre ?? "",
-            persona_entrega_apellido: ticket.persona_entrega_apellido ?? "",
-            firma_funcionario_entrega: ticket.firma_funcionario_entrega ?? "",
+            ubicacion_id: ticket.ubicacion_id ? String(ticket.ubicacion_id) : "",
             dependencia_recibe: ticket.dependencia_recibe ?? "",
             persona_recibe_nombre: ticket.persona_recibe_nombre ?? "",
             persona_recibe_apellido: ticket.persona_recibe_apellido ?? "",
@@ -98,6 +99,7 @@ export function TicketActions({
               variant="outline"
               size="sm"
               className="text-green-600 hover:text-green-700 hover:bg-green-50"
+              data-tour="tickets-edit"
             >
               <Edit className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Editar</span>
@@ -112,6 +114,7 @@ export function TicketActions({
             variant="outline"
             size="sm"
             className="text-green-600 hover:text-green-700 hover:bg-green-50"
+            data-tour="tickets-deliver"
           >
             <CheckCircle className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Marcar como Entregado</span>

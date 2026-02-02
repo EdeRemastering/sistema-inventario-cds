@@ -10,6 +10,7 @@ export type Elemento = {
   modelo: string | null;
   ubicacion: string | null; // Mantener para compatibilidad
   ubicacion_id: number | null; // Nueva relación con ubicaciones
+  imagen_url: string | null;
   estado_funcional: "B" | "D" | "I" | "FS" | "O" | "R" | "OB";
   estado_fisico: "B" | "D" | "I" | "FS" | "O" | "R" | "OB";
   fecha_entrada: Date;
@@ -55,6 +56,7 @@ type PrismaElementoBase = {
   modelo?: string | null;
   ubicacion?: string | null;
   ubicacion_id?: number | null;
+  imagen_url?: string | null;
   estado_funcional?: "B" | "D" | "I" | "FS" | "O" | "R" | "OB";
   estado_fisico?: "B" | "D" | "I" | "FS" | "O" | "R" | "OB";
   fecha_entrada?: Date;

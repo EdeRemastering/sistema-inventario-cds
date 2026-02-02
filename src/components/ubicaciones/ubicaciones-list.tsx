@@ -35,12 +35,16 @@ export function UbicacionesList({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Ubicaciones</h1>
-        <UbicacionUpsertDialog
-          serverAction={onCreateUbicacion}
-          create={true}
-          sedes={sedes}
-        />
+        <h1 className="text-2xl font-bold" data-tour="page-title">
+          Ubicaciones
+        </h1>
+        <div data-tour="ubicaciones-create">
+          <UbicacionUpsertDialog
+            serverAction={onCreateUbicacion}
+            create={true}
+            sedes={sedes}
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -62,7 +66,7 @@ export function UbicacionesList({
                 </TableCell>
               </TableRow>
             ) : (
-              ubicaciones.map((ubicacion) => (
+              ubicaciones.map((ubicacion, idx) => (
                 <TableRow key={ubicacion.id}>
                   <TableCell className="font-medium">{ubicacion.codigo}</TableCell>
                   <TableCell>{ubicacion.nombre}</TableCell>
@@ -86,12 +90,16 @@ export function UbicacionesList({
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingUbicacion(ubicacion)}
+                        data-tour={idx === 0 ? "ubicaciones-edit-first" : undefined}
                       >
                         Editar
                       </Button>
-                      <DeleteButton
-                        onConfirm={() => onDeleteUbicacion(ubicacion.id)}
-                      />
+                      <span data-tour={idx === 0 ? "ubicaciones-delete-first" : undefined}>
+                        <DeleteButton
+                          tourId={idx === 0 ? "ubicaciones-delete-first" : undefined}
+                          onConfirm={() => onDeleteUbicacion(ubicacion.id)}
+                        />
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>

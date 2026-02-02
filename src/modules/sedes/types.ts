@@ -11,3 +11,4 @@ export type Sede = {
 export type CreateSedeInput = Omit<Sede, "id" | "creado_en" | "actualizado_en">;
 export type UpdateSedeInput = Partial<CreateSedeInput> & { id?: number };
 
+

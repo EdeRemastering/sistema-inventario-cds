@@ -81,3 +81,4 @@ export function deleteSede(id: number): Promise<Sede> {
   return prisma.sedes.delete({ where: { id } }) as Promise<Sede>;
 }
 
+

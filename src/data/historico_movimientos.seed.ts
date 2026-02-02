@@ -39,3 +39,4 @@ export async function seedHistoricoMovimientos(prisma: PrismaClient) {
   console.log(`✅ ${count} movimientos históricos sembrados correctamente`);
 }
 
+

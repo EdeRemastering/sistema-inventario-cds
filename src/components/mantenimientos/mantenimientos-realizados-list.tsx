@@ -83,15 +83,17 @@ export function MantenimientosRealizadosList({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Mantenimientos Realizados</h1>
-        <MantenimientoRealizadoUpsertDialog
-          serverAction={onCreateMantenimiento}
-          create={true}
-          elementos={elementos}
-          sedes={sedes}
-          ubicaciones={ubicaciones}
-          categorias={categorias}
-          subcategorias={subcategorias}
-        />
+        <div data-tour="mantenimientos-realizados-create">
+          <MantenimientoRealizadoUpsertDialog
+            serverAction={onCreateMantenimiento}
+            create={true}
+            elementos={elementos}
+            sedes={sedes}
+            ubicaciones={ubicaciones}
+            categorias={categorias}
+            subcategorias={subcategorias}
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -114,7 +116,7 @@ export function MantenimientosRealizadosList({
                 </TableCell>
               </TableRow>
             ) : (
-              mantenimientos.map((mantenimiento) => (
+              mantenimientos.map((mantenimiento, idx) => (
                 <TableRow key={mantenimiento.id}>
                   <TableCell>
                     {mantenimiento.elemento
@@ -146,12 +148,13 @@ export function MantenimientosRealizadosList({
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingMantenimiento(mantenimiento)}
+                        data-tour={idx === 0 ? "mantenimientos-realizados-edit-first" : undefined}
                       >
                         Editar
                       </Button>
-                      <DeleteButton
-                        onConfirm={() => onDeleteMantenimiento(mantenimiento.id)}
-                      />
+                      <span data-tour={idx === 0 ? "mantenimientos-realizados-delete-first" : undefined}>
+                        <DeleteButton onConfirm={() => onDeleteMantenimiento(mantenimiento.id)} />
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>

@@ -7,11 +7,14 @@ import { createTicket, updateTicket, deleteTicket } from "./services";
 import { saveSignature, isValidSignature, deleteSignature } from "../../lib/signature-storage";
 import { generateUniqueSavedTicketNumber } from "../../lib/ticket-generator";
 import { prisma } from "../../lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../lib/auth";
 
 // Tipos temporales para evitar errores de Prisma
 type TicketWithSignatures = {
   firma_funcionario_entrega: string | null;
   firma_funcionario_recibe: string | null;
+  ubicacion_id?: number | null;
 };
 
 // type FullTicket = {
@@ -40,6 +43,19 @@ export async function actionCreateTicket(formData: FormData) {
       console.error("Error de validación:", parsed.error);
       throw new Error("Datos inválidos: " + JSON.stringify(parsed.error.issues));
     }
+
+    const session = await getServerSession(authOptions);
+    const currentUserId = Number(session?.user?.id ?? NaN);
+    if (!Number.isFinite(currentUserId)) {
+      throw new Error("No autorizado");
+    }
+    const currentUser = await prisma.usuarios.findUnique({
+      where: { id: currentUserId },
+      select: { username: true, nombre: true, apellido: true, firma_url: true },
+    });
+    if (!currentUser) {
+      throw new Error("Usuario no encontrado");
+    }
     
     // Generar número de ticket automáticamente si no se proporciona
     const numero_ticket = parsed.data.numero_ticket || await generateUniqueSavedTicketNumber();
@@ -47,27 +63,41 @@ export async function actionCreateTicket(formData: FormData) {
     if (!numero_ticket) {
       throw new Error("Error generando número de ticket");
     }
+
+    // Validación amigable de unicidad (además del @unique en DB)
+    const existing = await prisma.tickets_guardados.findFirst({
+      where: { numero_ticket },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new Error(`El número de ticket "${numero_ticket}" ya existe`);
+    }
     
-    // Extraer firmas del FormData
-    const firma_entrega = formData.get("firma_funcionario_entrega") as string | null;
     const firma_recibe = formData.get("firma_funcionario_recibe") as string | null;
-    
-    // Extraer elementos del FormData
-    const elementosData = formData.get("elementos") as string | null;
-    let elementos = [];
-    
-    if (elementosData) {
-      try {
-        elementos = JSON.parse(elementosData);
-      } catch (error) {
-        console.error("Error parsing elementos:", error);
-        throw new Error("Error procesando elementos del ticket");
-      }
+
+    // Obtener ubicación y elementos asociados (ahora se presta la ubicación)
+    const ubicacionId = parsed.data.ubicacion_id;
+    const ubicacion = await prisma.ubicaciones.findUnique({
+      where: { id: ubicacionId },
+      select: { id: true },
+    });
+    if (!ubicacion) {
+      throw new Error("Ubicación no encontrada");
     }
-    
-    if (elementos.length === 0) {
-      throw new Error("Debe agregar al menos un elemento al ticket");
-    }
+
+    const elementosUbicacion = await prisma.elementos.findMany({
+      where: { ubicacion_id: ubicacionId, activo: true },
+      select: {
+        id: true,
+        cantidad: true,
+        serie: true,
+        marca: true,
+        modelo: true,
+        categoria: { select: { nombre: true } },
+        subcategoria: { select: { nombre: true } },
+      },
+      orderBy: { id: "asc" },
+    });
     
     // Crear el ticket primero para obtener el ID
     const ticket = await createTicket({
@@ -75,45 +105,37 @@ export async function actionCreateTicket(formData: FormData) {
       numero_ticket: numero_ticket,
       fecha_salida: parsed.data.fecha_salida,
       fecha_estimada_devolucion: parsed.data.fecha_estimada_devolucion ?? null,
-      dependencia_entrega: parsed.data.dependencia_entrega ?? null,
-      persona_entrega_nombre: parsed.data.persona_entrega_nombre ?? null,
-      persona_entrega_apellido: parsed.data.persona_entrega_apellido ?? null,
-      firma_funcionario_entrega: null, // Se actualizará después
+      ubicacion_id: ubicacionId,
+      // "Resuelve" (coordinación logística): se autocompleta desde el usuario logueado
+      dependencia_entrega: "Coordinación de Logística",
+      persona_entrega_nombre: currentUser.nombre ?? null,
+      persona_entrega_apellido: currentUser.apellido ?? null,
+      firma_funcionario_entrega: currentUser.firma_url ?? null,
       dependencia_recibe: parsed.data.dependencia_recibe ?? null,
       persona_recibe_nombre: parsed.data.persona_recibe_nombre ?? null,
       persona_recibe_apellido: parsed.data.persona_recibe_apellido ?? null,
       firma_funcionario_recibe: null, // Se actualizará después
       motivo: parsed.data.motivo ?? null,
       orden_numero: parsed.data.orden_numero ?? null,
-      usuario_guardado: parsed.data.usuario_guardado ?? null,
+      usuario_guardado: currentUser.username ?? parsed.data.usuario_guardado ?? null,
     });
     
-    // Crear los elementos del ticket
-    for (const elemento of elementos) {
+    // Crear snapshot de elementos pertenecientes a la ubicación
+    for (const elemento of elementosUbicacion) {
       await prisma.ticket_elementos.create({
         data: {
           ticket_id: ticket.id,
-          elemento_id: elemento.elemento_id,
+          elemento_id: elemento.id,
           cantidad: elemento.cantidad,
-          elemento_nombre: elemento.elemento_nombre,
+          elemento_nombre: `${elemento.categoria.nombre}${elemento.subcategoria ? ` - ${elemento.subcategoria.nombre}` : ""}`,
           serie: elemento.serie,
-          marca_modelo: elemento.marca_modelo,
+          marca_modelo: `${elemento.marca || ""} ${elemento.modelo || ""}`.trim() || null,
         },
       });
     }
     
     // Guardar firmas como imágenes si son válidas
-    let firmaEntregaUrl = null;
     let firmaRecibeUrl = null;
-    
-    if (firma_entrega && isValidSignature(firma_entrega)) {
-      try {
-        firmaEntregaUrl = await saveSignature(firma_entrega, "ticket", ticket.id, "entrega");
-      } catch (error) {
-        console.error("Error guardando firma de entrega:", error);
-        throw new Error("Error al guardar la firma de entrega");
-      }
-    }
     
     if (firma_recibe && isValidSignature(firma_recibe)) {
       try {
@@ -125,9 +147,8 @@ export async function actionCreateTicket(formData: FormData) {
     }
     
     // Actualizar el ticket con las URLs de las firmas
-    if (firmaEntregaUrl || firmaRecibeUrl) {
+    if (firmaRecibeUrl) {
       await updateTicket(ticket.id, {
-        firma_funcionario_entrega: firmaEntregaUrl,
         firma_funcionario_recibe: firmaRecibeUrl,
       });
     }
@@ -146,28 +167,35 @@ export async function actionUpdateTicket(formData: FormData) {
     console.error("Validation error:", parsed.error);
     throw new Error("Datos inválidos");
   }
+
+  const session = await getServerSession(authOptions);
+  const currentUserId = Number(session?.user?.id ?? NaN);
+  if (!Number.isFinite(currentUserId)) {
+    throw new Error("No autorizado");
+  }
+  const currentUser = await prisma.usuarios.findUnique({
+    where: { id: currentUserId },
+    select: { username: true, nombre: true, apellido: true, firma_url: true },
+  });
+  if (!currentUser) {
+    throw new Error("Usuario no encontrado");
+  }
   
   // Extraer firmas del FormData
-  const firma_entrega = formData.get("firma_funcionario_entrega") as string | null;
   const firma_recibe = formData.get("firma_funcionario_recibe") as string | null;
   
   // Obtener el ticket actual para acceder a las firmas existentes
   const ticketActual = await prisma.tickets_guardados.findUnique({
     where: { id: parsed.data.id },
-    select: { firma_funcionario_entrega: true, firma_funcionario_recibe: true }
+    select: {
+      firma_funcionario_entrega: true,
+      firma_funcionario_recibe: true,
+      ubicacion_id: true,
+    }
   }) as TicketWithSignatures | null;
 
   // Guardar nuevas firmas si son válidas
-  let firmaEntregaUrl = null;
   let firmaRecibeUrl = null;
-  
-  if (firma_entrega && isValidSignature(firma_entrega)) {
-    firmaEntregaUrl = await saveSignature(firma_entrega, "ticket", parsed.data.id, "entrega");
-    // Eliminar la firma anterior si existe
-    if (ticketActual?.firma_funcionario_entrega) {
-      await deleteSignature(ticketActual.firma_funcionario_entrega);
-    }
-  }
   
   if (firma_recibe && isValidSignature(firma_recibe)) {
     firmaRecibeUrl = await saveSignature(firma_recibe, "ticket", parsed.data.id, "recibe");
@@ -177,10 +205,51 @@ export async function actionUpdateTicket(formData: FormData) {
     }
   }
   
+  // Si cambió la ubicación, refrescar snapshot de elementos
+  const newUbicacionId = parsed.data.ubicacion_id ?? ticketActual?.ubicacion_id ?? null;
+  if (parsed.data.ubicacion_id !== undefined && parsed.data.ubicacion_id !== ticketActual?.ubicacion_id) {
+    // Limpiar snapshot anterior
+    await prisma.ticket_elementos.deleteMany({ where: { ticket_id: parsed.data.id } });
+    // Crear snapshot nuevo
+    const elementosUbicacion = await prisma.elementos.findMany({
+      where: { ubicacion_id: parsed.data.ubicacion_id, activo: true },
+      select: {
+        id: true,
+        cantidad: true,
+        serie: true,
+        marca: true,
+        modelo: true,
+        categoria: { select: { nombre: true } },
+        subcategoria: { select: { nombre: true } },
+      },
+      orderBy: { id: "asc" },
+    });
+    for (const elemento of elementosUbicacion) {
+      await prisma.ticket_elementos.create({
+        data: {
+          ticket_id: parsed.data.id,
+          elemento_id: elemento.id,
+          cantidad: elemento.cantidad,
+          elemento_nombre: `${elemento.categoria.nombre}${elemento.subcategoria ? ` - ${elemento.subcategoria.nombre}` : ""}`,
+          serie: elemento.serie,
+          marca_modelo: `${elemento.marca || ""} ${elemento.modelo || ""}`.trim() || null,
+        },
+      });
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, ...payload } = parsed.data;
   await updateTicket(parsed.data.id, {
-    ...parsed.data,
-    firma_funcionario_entrega: firmaEntregaUrl || ticketActual?.firma_funcionario_entrega || null,
+    ...payload,
+    ubicacion_id: newUbicacionId,
+    // Resuelve (auto): siempre se alinea al usuario logueado
+    dependencia_entrega: "Coordinación de Logística",
+    persona_entrega_nombre: currentUser.nombre ?? null,
+    persona_entrega_apellido: currentUser.apellido ?? null,
+    firma_funcionario_entrega: currentUser.firma_url ?? ticketActual?.firma_funcionario_entrega ?? null,
     firma_funcionario_recibe: firmaRecibeUrl || ticketActual?.firma_funcionario_recibe || null,
+    usuario_guardado: currentUser.username ?? payload.usuario_guardado ?? null,
   });
   revalidatePath("/tickets");
 }
@@ -217,34 +286,35 @@ export async function actionMarkTicketAsReturned(id: number, firmaEntrega?: stri
     console.log("Firma Entrega recibida:", firmaEntrega ? "Sí" : "No");
     console.log("Firma Recibe recibida:", firmaRecibe ? "Sí" : "No");
     
-    // Verificar que se proporcionen las firmas requeridas
-    if (!firmaEntrega || !firmaRecibe) {
-      throw new Error("Se requieren las firmas de entrega y recepción para marcar el ticket como entregado");
+    const session = await getServerSession(authOptions);
+    const currentUserId = Number(session?.user?.id ?? NaN);
+    if (!Number.isFinite(currentUserId)) {
+      throw new Error("No autorizado");
+    }
+    const currentUser = await prisma.usuarios.findUnique({
+      where: { id: currentUserId },
+      select: { firma_url: true },
+    });
+    if (!currentUser) throw new Error("Usuario no encontrado");
+
+    // Verificar firma del solicitante (requerida). La firma del coordinador se toma del perfil.
+    if (!firmaRecibe) {
+      throw new Error("Se requiere la firma del solicitante para marcar el ticket como entregado");
     }
 
     // Validar que las firmas sean válidas
-    console.log("Validando firma de entrega...");
-    const isValidFirmaEntrega = isValidSignature(firmaEntrega);
-    console.log("Firma de entrega válida:", isValidFirmaEntrega);
-    
     console.log("Validando firma de recibe...");
     const isValidFirmaRecibe = isValidSignature(firmaRecibe);
     console.log("Firma de recibe válida:", isValidFirmaRecibe);
     
-    if (!isValidFirmaEntrega || !isValidFirmaRecibe) {
-      throw new Error("Las firmas proporcionadas no son válidas. Asegúrate de firmar en ambos campos.");
+    if (!isValidFirmaRecibe) {
+      throw new Error("La firma del solicitante no es válida. Asegúrate de firmar.");
     }
 
     // Guardar las firmas como archivos
-    let firmaEntregaUrl: string;
     let firmaRecibeUrl: string;
     
-    try {
-      firmaEntregaUrl = await saveSignature(firmaEntrega, "ticket", id, "entrega");
-    } catch (error) {
-      console.error("Error guardando firma de entrega:", error);
-      throw new Error("Error al guardar la firma de entrega");
-    }
+    const firmaEntregaUrl = currentUser.firma_url ?? null;
     
     try {
       firmaRecibeUrl = await saveSignature(firmaRecibe, "ticket", id, "recibe");
@@ -264,114 +334,11 @@ export async function actionMarkTicketAsReturned(id: number, firmaEntrega?: stri
       },
     });
 
-    // Obtener el ticket con sus elementos
-    const ticket = await prisma.tickets_guardados.findUnique({
-      where: { id },
-      include: {
-        ticket_elementos: {
-          include: {
-            elemento: true,
-          },
-        },
-      },
-    });
-
-    if (!ticket) {
-      throw new Error("Ticket no encontrado");
-    }
-
-    // Validar que el ticket tenga elementos
-    if (!ticket.ticket_elementos || ticket.ticket_elementos.length === 0) {
-      // Para tickets antiguos (compatibilidad)
-      const elemento = await prisma.elementos.findFirst({
-        where: { serie: (ticket as Record<string, unknown>).serie as string || undefined }
-      });
-      
-      if (!elemento) {
-        throw new Error("No se encontró el elemento asociado al ticket");
-      }
-
-      // Crear el movimiento de devolución
-      await prisma.movimientos.create({
-        data: {
-          elemento_id: elemento.id,
-          cantidad: (ticket as Record<string, unknown>).cantidad as number || 1,
-          orden_numero: ticket.orden_numero || "SIN-ORDEN",
-          fecha_movimiento: new Date(),
-          dependencia_entrega: ticket.dependencia_recibe || "SIN-DEPENDENCIA",
-          firma_funcionario_entrega: firmaRecibeUrl,
-          cargo_funcionario_entrega: "",
-          dependencia_recibe: ticket.dependencia_entrega || "SIN-DEPENDENCIA",
-          firma_funcionario_recibe: firmaEntregaUrl,
-          cargo_funcionario_recibe: "",
-          motivo: `Devolución de ticket ${ticket.numero_ticket}`,
-          fecha_estimada_devolucion: new Date(),
-          fecha_real_devolucion: new Date(),
-          observaciones_entrega: "Devolución completada",
-          observaciones_devolucion: "Elemento devuelto en buen estado",
-          tipo: "DEVOLUCION",
-          codigo_equipo: "",
-          serial_equipo: (ticket as Record<string, unknown>).serie as string || "",
-          hora_entrega: new Date(),
-          hora_devolucion: new Date(),
-          numero_ticket: `DEV-${ticket.numero_ticket}-${Date.now()}`,
-          firma_entrega: firmaRecibeUrl,
-          firma_recibe: firmaEntregaUrl,
-          firma_devuelve: firmaRecibeUrl,
-          firma_recibe_devolucion: firmaEntregaUrl,
-          devuelto_por: "Sistema",
-          recibido_por: "Sistema",
-        },
-      });
-    } else {
-      // Para tickets nuevos con múltiples elementos
-      for (let i = 0; i < ticket.ticket_elementos.length; i++) {
-        const ticketElemento = ticket.ticket_elementos[i];
-        // Generar número de ticket único para cada elemento usando timestamp + índice
-        const numeroTicketDevolucion = `DEV-${ticket.numero_ticket}-${ticketElemento.elemento_id}-${Date.now()}-${i}`;
-        
-        // Pequeña pausa para asegurar timestamps únicos si hay muchos elementos
-        if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 10));
-        }
-        
-        await prisma.movimientos.create({
-          data: {
-            elemento_id: ticketElemento.elemento_id,
-            cantidad: ticketElemento.cantidad,
-            orden_numero: ticket.orden_numero || "SIN-ORDEN",
-            fecha_movimiento: new Date(),
-            dependencia_entrega: ticket.dependencia_recibe || "SIN-DEPENDENCIA",
-            firma_funcionario_entrega: firmaRecibeUrl,
-            cargo_funcionario_entrega: "",
-            dependencia_recibe: ticket.dependencia_entrega || "SIN-DEPENDENCIA",
-            firma_funcionario_recibe: firmaEntregaUrl,
-            cargo_funcionario_recibe: "",
-            motivo: `Devolución de ticket ${ticket.numero_ticket}`,
-            fecha_estimada_devolucion: new Date(),
-            fecha_real_devolucion: new Date(),
-            observaciones_entrega: "Devolución completada",
-            observaciones_devolucion: "Elemento devuelto en buen estado",
-            tipo: "DEVOLUCION",
-            codigo_equipo: "",
-            serial_equipo: ticketElemento.serie || "",
-            hora_entrega: new Date(),
-            hora_devolucion: new Date(),
-            numero_ticket: numeroTicketDevolucion,
-            firma_entrega: firmaRecibeUrl,
-            firma_recibe: firmaEntregaUrl,
-            firma_devuelve: firmaRecibeUrl,
-            firma_recibe_devolucion: firmaEntregaUrl,
-            devuelto_por: "Sistema",
-            recibido_por: "Sistema",
-          },
-        });
-      }
-    }
+    // Nota: ya no registramos devoluciones por elemento aquí.
+    // El ticket representa el préstamo de una ubicación (ambiente).
 
     console.log("Revalidando rutas...");
     revalidatePath("/tickets");
-    revalidatePath("/movimientos");
     
     console.log("=== Proceso completado exitosamente ===");
   } catch (error) {

@@ -490,7 +490,7 @@ export function HojaVidaUpsertDialog({
               value={watch("elemento_id") || undefined}
               onValueChange={(value) => setValue("elemento_id", value)}
               label="Elemento"
-              placeholder="Buscar por ID, código, serie, marca o modelo..."
+              placeholder="Ej: escribe la serie o el código del elemento (MIC-00023 / PROY-0102)"
               disabled={!selectedUbicacionId || !selectedCategoriaId}
               error={errors.elemento_id?.message}
             />
@@ -507,7 +507,7 @@ export function HojaVidaUpsertDialog({
                       setValue("fecha_dilegenciamiento", formatLocalDate(date));
                     }
                   }}
-                  placeholder="Selecciona fecha de diligenciamiento"
+                  placeholder="Ej: hoy"
                 />
                 {errors.fecha_dilegenciamiento && (
                   <p className="text-red-500 text-sm">{errors.fecha_dilegenciamiento.message}</p>
@@ -520,7 +520,7 @@ export function HojaVidaUpsertDialog({
                   onValueChange={(value) => setValue("tipo_elemento", value as "EQUIPO" | "RECURSO_DIDACTICO")}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona tipo" />
+                    <SelectValue placeholder="Ej: Equipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="EQUIPO">Equipo</SelectItem>
@@ -540,7 +540,7 @@ export function HojaVidaUpsertDialog({
                 <Input
                   id="area_ubicacion"
                   type="text"
-                  placeholder="Área donde se ubica el elemento"
+                  placeholder="Ej: Bloque A • Piso 2 • Laboratorio"
                   {...register("area_ubicacion")}
                 />
               </div>
@@ -549,7 +549,7 @@ export function HojaVidaUpsertDialog({
                 <Input
                   id="responsable"
                   type="text"
-                  placeholder="Nombre del responsable"
+                  placeholder="Ej: Coordinación de Logística"
                   {...register("responsable")}
                 />
               </div>
@@ -560,7 +560,7 @@ export function HojaVidaUpsertDialog({
               <Label htmlFor="descripcion">Descripción</Label>
               <Textarea
                 id="descripcion"
-                placeholder="Descripción del elemento..."
+                placeholder="Ej: Proyector para aula, incluye control remoto y cable HDMI."
                 {...register("descripcion")}
                 rows={3}
               />
@@ -572,7 +572,7 @@ export function HojaVidaUpsertDialog({
                 <Label htmlFor="requerimientos_funcionamiento">Requerimientos de Funcionamiento</Label>
                 <Textarea
                   id="requerimientos_funcionamiento"
-                  placeholder="Requerimientos para el funcionamiento..."
+                  placeholder="Ej: Alimentación 110V, ventilación libre, cable HDMI disponible."
                   {...register("requerimientos_funcionamiento")}
                   rows={3}
                 />
@@ -581,7 +581,7 @@ export function HojaVidaUpsertDialog({
                 <Label htmlFor="requerimientos_seguridad">Requerimientos de Seguridad</Label>
                 <Textarea
                   id="requerimientos_seguridad"
-                  placeholder="Requerimientos de seguridad..."
+                  placeholder="Ej: Uso con regulador, no exponer a humedad, manipular con guantes si aplica."
                   {...register("requerimientos_seguridad")}
                   rows={3}
                 />
@@ -600,7 +600,7 @@ export function HojaVidaUpsertDialog({
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona frecuencia (opcional)" />
+                    <SelectValue placeholder="Ej: Mensual (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Sin rutina</SelectItem>
@@ -625,7 +625,7 @@ export function HojaVidaUpsertDialog({
                       setValue("fecha_actualizacion", "");
                     }
                   }}
-                  placeholder="Seleccionar fecha"
+                  placeholder="Ej: hoy (opcional)"
                 />
               </div>
             </div>

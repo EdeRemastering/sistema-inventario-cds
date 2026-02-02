@@ -9,17 +9,17 @@ import {
   Boxes,
   FolderTree,
   Package2,
-  ClipboardList,
   FileText,
   Ticket,
   ListChecks,
   Users,
   BarChart3,
+  LineChart,
   LogOut,
   MapPin,
   Wrench,
   FileCheck,
-  Bell,
+  CircleHelp,
 } from "lucide-react";
 
 import {
@@ -43,22 +43,30 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: "mantenimientos";
+  tourId?: string;
 };
 
 const items: NavItem[] = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
-  { href: "/categorias", label: "Categorías", icon: FolderTree },
-  { href: "/subcategorias", label: "Subcategorías", icon: Boxes },
-  { href: "/ubicaciones", label: "Ubicaciones", icon: MapPin },
-  { href: "/elementos", label: "Elementos", icon: Package2 },
-  { href: "/movimientos", label: "Movimientos", icon: ClipboardList },
-  { href: "/mantenimientos", label: "Mantenimientos", icon: Wrench, badge: "mantenimientos" },
-  { href: "/hojas-vida", label: "Hojas de Vida", icon: FileCheck },
-  { href: "/observaciones", label: "Observaciones", icon: FileText },
-  { href: "/tickets", label: "Tickets", icon: Ticket },
-  { href: "/reportes", label: "Reportes", icon: BarChart3 },
-  { href: "/usuarios", label: "Usuarios", icon: Users },
-  { href: "/logs", label: "Logs", icon: ListChecks },
+  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, tourId: "nav-inicio" },
+  { href: "/tutorial", label: "Tutorial", icon: CircleHelp, tourId: "nav-tutorial" },
+  { href: "/categorias", label: "Categorías", icon: FolderTree, tourId: "nav-categorias" },
+  { href: "/subcategorias", label: "Subcategorías", icon: Boxes, tourId: "nav-subcategorias" },
+  { href: "/ubicaciones", label: "Ubicaciones", icon: MapPin, tourId: "nav-ubicaciones" },
+  { href: "/elementos", label: "Elementos", icon: Package2, tourId: "nav-elementos" },
+  {
+    href: "/mantenimientos",
+    label: "Mantenimientos",
+    icon: Wrench,
+    badge: "mantenimientos",
+    tourId: "nav-mantenimientos",
+  },
+  { href: "/kpis/mantenimientos", label: "KPIs", icon: LineChart, tourId: "nav-kpis" },
+  { href: "/hojas-vida", label: "Hojas de Vida", icon: FileCheck, tourId: "nav-hojas-vida" },
+  { href: "/observaciones", label: "Observaciones", icon: FileText, tourId: "nav-observaciones" },
+  { href: "/tickets", label: "Tickets", icon: Ticket, tourId: "nav-tickets" },
+  { href: "/reportes", label: "Reportes", icon: BarChart3, tourId: "nav-reportes" },
+  { href: "/usuarios", label: "Usuarios", icon: Users, tourId: "nav-usuarios" },
+  { href: "/logs", label: "Logs", icon: ListChecks, tourId: "nav-logs" },
 ];
 
 export function DashboardSidebar() {
@@ -102,8 +110,8 @@ export function DashboardSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map(({ href, label, icon: Icon, badge }) => {
+            <SidebarMenu data-tour="sidebar-menu">
+              {items.map(({ href, label, icon: Icon, badge, tourId }) => {
                 const active = pathname === href;
                 const showBadge = badge === "mantenimientos" && mantenimientosPendientes > 0;
                 
@@ -113,18 +121,21 @@ export function DashboardSidebar() {
                       asChild
                       isActive={active}
                       tooltip={label}
+                      // Por defecto el sidebar button tiene `overflow-hidden`, lo que recorta badges.
+                      // Solo lo abrimos cuando hay badge visible.
+                      className={
+                        showBadge
+                          ? "overflow-visible pr-10 group-data-[collapsible=icon]:pr-2"
+                          : undefined
+                      }
                     >
-                      <Link href={href} className="relative">
+                      <Link href={href} className="relative" data-tour={tourId}>
                         <Icon className="h-4 w-4" />
                         <span>{label}</span>
                         {showBadge && (
-                          <span className="absolute -top-1 -right-1 flex items-center justify-center">
-                            <span className="relative flex h-5 min-w-5 items-center justify-center">
-                              <Bell className="h-3.5 w-3.5 text-red-500 animate-pulse" />
-                              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                                {mantenimientosPendientes > 99 ? "99+" : mantenimientosPendientes}
-                              </span>
-                            </span>
+                          // Solo círculo con número (alerta)
+                          <span className="ml-auto relative flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-sidebar shrink-0">
+                            {mantenimientosPendientes > 99 ? "99+" : mantenimientosPendientes}
                           </span>
                         )}
                       </Link>

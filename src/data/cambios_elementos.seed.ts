@@ -30,3 +30,4 @@ export async function seedCambiosElementos(prisma: PrismaClient) {
   console.log(`✅ ${count} cambios de elementos sembrados correctamente`);
 }
 
+

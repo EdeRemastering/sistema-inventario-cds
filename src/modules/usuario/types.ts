@@ -2,6 +2,8 @@ export type Usuario = {
   id: number;
   username: string;
   nombre: string;
+  apellido: string | null;
+  firma_url: string | null;
   rol: "administrador" | "usuario";
   activo: boolean | null;
   creado_en: Date;
@@ -12,6 +14,8 @@ export type CreateUsuarioInput = {
   username: string;
   password: string;
   nombre: string;
+  apellido?: string | null;
+  firma_url?: string | null;
   rol?: "administrador" | "usuario";
   activo?: boolean;
 };

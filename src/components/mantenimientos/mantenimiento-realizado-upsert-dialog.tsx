@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -51,6 +52,17 @@ type ElementoOption = {
   } | null;
 };
 
+/**
+ * En creación, el "responsable" debe ser el usuario autenticado.
+ * Nota: aunque lo autocompletamos aquí, el servidor también lo fuerza por seguridad.
+ */
+function getResponsableFromSession(session: ReturnType<typeof useSession>["data"]): string {
+  const nombre = session?.user?.nombre ?? "";
+  const apellido = session?.user?.apellido ?? "";
+  const full = `${nombre} ${apellido}`.trim();
+  return full || session?.user?.name || session?.user?.username || "";
+}
+
 const schema = z.object({
   sede_id: z.string().min(1, "Selecciona sede"),
   ubicacion_id: z.string().min(1, "Selecciona ubicación"),
@@ -63,7 +75,9 @@ const schema = z.object({
   descripcion: z.string().min(1, "Descripción requerida"),
   averias_encontradas: z.string().optional(),
   repuestos_utilizados: z.string().optional(),
-  responsable: z.string().min(1, "Responsable requerido"),
+  // El servidor lo completa con el usuario en sesión (en creación).
+  // En edición puede venir del registro existente.
+  responsable: z.string().optional().or(z.literal("")),
   costo: z.string().optional(),
   creado_por: z.string().optional(),
 });
@@ -95,7 +109,11 @@ export function MantenimientoRealizadoUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
-  const [open, setOpen] = useState(!defaultValues);
+  // En creación NO debe abrirse automáticamente al entrar a la página.
+  // En edición, el padre ya decide cuándo renderizar este diálogo.
+  const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  const responsableSesion = getResponsableFromSession(session);
 
   // Obtener el elemento seleccionado para pre-llenar los filtros
   const elementoSeleccionado = defaultValues?.elemento_id
@@ -173,6 +191,23 @@ export function MantenimientoRealizadoUpsertDialog({
     }
   }, [defaultValues, reset]);
 
+  // Si este componente se renderiza para edición (defaultValues presentes),
+  // lo abrimos automáticamente.
+  useEffect(() => {
+    if (!create && defaultValues) setOpen(true);
+  }, [create, defaultValues]);
+
+  // Auto-asignar responsable con el usuario en sesión (solo en creación).
+  // Si la sesión todavía no cargó, permitimos que el form exista; el servidor validará.
+  useEffect(() => {
+    if (!create) return;
+    if (!responsableSesion) return;
+    const current = watch("responsable");
+    if (!current) {
+      setValue("responsable", responsableSesion, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [create, responsableSesion, setValue, watch]);
+
   const onSubmit = async (data: MantenimientoRealizadoFormData) => {
     try {
       const formData = new FormData();
@@ -184,7 +219,9 @@ export function MantenimientoRealizadoUpsertDialog({
       formData.append("descripcion", data.descripcion);
       if (data.averias_encontradas) formData.append("averias_encontradas", data.averias_encontradas);
       if (data.repuestos_utilizados) formData.append("repuestos_utilizados", data.repuestos_utilizados);
-      formData.append("responsable", data.responsable);
+      // En creación, normalmente viene autocompletado por sesión.
+      // Aun así enviamos string (nunca undefined) para mantener el contrato del server action.
+      formData.append("responsable", data.responsable ?? "");
       if (data.costo) formData.append("costo", data.costo);
       if (data.creado_por) formData.append("creado_por", data.creado_por);
 
@@ -415,7 +452,7 @@ export function MantenimientoRealizadoUpsertDialog({
               value={watch("elemento_id") || undefined}
               onValueChange={(value) => setValue("elemento_id", value)}
               label="Elemento"
-              placeholder="Buscar por ID, código, serie, marca o modelo..."
+              placeholder="Ej: escribe la serie o el código del elemento (MIC-00023 / PROY-0102)"
               disabled={!selectedUbicacionId || !selectedCategoriaId}
               error={errors.elemento_id?.message}
             />
@@ -440,7 +477,7 @@ export function MantenimientoRealizadoUpsertDialog({
                   onValueChange={(value) => setValue("tipo", value as "PREVENTIVO" | "CORRECTIVO")}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona tipo" />
+                    <SelectValue placeholder="Ej: Preventivo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PREVENTIVO">Preventivo</SelectItem>
@@ -459,7 +496,7 @@ export function MantenimientoRealizadoUpsertDialog({
               <Label htmlFor="descripcion">Descripción</Label>
               <Textarea
                 id="descripcion"
-                placeholder="Describe el mantenimiento realizado..."
+                placeholder="Ej: Limpieza general, ajuste de conexiones, prueba funcional y calibración."
                 {...register("descripcion")}
                 rows={3}
               />
@@ -473,7 +510,7 @@ export function MantenimientoRealizadoUpsertDialog({
               <Label htmlFor="averias_encontradas">Averías Encontradas</Label>
               <Textarea
                 id="averias_encontradas"
-                placeholder="Describe las averías encontradas (si las hay)..."
+                placeholder="Ej: Ruido intermitente, conector flojo, sobrecalentamiento. (Opcional)"
                 {...register("averias_encontradas")}
                 rows={2}
               />
@@ -484,7 +521,7 @@ export function MantenimientoRealizadoUpsertDialog({
               <Label htmlFor="repuestos_utilizados">Repuestos Utilizados</Label>
               <Textarea
                 id="repuestos_utilizados"
-                placeholder="Lista los repuestos utilizados..."
+                placeholder="Ej: Cable XLR, fusible 2A, conector RJ45. (Opcional)"
                 {...register("repuestos_utilizados")}
                 rows={2}
               />
@@ -497,8 +534,9 @@ export function MantenimientoRealizadoUpsertDialog({
                 <Input
                   id="responsable"
                   type="text"
-                  placeholder="Nombre del responsable"
+                  placeholder="Se toma del usuario en sesión"
                   {...register("responsable")}
+                  readOnly={create && Boolean(responsableSesion)}
                 />
                 {errors.responsable && (
                   <p className="text-red-500 text-sm">{errors.responsable.message}</p>
@@ -511,7 +549,7 @@ export function MantenimientoRealizadoUpsertDialog({
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="0.00"
+                  placeholder="Ej: 150000"
                   {...register("costo")}
                 />
               </div>

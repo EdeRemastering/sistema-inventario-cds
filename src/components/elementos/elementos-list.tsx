@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { EmptyState } from "../ui/empty-state";
 import { ElementoUpsertDialog } from "./elemento-upsert-dialog";
+import { ElementoDetailDialog } from "./elemento-detail-dialog";
 import { DeleteButton } from "../delete-button";
 import type { ElementoListItem } from "../../modules/elementos/services";
 import type { Categoria } from "../../modules/categorias/types";
@@ -49,6 +50,8 @@ export function ElementosList({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
+  const [detailElementoId, setDetailElementoId] = useState<number | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +84,9 @@ export function ElementosList({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Elementos</h1>
+        <h1 className="text-2xl font-semibold" data-tour="page-title">
+          Elementos
+        </h1>
         <span className="text-sm text-muted-foreground">
           {pagination.total.toLocaleString()} elementos totales
         </span>
@@ -108,14 +113,16 @@ export function ElementosList({
                 </Button>
               )}
             </form>
-            <ElementoUpsertDialog
-              create
-              serverAction={onCreateElemento}
-              sedes={sedes}
-              categorias={categorias}
-              subcategorias={subcategorias}
-              ubicaciones={ubicaciones}
-            />
+            <div data-tour="elementos-create">
+              <ElementoUpsertDialog
+                create
+                serverAction={onCreateElemento}
+                sedes={sedes}
+                categorias={categorias}
+                subcategorias={subcategorias}
+                ubicaciones={ubicaciones}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className={isPending ? "opacity-50 pointer-events-none" : ""}>
@@ -135,7 +142,7 @@ export function ElementosList({
             />
           ) : (
             <div className="space-y-2">
-              {elementos.map((elemento) => (
+              {elementos.map((elemento, idx) => (
                 <div
                   key={elemento.id}
                   className="flex items-center justify-between gap-3 rounded border p-3 hover:bg-muted/50 transition-colors"
@@ -147,38 +154,54 @@ export function ElementosList({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <ElementoUpsertDialog
-                      create={false}
-                      serverAction={onUpdateElemento}
-                      sedes={sedes}
-                      categorias={categorias}
-                      subcategorias={subcategorias}
-                      ubicaciones={ubicaciones}
-                      defaultValues={{
-                        sede_id: elemento.ubicacion_rel?.sede?.id
-                          ? String(elemento.ubicacion_rel.sede.id)
-                          : "",
-                        ubicacion_id: elemento.ubicacion_id
-                          ? String(elemento.ubicacion_id)
-                          : "",
-                        categoria_id: String(elemento.categoria_id),
-                        subcategoria_id: elemento.subcategoria_id
-                          ? String(elemento.subcategoria_id)
-                          : "",
-                        serie: elemento.serie,
-                        marca: elemento.marca ?? "",
-                        modelo: elemento.modelo ?? "",
-                        cantidad: String(elemento.cantidad),
-                      }}
-                      hiddenFields={{ id: elemento.id }}
-                    />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteElemento(elemento.id);
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDetailElementoId(elemento.id);
+                        setDetailOpen(true);
                       }}
                     >
-                      Eliminar
-                    </DeleteButton>
+                      Detalle
+                    </Button>
+                    <div data-tour={idx === 0 ? "elementos-edit-first" : undefined}>
+                      <ElementoUpsertDialog
+                        create={false}
+                        serverAction={onUpdateElemento}
+                        sedes={sedes}
+                        categorias={categorias}
+                        subcategorias={subcategorias}
+                        ubicaciones={ubicaciones}
+                        defaultValues={{
+                          sede_id: elemento.ubicacion_rel?.sede?.id
+                            ? String(elemento.ubicacion_rel.sede.id)
+                            : "",
+                          ubicacion_id: elemento.ubicacion_id
+                            ? String(elemento.ubicacion_id)
+                            : "",
+                          categoria_id: String(elemento.categoria_id),
+                          subcategoria_id: elemento.subcategoria_id
+                            ? String(elemento.subcategoria_id)
+                            : "",
+                          serie: elemento.serie,
+                          marca: elemento.marca ?? "",
+                          modelo: elemento.modelo ?? "",
+                          cantidad: String(elemento.cantidad),
+                          imagen_url: elemento.imagen_url ?? "",
+                        }}
+                        hiddenFields={{ id: elemento.id }}
+                      />
+                    </div>
+                    <div data-tour={idx === 0 ? "elementos-delete-first" : undefined}>
+                      <DeleteButton
+                        tourId={idx === 0 ? "elementos-delete-first" : undefined}
+                        onConfirm={async () => {
+                          await onDeleteElemento(elemento.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -218,6 +241,15 @@ export function ElementosList({
           </CardFooter>
         )}
       </Card>
+
+      <ElementoDetailDialog
+        elementoId={detailElementoId}
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+          if (!open) setDetailElementoId(null);
+        }}
+      />
     </div>
   );
 }

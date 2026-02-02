@@ -26,6 +26,19 @@ export type TicketGuardado = {
   numero_ticket: string;
   fecha_salida: Date;
   fecha_estimada_devolucion: Date | null;
+  // Nuevo: ahora el préstamo es por ubicación (salón/ambiente)
+  ubicacion_id?: number | null;
+  ubicacion?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    };
+  } | null;
   dependencia_entrega: string | null;
   persona_entrega_nombre: string | null;
   persona_entrega_apellido: string | null;

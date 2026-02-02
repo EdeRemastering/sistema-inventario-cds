@@ -32,7 +32,9 @@ export function CategoriasList({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Categorías</h1>
+      <h1 className="text-2xl font-semibold" data-tour="page-title">
+        Categorías
+      </h1>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
@@ -41,7 +43,9 @@ export function CategoriasList({
               onSearch={handleSearch}
               className="max-w-sm"
             />
-            <CategoriaUpsertDialog create serverAction={onCreateCategoria} />
+            <div data-tour="categorias-create">
+              <CategoriaUpsertDialog create serverAction={onCreateCategoria} />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -61,7 +65,7 @@ export function CategoriasList({
             />
           ) : (
             <div className="space-y-3">
-              {filteredData.map((categoria) => (
+              {filteredData.map((categoria, idx) => (
                 <div
                   key={categoria.id}
                   className="flex items-center justify-between gap-3 rounded border p-3"
@@ -73,23 +77,28 @@ export function CategoriasList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <CategoriaUpsertDialog
-                      create={false}
-                      serverAction={onUpdateCategoria}
-                      defaultValues={{
-                        nombre: categoria.nombre,
-                        descripcion: categoria.descripcion ?? "",
-                        estado: categoria.estado as "activo" | "inactivo",
-                      }}
-                      hiddenFields={{ id: categoria.id }}
-                    />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteCategoria(categoria.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+                    <div data-tour={idx === 0 ? "categorias-edit-first" : undefined}>
+                      <CategoriaUpsertDialog
+                        create={false}
+                        serverAction={onUpdateCategoria}
+                        defaultValues={{
+                          nombre: categoria.nombre,
+                          descripcion: categoria.descripcion ?? "",
+                          estado: categoria.estado as "activo" | "inactivo",
+                        }}
+                        hiddenFields={{ id: categoria.id }}
+                      />
+                    </div>
+                    <div data-tour={idx === 0 ? "categorias-delete-first" : undefined}>
+                      <DeleteButton
+                        tourId={idx === 0 ? "categorias-delete-first" : undefined}
+                        onConfirm={async () => {
+                          await onDeleteCategoria(categoria.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
+                    </div>
                   </div>
                 </div>
               ))}

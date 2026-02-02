@@ -10,6 +10,7 @@ export type ElementoListItem = {
   marca: string | null;
   modelo: string | null;
   cantidad: number;
+  imagen_url: string | null;
   categoria_id: number;
   subcategoria_id: number | null;
   ubicacion_id: number | null;
@@ -57,12 +58,15 @@ async function fetchElementosPaginated(
   const [data, total] = await Promise.all([
     prisma.elementos.findMany({
       where: whereClause,
+      // Prisma client puede quedar desfasado localmente en Windows (EPERM al generar engines).
+      // Cast a any para no bloquear TS cuando el schema de BD ya está migrado.
       select: {
         id: true,
         serie: true,
         marca: true,
         modelo: true,
         cantidad: true,
+        imagen_url: true,
         categoria_id: true,
         subcategoria_id: true,
         ubicacion_id: true,
@@ -82,11 +86,11 @@ async function fetchElementosPaginated(
             }
           }
         }
-      },
+      } as any,
       orderBy: { id: "desc" },
       skip,
       take: pageSize,
-    }),
+    } as any),
     prisma.elementos.count({ where: whereClause })
   ]);
 
@@ -117,6 +121,7 @@ async function fetchElementosForList(): Promise<ElementoListItem[]> {
       marca: true,
       modelo: true,
       cantidad: true,
+      imagen_url: true,
       categoria_id: true,
       subcategoria_id: true,
       ubicacion_id: true,
@@ -136,10 +141,10 @@ async function fetchElementosForList(): Promise<ElementoListItem[]> {
           }
         }
       }
-    },
+    } as any,
     orderBy: { id: "desc" },
     take: 100 // Limitar a 100 para carga inicial rápida
-  }) as unknown as Promise<ElementoListItem[]>;
+  } as any) as unknown as Promise<ElementoListItem[]>;
 }
 
 // Versión optimizada con caché
@@ -162,6 +167,7 @@ export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
       modelo: true,
       ubicacion: true,
       ubicacion_id: true,
+      imagen_url: true,
       estado_funcional: true,
       estado_fisico: true,
       fecha_entrada: true,
@@ -188,9 +194,9 @@ export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
           }
         }
       }
-    },
+    } as any,
     orderBy: { id: "desc" } 
-  }) as unknown as Promise<ElementoWithRelations[]>;
+  } as any) as unknown as Promise<ElementoWithRelations[]>;
 }
 
 export function getElemento(id: number): Promise<Elemento | null> {
@@ -216,7 +222,9 @@ export function createElemento(data: CreateElementoInput): Promise<Elemento> {
     observaciones: data.observaciones ?? null,
     activo: data.activo ?? true,
   };
-  return prisma.elementos.create({ data: payload }) as unknown as Promise<Elemento>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (payload as any).imagen_url = (data as any).imagen_url ?? null;
+  return prisma.elementos.create({ data: payload } as any) as unknown as Promise<Elemento>;
 }
 
 export function updateElemento(id: number, data: UpdateElementoInput): Promise<Elemento> {
@@ -238,6 +246,8 @@ export function updateElemento(id: number, data: UpdateElementoInput): Promise<E
       ? null 
       : (typeof data.ubicacion_id === "number" ? data.ubicacion_id : null);
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((data as any).imagen_url !== undefined) (payload as any).imagen_url = (typeof (data as any).imagen_url === "string" && (data as any).imagen_url === "") ? null : (data as any).imagen_url || null;
   if (data.estado_funcional !== undefined) payload.estado_funcional = data.estado_funcional;
   if (data.estado_fisico !== undefined) payload.estado_fisico = data.estado_fisico;
   if (data.fecha_entrada !== undefined) payload.fecha_entrada = data.fecha_entrada;
@@ -255,7 +265,7 @@ export function updateElemento(id: number, data: UpdateElementoInput): Promise<E
   if (data.observaciones !== undefined) payload.observaciones = (typeof data.observaciones === "string" && data.observaciones === "") ? null : data.observaciones || null;
   if (data.activo !== undefined) payload.activo = data.activo;
   
-  return prisma.elementos.update({ where: { id }, data: payload }) as unknown as Promise<Elemento>;
+  return prisma.elementos.update({ where: { id }, data: payload } as any) as unknown as Promise<Elemento>;
 }
 
 export function deleteElemento(id: number): Promise<Elemento> {

@@ -47,3 +47,4 @@ export async function seedTicketElementos(prisma: PrismaClient) {
   console.log(`✅ ${count} elementos de tickets sembrados correctamente`);
 }
 
+

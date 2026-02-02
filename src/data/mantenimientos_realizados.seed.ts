@@ -40,3 +40,4 @@ export async function seedMantenimientosRealizados(prisma: PrismaClient) {
   console.log(`✅ ${count} mantenimientos realizados sembrados correctamente`);
 }
 
+

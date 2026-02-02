@@ -1,7 +1,7 @@
 # Sistema de Inventario CDS
 
 ## Descripción
-Sistema web integral para la gestión completa del inventario del Centro de Sistemas de Urabá (CDS). Incluye módulos para la administración de elementos, categorías, movimientos, tickets, reportes y toda la estructura organizacional del inventario institucional.
+Sistema web integral para la gestión completa del inventario del Centro de Sistemas de Urabá (CDS). Incluye módulos para la administración de elementos, categorías, tickets (préstamos), mantenimientos, reportes y toda la estructura organizacional del inventario institucional.
 
 ## Características Principales
 
@@ -17,11 +17,10 @@ Sistema web integral para la gestión completa del inventario del Centro de Sist
 - Clasificación jerárquica
 - Filtros avanzados
 
-### 📋 **Control de Movimientos**
-- Registro de entradas y salidas
-- Préstamos y devoluciones
+### 🎫 **Tickets (Préstamos)**
+- Préstamos y devoluciones (por ubicaciones)
 - Firmas digitales
-- Tickets de movimientos
+- Historial y tickets activos
 
 ### 📊 **Sistema de Reportes**
 - Reportes de inventario completo
@@ -44,7 +43,7 @@ Sistema web integral para la gestión completa del inventario del Centro de Sist
 ## Tecnologías Utilizadas
 
 ### Frontend
-- **Next.js 15** - Framework de React
+- **Next.js 16** - Framework de React
 - **TypeScript** - Tipado estático
 - **Tailwind CSS** - Framework de estilos
 - **Shadcn/ui** - Componentes de UI
@@ -73,8 +72,9 @@ src/
 │   │   ├── elementos/     # Módulo de elementos
 │   │   ├── categorias/    # Módulo de categorías
 │   │   ├── subcategorias/ # Módulo de subcategorías
-│   │   ├── movimientos/   # Módulo de movimientos
 │   │   ├── tickets/       # Módulo de tickets
+│   │   ├── mantenimientos/# Módulo de mantenimientos
+│   │   ├── kpis/          # KPIs (mantenimientos)
 │   │   ├── reportes/      # Módulo de reportes
 │   │   ├── observaciones/ # Módulo de observaciones
 │   │   ├── logs/          # Módulo de logs
@@ -87,8 +87,9 @@ src/
 │   ├── elementos/        # Componentes de elementos
 │   ├── categorias/       # Componentes de categorías
 │   ├── subcategorias/    # Componentes de subcategorías
-│   ├── movimientos/      # Componentes de movimientos
 │   ├── tickets/          # Componentes de tickets
+│   ├── mantenimientos/   # Componentes de mantenimientos
+│   ├── kpis/             # Componentes de KPIs
 │   ├── reportes/         # Componentes de reportes
 │   ├── observaciones/    # Componentes de observaciones
 │   ├── logs/            # Componentes de logs
@@ -98,8 +99,8 @@ src/
 │   ├── elementos/
 │   ├── categorias/
 │   ├── subcategorias/
-│   ├── movimientos/
 │   ├── tickets_guardados/
+│   ├── mantenimientos/
 │   ├── observaciones/
 │   ├── logs/
 │   ├── reportes/
@@ -133,43 +134,37 @@ pnpm install
 ```
 
 3. **Configurar variables de entorno**
-```bash
-cp .env.example .env
-```
-
 Editar `.env` con las configuraciones necesarias:
 ```env
 # Base de datos
 DATABASE_URL="mysql://usuario:password@localhost:3306/sistema_inventario_cds"
+DIRECT_URL="mysql://usuario:password@localhost:3306/sistema_inventario_cds"
 
 # NextAuth
 NEXTAUTH_SECRET="tu-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Configuración de firmas (opcional: Cloudflare R2)
-USE_R2_STORAGE=false
-USE_FILESYSTEM_SIGNATURES=true
+# Cloudflare R2 (obligatorio para imágenes: firmas + fotos)
+R2_ACCOUNT_ID="tu-account-id"
+R2_ACCESS_KEY_ID="tu-access-key"
+R2_SECRET_ACCESS_KEY="tu-secret-access-key"
+R2_BUCKET_NAME="nombre-bucket"
+R2_PUBLIC_URL="https://pub-xxxx.r2.dev"
 
-# Si usas Cloudflare R2 para firmas (ver docs/setup/CLOUDFLARE_R2_SETUP.md)
-# R2_ACCOUNT_ID="tu-account-id"
-# R2_ACCESS_KEY_ID="tu-access-key"
-# R2_SECRET_ACCESS_KEY="tu-secret-access-key"
-# R2_BUCKET_NAME="nombre-bucket"
-# R2_PUBLIC_URL=""
+# Groq (KPIs con IA)
+GROQ_API_KEY="tu-groq-api-key"
 ```
-
-Para más detalles sobre la configuración, consulta la [documentación](./docs/README.md)
 
 4. **Configurar la base de datos**
 ```bash
 # Generar cliente de Prisma
 pnpm prisma generate
 
-# Ejecutar migraciones
-pnpm prisma migrate dev
+# Sin migraciones: el schema de Prisma es la fuente de verdad
+pnpm prisma db push
 
 # Poblar datos iniciales
-pnpm prisma db seed
+pnpm seed
 ```
 
 5. **Ejecutar en desarrollo**
@@ -185,17 +180,16 @@ pnpm dev                 # Servidor de desarrollo
 pnpm build              # Construir para producción
 pnpm start              # Servidor de producción
 pnpm lint               # Linter de código
-pnpm type-check         # Verificación de tipos
 
 # Base de datos
 pnpm prisma generate    # Generar cliente de Prisma
-pnpm prisma migrate dev # Ejecutar migraciones
-pnpm prisma db seed     # Poblar datos iniciales
-pnpm prisma studio      # Interfaz visual de la BD
+pnpm prisma db push     # Crear/actualizar esquema sin migraciones
+pnpm seed               # Poblar datos iniciales
 
 # Testing
 pnpm test               # Ejecutar tests
-pnpm test:watch         # Tests en modo watch
+pnpm test:ui            # UI de tests
+pnpm test:run           # Tests en modo run
 pnpm test:coverage      # Tests con cobertura
 ```
 
@@ -318,12 +312,11 @@ pnpm test:coverage      # Tests con cobertura
 
 ```env
 DATABASE_URL="mysql://..."
+DIRECT_URL="mysql://..."
 NEXTAUTH_SECRET="..."
 NEXTAUTH_URL="https://tu-dominio.com"
 
-# Configuración de firmas (recomendado para producción)
-USE_R2_STORAGE=true
-USE_FILESYSTEM_SIGNATURES=false
+# Cloudflare R2 (obligatorio para imágenes: firmas + fotos)
 R2_ACCOUNT_ID="..."
 R2_ACCESS_KEY_ID="..."
 R2_SECRET_ACCESS_KEY="..."
@@ -331,7 +324,7 @@ R2_BUCKET_NAME="..."
 R2_PUBLIC_URL="https://cdn.tu-dominio.com"
 ```
 
-**Nota**: Para producción, se recomienda usar Cloudflare R2 para almacenar firmas. Consulta la [guía de configuración de R2](./docs/setup/CLOUDFLARE_R2_SETUP.md) y la [guía de migración](./docs/guides/MIGRATION_GUIDE.md)
+**Nota**: En este proyecto, todas las imágenes (firmas + fotos) se almacenan en Cloudflare R2.
 
 ## Contribución
 
@@ -351,26 +344,6 @@ R2_PUBLIC_URL="https://cdn.tu-dominio.com"
 - **Tipos**: Usar TypeScript estricto
 - **Componentes**: Documentar props y ejemplos
 - **Tests**: Escribir tests para funcionalidades críticas
-
-## 📚 Documentación
-
-La documentación completa está organizada en el directorio [`docs/`](./docs/):
-
-### 📖 Guías y Configuración
-- **[Setup y Configuración](./docs/setup/)** - Guías de configuración inicial
-  - [Cloudflare R2](./docs/setup/CLOUDFLARE_R2_SETUP.md) - Configuración de almacenamiento en la nube
-- **[Guías de Migración](./docs/guides/)** - Guías para actualizaciones y migraciones
-  - [Migración de Firmas](./docs/guides/MIGRATION_GUIDE.md) - Migración del sistema de firmas
-
-### 💻 Documentación Técnica
-- **[Documentación de Desarrollo](./docs/development/)** - Documentación del código
-  - [Módulos](./docs/development/modules/) - Lógica de negocio
-  - [Componentes](./docs/development/components/) - Componentes de React
-  - [Hooks](./docs/development/hooks/) - Custom hooks
-  - [Contextos](./docs/development/contexts/) - Context API
-  - [Servicios](./docs/development/services/) - Utilidades y servicios
-
-Para más información, consulta el [README de documentación](./docs/README.md)
 
 ## Licencia
 

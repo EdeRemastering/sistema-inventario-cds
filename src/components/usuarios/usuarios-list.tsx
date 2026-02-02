@@ -25,14 +25,16 @@ export function UsuariosList({
   const { searchQuery, filteredData, handleSearch, hasResults, hasData } =
     useSearch({
       data: usuarios,
-      searchFields: ["username", "nombre", "rol"],
+      searchFields: ["username", "nombre", "apellido", "rol"],
     });
 
   const showEmptyState = !hasData || !hasResults;
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <h1 className="text-xl sm:text-2xl font-semibold">Usuarios</h1>
+      <h1 className="text-xl sm:text-2xl font-semibold" data-tour="page-title">
+        Usuarios
+      </h1>
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -41,7 +43,9 @@ export function UsuariosList({
               onSearch={handleSearch}
               className="w-full sm:max-w-sm"
             />
-            <UsuarioUpsertDialog create serverAction={onCreateUsuario} />
+            <div data-tour="usuarios-create">
+              <UsuarioUpsertDialog create serverAction={onCreateUsuario} />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -61,13 +65,16 @@ export function UsuariosList({
             />
           ) : (
             <div className="space-y-3">
-              {filteredData.map((usuario) => (
+              {filteredData.map((usuario, idx) => (
                 <div
                   key={usuario.id}
                   className="flex flex-col sm:flex-row sm:items-center gap-3 rounded border p-3"
                 >
                   <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-                    <span className="font-medium break-words">{usuario.nombre}</span>
+                    <span className="font-medium break-words">
+                      {usuario.nombre}
+                      {usuario.apellido ? ` ${usuario.apellido}` : ""}
+                    </span>
                     <span className="text-muted-foreground text-sm break-words">@{usuario.username}</span>
                     <span className="text-xs rounded bg-secondary px-2 py-0.5 whitespace-nowrap">
                       {usuario.rol}
@@ -79,24 +86,30 @@ export function UsuariosList({
                     )}
                   </div>
                   <div className="flex gap-2 sm:ml-auto">
-                    <UsuarioUpsertDialog
-                      create={false}
-                      serverAction={onUpdateUsuario}
-                      defaultValues={{
-                        nombre: usuario.nombre,
-                        username: usuario.username,
-                        rol: usuario.rol as "administrador" | "usuario",
-                        activo: usuario.activo ?? true,
-                      }}
-                      hiddenFields={{ id: usuario.id }}
-                    />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteUsuario(usuario.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+                    <div data-tour={idx === 0 ? "usuarios-edit-first" : undefined}>
+                      <UsuarioUpsertDialog
+                        create={false}
+                        serverAction={onUpdateUsuario}
+                        defaultValues={{
+                          nombre: usuario.nombre,
+                          apellido: usuario.apellido ?? "",
+                          username: usuario.username,
+                          rol: usuario.rol as "administrador" | "usuario",
+                          activo: usuario.activo ?? true,
+                        }}
+                        hiddenFields={{ id: usuario.id }}
+                      />
+                    </div>
+                    <div data-tour={idx === 0 ? "usuarios-delete-first" : undefined}>
+                      <DeleteButton
+                        tourId={idx === 0 ? "usuarios-delete-first" : undefined}
+                        onConfirm={async () => {
+                          await onDeleteUsuario(usuario.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
+                    </div>
                   </div>
                 </div>
               ))}

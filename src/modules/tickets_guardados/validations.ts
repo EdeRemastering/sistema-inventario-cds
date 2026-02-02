@@ -4,6 +4,8 @@ export const ticketCreateSchema = z.object({
   numero_ticket: z.string().optional(), // Ahora es opcional, se generará automáticamente
   fecha_salida: z.coerce.date(),
   fecha_estimada_devolucion: z.coerce.date().optional(),
+  // Nuevo: ubicación prestada
+  ubicacion_id: z.coerce.number().int().positive(),
   elemento: z.string().optional(),
   serie: z.string().optional(),
   marca_modelo: z.string().optional(),

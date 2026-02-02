@@ -22,8 +22,8 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
     ? ((stats.totalUsuarios - stats.usuariosMesAnterior) / stats.usuariosMesAnterior * 100)
     : 0;
 
-  const cambioMovimientos = stats.movimientosSemanaAnterior > 0
-    ? ((stats.totalMovimientos - stats.movimientosSemanaAnterior) / stats.movimientosSemanaAnterior * 100)
+  const cambioTickets = stats.ticketsSemanaAnterior > 0
+    ? ((stats.totalTickets - stats.ticketsSemanaAnterior) / stats.ticketsSemanaAnterior * 100)
     : 0;
 
   return (
@@ -75,15 +75,15 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
 
       <Card className="border-primary/20">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">Movimientos</h3>
+          <h3 className="text-sm font-medium">Tickets</h3>
           <TrendingUp className="h-4 w-4 text-primary" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-primary">
-            {stats.totalMovimientos.toLocaleString()}
+            {stats.totalTickets.toLocaleString()}
           </div>
           <p className="text-xs text-muted-foreground">
-            {cambioMovimientos >= 0 ? '+' : ''}{cambioMovimientos.toFixed(1)}% desde la semana pasada
+            {cambioTickets >= 0 ? "+" : ""}{cambioTickets.toFixed(1)}% desde la semana pasada
           </p>
         </CardContent>
       </Card>
@@ -104,8 +104,8 @@ export function DashboardQuickStats({ stats }: DashboardStatsProps) {
             <span className="font-medium text-primary">{stats.elementosEnStock}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm">Elementos prestados</span>
-            <span className="font-medium text-primary">{stats.elementosPrestados}</span>
+            <span className="text-sm">Tickets activos</span>
+            <span className="font-medium text-primary">{stats.ticketsActivos}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm">Tickets pendientes</span>

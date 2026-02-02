@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -13,25 +14,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { ElementosTicketForm } from "./elementos-ticket-form";
-import { ElementoFormData } from "@/modules/tickets_guardados/types";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { GenericDateTimePicker } from "../ui/generic-date-picker";
 import { SignaturePadComponent } from "../ui/signature-pad";
-import { actionListElementos } from "@/modules/elementos/actions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import type { Ubicacion } from "@/modules/ubicaciones/types";
 
 const schema = z
   .object({
     numero_ticket: z.string().optional(), // Ahora es opcional, se generará automáticamente
     fecha_salida: z.date({
-      message: "Fecha de salida requerida",
+      message: "Fecha de inicio requerida",
     }),
     fecha_estimada_devolucion: z.date().optional(),
-    dependencia_entrega: z.string().optional(),
-    persona_entrega_nombre: z.string().optional(),
-    persona_entrega_apellido: z.string().optional(),
-    firma_funcionario_entrega: z.string().optional(),
+    ubicacion_id: z.string().min(1, "Selecciona una ubicación"),
     dependencia_recibe: z.string().optional(),
     persona_recibe_nombre: z.string().optional(),
     persona_recibe_apellido: z.string().optional(),
@@ -64,6 +67,7 @@ type TicketFormData = z.infer<typeof schema>;
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
   create?: boolean;
+  ubicaciones: Ubicacion[];
   defaultValues?: Partial<TicketFormData>;
   hiddenFields?: Record<string, string | number>;
   trigger?: React.ReactNode;
@@ -72,48 +76,16 @@ type Props = {
 export function TicketUpsertDialog({
   serverAction,
   create = true,
+  ubicaciones,
   defaultValues,
   hiddenFields,
   trigger,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [elementos, setElementos] = useState<
-    {
-      id: number;
-      serie: string;
-      marca?: string | null;
-      modelo?: string | null;
-      categoria: {
-        nombre: string;
-      };
-      subcategoria?: {
-        nombre: string;
-      } | null;
-    }[]
-  >([]);
-  const [elementosSeleccionados, setElementosSeleccionados] = useState<
-    ElementoFormData[]
-  >([]);
-  const [firmaEntrega, setFirmaEntrega] = useState<string | null>(null);
   const [firmaRecibe, setFirmaRecibe] = useState<string | null>(null);
   const [horaSalida, setHoraSalida] = useState<string>("");
   const [horaDevolucion, setHoraDevolucion] = useState<string>("");
-
-  // Obtener elementos cuando se abre el diálogo
-  React.useEffect(() => {
-    const fetchElementos = async () => {
-      try {
-        const elementosData = await actionListElementos();
-        setElementos(elementosData || []);
-      } catch (error) {
-        console.error("Error fetching elementos:", error);
-      }
-    };
-
-    if (open) {
-      fetchElementos();
-    }
-  }, [open]);
+  const { data: session } = useSession();
 
   const {
     register,
@@ -125,18 +97,13 @@ export function TicketUpsertDialog({
   } = useForm<TicketFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      ubicacion_id: "",
       ...defaultValues,
     } as TicketFormData,
   });
 
   const onSubmit = async (data: TicketFormData) => {
     try {
-      // Validar que hay al menos un elemento
-      if (elementosSeleccionados.length === 0) {
-        toast.error("Debe agregar al menos un elemento al ticket");
-        return;
-      }
-
       const formData = new FormData();
 
       // Agregar todos los campos del formulario
@@ -149,15 +116,7 @@ export function TicketUpsertDialog({
           "fecha_estimada_devolucion",
           data.fecha_estimada_devolucion.toISOString()
         );
-      if (data.dependencia_entrega)
-        formData.append("dependencia_entrega", data.dependencia_entrega);
-      if (data.persona_entrega_nombre)
-        formData.append("persona_entrega_nombre", data.persona_entrega_nombre);
-      if (data.persona_entrega_apellido)
-        formData.append(
-          "persona_entrega_apellido",
-          data.persona_entrega_apellido
-        );
+      formData.append("ubicacion_id", data.ubicacion_id);
       if (data.dependencia_recibe)
         formData.append("dependencia_recibe", data.dependencia_recibe);
       if (data.persona_recibe_nombre)
@@ -171,12 +130,7 @@ export function TicketUpsertDialog({
       if (data.orden_numero) formData.append("orden_numero", data.orden_numero);
 
       // Agregar firmas digitales
-      if (firmaEntrega)
-        formData.append("firma_funcionario_entrega", firmaEntrega);
       if (firmaRecibe) formData.append("firma_funcionario_recibe", firmaRecibe);
-
-      // Agregar elementos seleccionados
-      formData.append("elementos", JSON.stringify(elementosSeleccionados));
 
       // Agregar campos ocultos
       if (hiddenFields) {
@@ -201,8 +155,6 @@ export function TicketUpsertDialog({
       });
 
       reset();
-      setElementosSeleccionados([]);
-      setFirmaEntrega(null);
       setFirmaRecibe(null);
       setHoraSalida("");
       setHoraDevolucion("");
@@ -231,7 +183,7 @@ export function TicketUpsertDialog({
         <Button onClick={() => setOpen(true)}>{btnText}</Button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-tour="ticket-form">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
@@ -270,53 +222,86 @@ export function TicketUpsertDialog({
               </div>
             )}
 
-            {/* Fechas */}
-            <div className="flex flex-col gap-4">
-              <GenericDateTimePicker
-                label="Fecha de Salida"
-                value={watch("fecha_salida")}
-                onChange={(date) => {
-                  if (date) {
-                    // Combinar fecha con hora si existe
-                    if (horaSalida) {
-                      const [hours, minutes] = horaSalida.split(":");
-                      date.setHours(parseInt(hours), parseInt(minutes));
-                    }
-                    setValue("fecha_salida", date);
-                  }
-                }}
-                placeholder="Seleccionar fecha y hora"
-                error={errors.fecha_salida?.message}
-                required
-                timeValue={horaSalida}
-                onTimeChange={setHoraSalida}
-              />
-              <GenericDateTimePicker
-                label="Fecha Estimada de Devolución"
-                value={watch("fecha_estimada_devolucion")}
-                onChange={(date) => {
-                  if (date) {
-                    // Combinar fecha con hora si existe
-                    if (horaDevolucion) {
-                      const [hours, minutes] = horaDevolucion.split(":");
-                      date.setHours(parseInt(hours), parseInt(minutes));
-                    }
-                    setValue("fecha_estimada_devolucion", date);
-                  }
-                }}
-                placeholder="Seleccionar fecha y hora"
-                error={errors.fecha_estimada_devolucion?.message}
-                timeValue={horaDevolucion}
-                onTimeChange={setHoraDevolucion}
-              />
+            {/* Quien resuelve (auto) */}
+            <div className="grid gap-1">
+              <Label>Resuelve la solicitud</Label>
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                <p className="font-medium">
+                  {session?.user?.name ?? "Usuario autenticado"}
+                </p>
+                <p className="text-xs mt-1">
+                  Se tomará automáticamente del usuario que inició sesión (firma incluida).
+                </p>
+              </div>
             </div>
 
-            {/* Selección de Múltiples Elementos */}
-            <ElementosTicketForm
-              elementos={elementos}
-              elementosSeleccionados={elementosSeleccionados}
-              onElementosChange={setElementosSeleccionados}
-            />
+            {/* Fechas */}
+            <div className="flex flex-col gap-4" data-tour="ticket-form-fechas">
+              <div data-tour="ticket-form-fecha-inicio">
+                <GenericDateTimePicker
+                  label="Fecha de inicio"
+                  value={watch("fecha_salida")}
+                  onChange={(date) => {
+                    if (date) {
+                      // Combinar fecha con hora si existe
+                      if (horaSalida) {
+                        const [hours, minutes] = horaSalida.split(":");
+                        date.setHours(parseInt(hours), parseInt(minutes));
+                      }
+                      setValue("fecha_salida", date);
+                    }
+                  }}
+                  placeholder="Ej: hoy 08:00"
+                  error={errors.fecha_salida?.message}
+                  required
+                  timeValue={horaSalida}
+                  onTimeChange={setHoraSalida}
+                />
+              </div>
+              <div data-tour="ticket-form-fecha-devolucion">
+                <GenericDateTimePicker
+                  label="Fecha Estimada de Devolución"
+                  value={watch("fecha_estimada_devolucion")}
+                  onChange={(date) => {
+                    if (date) {
+                      // Combinar fecha con hora si existe
+                      if (horaDevolucion) {
+                        const [hours, minutes] = horaDevolucion.split(":");
+                        date.setHours(parseInt(hours), parseInt(minutes));
+                      }
+                      setValue("fecha_estimada_devolucion", date);
+                    }
+                  }}
+                  placeholder="Ej: hoy 17:00"
+                  error={errors.fecha_estimada_devolucion?.message}
+                  timeValue={horaDevolucion}
+                  onTimeChange={setHoraDevolucion}
+                />
+              </div>
+            </div>
+
+            {/* Ubicación prestada */}
+            <div className="grid gap-1" data-tour="ticket-form-ubicacion">
+              <Label>Ubicación (Ambiente) a prestar</Label>
+              <Select
+                value={watch("ubicacion_id")}
+                onValueChange={(v) => setValue("ubicacion_id", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Ej: SAL-02 - Sala de Sistemas 2" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ubicaciones.map((u) => (
+                    <SelectItem key={u.id} value={String(u.id)}>
+                      {u.codigo} - {u.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.ubicacion_id && (
+                <p className="text-red-500 text-sm">{errors.ubicacion_id.message}</p>
+              )}
+            </div>
 
             {/* Número de Orden */}
             <div className="grid gap-1">
@@ -324,6 +309,7 @@ export function TicketUpsertDialog({
               <Input
                 id="orden_numero"
                 type="text"
+                placeholder="Ej: OT-2026-00123"
                 {...register("orden_numero")}
               />
               {errors.orden_numero && (
@@ -333,63 +319,13 @@ export function TicketUpsertDialog({
               )}
             </div>
 
-            {/* Dependencia de Entrega */}
+            {/* Dependencia del solicitante */}
             <div className="grid gap-1">
-              <Label htmlFor="dependencia_entrega">
-                Dependencia de Entrega
-              </Label>
-              <Input
-                id="dependencia_entrega"
-                type="text"
-                {...register("dependencia_entrega")}
-              />
-              {errors.dependencia_entrega && (
-                <p className="text-red-500 text-sm">
-                  {errors.dependencia_entrega.message}
-                </p>
-              )}
-            </div>
-
-            {/* Persona que Entrega */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1">
-                <Label htmlFor="persona_entrega_nombre">
-                  Nombre (Quien Entrega)
-                </Label>
-                <Input
-                  id="persona_entrega_nombre"
-                  type="text"
-                  {...register("persona_entrega_nombre")}
-                />
-                {errors.persona_entrega_nombre && (
-                  <p className="text-red-500 text-sm">
-                    {errors.persona_entrega_nombre.message}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="persona_entrega_apellido">
-                  Apellido (Quien Entrega)
-                </Label>
-                <Input
-                  id="persona_entrega_apellido"
-                  type="text"
-                  {...register("persona_entrega_apellido")}
-                />
-                {errors.persona_entrega_apellido && (
-                  <p className="text-red-500 text-sm">
-                    {errors.persona_entrega_apellido.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Dependencia que Recibe */}
-            <div className="grid gap-1">
-              <Label htmlFor="dependencia_recibe">Dependencia que Recibe</Label>
+              <Label htmlFor="dependencia_recibe">Dependencia del solicitante</Label>
               <Input
                 id="dependencia_recibe"
                 type="text"
+                placeholder="Ej: Coordinación Académica / Sistemas / Logística"
                 {...register("dependencia_recibe")}
               />
               {errors.dependencia_recibe && (
@@ -399,15 +335,16 @@ export function TicketUpsertDialog({
               )}
             </div>
 
-            {/* Persona que Recibe */}
+            {/* Solicitante */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
                 <Label htmlFor="persona_recibe_nombre">
-                  Nombre (Quien Recibe)
+                  Nombre (Solicitante)
                 </Label>
                 <Input
                   id="persona_recibe_nombre"
                   type="text"
+                  placeholder="Ej: Luisa"
                   {...register("persona_recibe_nombre")}
                 />
                 {errors.persona_recibe_nombre && (
@@ -418,11 +355,12 @@ export function TicketUpsertDialog({
               </div>
               <div className="grid gap-1">
                 <Label htmlFor="persona_recibe_apellido">
-                  Apellido (Quien Recibe)
+                  Apellido (Solicitante)
                 </Label>
                 <Input
                   id="persona_recibe_apellido"
                   type="text"
+                  placeholder="Ej: Pérez"
                   {...register("persona_recibe_apellido")}
                 />
                 {errors.persona_recibe_apellido && (
@@ -436,7 +374,12 @@ export function TicketUpsertDialog({
             {/* Motivo */}
             <div className="grid gap-1">
               <Label htmlFor="motivo">Motivo</Label>
-              <Input id="motivo" type="text" {...register("motivo")} />
+              <Input
+                id="motivo"
+                type="text"
+                placeholder="Ej: Clase de capacitación / Evento institucional"
+                {...register("motivo")}
+              />
               {errors.motivo && (
                 <p className="text-red-500 text-sm">{errors.motivo.message}</p>
               )}
@@ -450,16 +393,7 @@ export function TicketUpsertDialog({
               <div className="flex flex-col gap-8">
                 <div className="space-y-2">
                   <SignaturePadComponent
-                    label="Firma de Funcionario que Entrega"
-                    onSignatureChange={setFirmaEntrega}
-                    defaultValue={defaultValues?.firma_funcionario_entrega}
-                    required={create}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <SignaturePadComponent
-                    label="Firma de Funcionario que Recibe"
+                    label="Firma del solicitante"
                     onSignatureChange={setFirmaRecibe}
                     defaultValue={defaultValues?.firma_funcionario_recibe}
                     required={create}
@@ -476,7 +410,7 @@ export function TicketUpsertDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} data-tour="ticket-form-submit">
                 {submitText}
               </Button>
             </DialogFooter>

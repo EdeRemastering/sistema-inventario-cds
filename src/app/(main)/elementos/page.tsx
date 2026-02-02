@@ -12,6 +12,8 @@ import { ElementosList } from "../../../components/elementos/elementos-list";
 import { ElementosSkeleton } from "../../../components/skeletons/elementos";
 import { Suspense } from "react";
 
+export const runtime = "nodejs";
+
 type PageProps = {
   searchParams: Promise<{ page?: string; search?: string }>;
 };

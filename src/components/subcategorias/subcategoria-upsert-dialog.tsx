@@ -108,30 +108,35 @@ export function SubcategoriaUpsertDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{btnText}</Button>
+      <Button
+        onClick={() => setOpen(true)}
+        data-tour={create ? "subcategorias-create-button" : "subcategorias-edit-button"}
+      >
+        {btnText}
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent data-tour="subcategoria-form">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="subcategoria-form-nombre">
               <Label htmlFor="nombre">Nombre</Label>
               <Input
                 id="nombre"
                 type="text"
-                placeholder="Nombre"
+                placeholder='Ej: Micrófonos, Parlantes, Consolas'
                 {...register("nombre")}
               />
               {errors.nombre && (
                 <p className="text-red-500 text-sm">{errors.nombre.message}</p>
               )}
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="subcategoria-form-descripcion">
               <Label htmlFor="descripcion">Descripción</Label>
               <textarea
                 id="descripcion"
-                placeholder="Descripción"
+                placeholder="Ej: Subcategoría para equipos de captura de audio (micrófonos de mano, diadema, inalámbricos)."
                 rows={2}
                 {...register("descripcion")}
                 className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -142,7 +147,7 @@ export function SubcategoriaUpsertDialog({
                 </p>
               )}
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="subcategoria-form-categoria">
               <Label htmlFor="categoria_id">Categoría</Label>
               <Select
                 value={watch("categoria_id")}
@@ -188,7 +193,11 @@ export function SubcategoriaUpsertDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-tour="subcategoria-form-submit"
+              >
                 {submitText}
               </Button>
             </DialogFooter>

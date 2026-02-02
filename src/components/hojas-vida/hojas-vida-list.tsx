@@ -85,16 +85,20 @@ export function HojasVidaList({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Hojas de Vida</h1>
-        <HojaVidaUpsertDialog
-          serverAction={onCreateHojaVida}
-          create={true}
-          elementos={elementos}
-          sedes={sedes}
-          ubicaciones={ubicaciones}
-          categorias={categorias}
-          subcategorias={subcategorias}
-        />
+        <h1 className="text-2xl font-bold" data-tour="page-title">
+          Hojas de Vida
+        </h1>
+        <div data-tour="hojasvida-create">
+          <HojaVidaUpsertDialog
+            serverAction={onCreateHojaVida}
+            create={true}
+            elementos={elementos}
+            sedes={sedes}
+            ubicaciones={ubicaciones}
+            categorias={categorias}
+            subcategorias={subcategorias}
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -117,7 +121,7 @@ export function HojasVidaList({
                 </TableCell>
               </TableRow>
             ) : (
-              hojasVida.map((hoja) => (
+              hojasVida.map((hoja, idx) => (
                 <TableRow key={hoja.id}>
                   <TableCell>
                     {hoja.elemento
@@ -150,12 +154,13 @@ export function HojasVidaList({
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingHojaVida(hoja)}
+                        data-tour={idx === 0 ? "hojasvida-edit-first" : undefined}
                       >
                         Editar
                       </Button>
-                      <DeleteButton
-                        onConfirm={() => onDeleteHojaVida(hoja.id)}
-                      />
+                      <span data-tour={idx === 0 ? "hojasvida-delete-first" : undefined}>
+                        <DeleteButton onConfirm={() => onDeleteHojaVida(hoja.id)} />
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>

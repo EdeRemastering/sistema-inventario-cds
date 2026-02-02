@@ -1,4 +1,7 @@
-import { listMantenimientosProgramados, listMantenimientosRealizados } from "../../../modules/mantenimientos/services";
+import {
+  listMantenimientosProgramados,
+  listMantenimientosRealizados,
+} from "../../../modules/mantenimientos/services";
 import { getFormSelectOptions } from "../../../lib/form-options";
 import {
   actionCreateMantenimientoProgramado,
@@ -14,8 +17,15 @@ import { MantenimientosRealizadosList } from "../../../components/mantenimientos
 import { MantenimientosSemanaView } from "../../../components/mantenimientos/mantenimientos-semana-view";
 import { CronogramaView } from "../../../components/cronograma/cronograma-view";
 import { Suspense } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../../components/ui/tabs";
 import { Wrench, CalendarDays, Calendar, ClipboardCheck } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 // Componente que maneja la lógica de datos
 async function MantenimientosContent() {
@@ -27,13 +37,17 @@ async function MantenimientosContent() {
   ]);
 
   // Contar pendientes para mostrar en el tab
-  const pendientesCount = programados.filter(m => m.estado === "PENDIENTE").length;
+  const pendientesCount = programados.filter(
+    (m) => m.estado === "PENDIENTE",
+  ).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Wrench className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold">Mantenimientos</h1>
+        <h1 className="text-3xl font-bold" data-tour="page-title">
+          Mantenimientos
+        </h1>
         {pendientesCount > 0 && (
           <span className="inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full bg-red-500 text-white text-sm font-bold">
             {pendientesCount}
@@ -42,7 +56,7 @@ async function MantenimientosContent() {
       </div>
 
       <Tabs defaultValue="semana" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid" data-tour="mantenimientos-tabs">
           <TabsTrigger value="semana" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Esta Semana</span>
@@ -125,18 +139,20 @@ async function MantenimientosContent() {
 
 export default function MantenimientosPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Wrench className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Mantenimientos</h1>
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Wrench className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">Mantenimientos</h1>
+          </div>
+          <div className="animate-pulse space-y-4">
+            <div className="h-10 bg-muted rounded w-96"></div>
+            <div className="h-96 bg-muted rounded"></div>
+          </div>
         </div>
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-muted rounded w-96"></div>
-          <div className="h-96 bg-muted rounded"></div>
-        </div>
-      </div>
-    }>
+      }
+    >
       <MantenimientosContent />
     </Suspense>
   );

@@ -62,3 +62,4 @@ export async function seedConfiguracionFrecuencias(prisma: PrismaClient) {
   console.log(`✅ ${configuracionFrecuenciasSeed.length} frecuencias sembradas correctamente`);
 }
 
+

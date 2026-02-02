@@ -68,7 +68,8 @@ export const mantenimientoRealizadoCreateSchema = z.object({
   descripcion: z.string().min(1, "Descripción requerida"),
   averias_encontradas: z.string().optional(),
   repuestos_utilizados: z.string().optional(),
-  responsable: z.string().min(1, "Responsable requerido").max(100),
+  // Se auto-asigna con el usuario en sesión (server action). Se permite vacío en el formulario.
+  responsable: z.string().max(100).optional().or(z.literal("")),
   costo: z.coerce.number().nonnegative().optional().or(z.literal("")),
   creado_por: z.string().optional(),
 });

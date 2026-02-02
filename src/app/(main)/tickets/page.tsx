@@ -1,4 +1,5 @@
 import { listTickets } from "../../../modules/tickets_guardados/services";
+import { listUbicacionesConElementos } from "../../../modules/ubicaciones/services";
 import {
   actionCreateTicket,
   actionDeleteTicket,
@@ -10,11 +11,15 @@ import { TicketsSkeleton } from "../../../components/skeletons/tickets";
 import { Suspense } from "react";
 
 async function TicketsContent() {
-  const tickets = await listTickets();
+  const [tickets, ubicaciones] = await Promise.all([
+    listTickets(),
+    listUbicacionesConElementos(),
+  ]);
 
   return (
     <TicketsList
       tickets={tickets}
+      ubicaciones={ubicaciones}
       onCreateTicket={actionCreateTicket}
       onUpdateTicket={actionUpdateTicket}
       onDeleteTicket={actionDeleteTicket}

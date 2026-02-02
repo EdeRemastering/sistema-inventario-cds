@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
 import { formDataToObject } from "../../utils/form";
 import {
   mantenimientoProgramadoCreateSchema,
@@ -19,6 +21,19 @@ import {
   updateEstadoMantenimiento,
 } from "./services";
 import { logAction } from "../../lib/audit-logger";
+import { authOptions } from "@/lib/auth";
+
+/**
+ * Normaliza el nombre del usuario autenticado para usarlo como "responsable".
+ * Importante: esto se calcula en el servidor para evitar que el cliente lo manipule.
+ */
+function getResponsableFromSession(session: Session | null): string {
+  // `nombre`/`apellido` son campos extendidos en nuestra sesión (module augmentation).
+  const nombre = (session?.user as any)?.nombre ?? "";
+  const apellido = (session?.user as any)?.apellido ?? "";
+  const full = `${nombre} ${apellido}`.trim();
+  return full || session?.user?.name || (session?.user as any)?.username || "";
+}
 
 // Actions para Mantenimientos Programados
 export async function actionCreateMantenimientoProgramado(formData: FormData) {
@@ -81,14 +96,23 @@ export async function actionCreateMantenimientoRealizado(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
+  const session = await getServerSession(authOptions);
+  const responsableFromSession = getResponsableFromSession(session);
+
   const createData = {
     ...parsed.data,
     programacion_id: parsed.data.programacion_id === "" ? null : (parsed.data.programacion_id ?? null),
     averias_encontradas: parsed.data.averias_encontradas ?? null,
     repuestos_utilizados: parsed.data.repuestos_utilizados ?? null,
     costo: parsed.data.costo === "" ? null : (parsed.data.costo ?? null),
-    creado_por: parsed.data.creado_por ?? null,
+    // Fuerza el responsable como el usuario autenticado (evita manipulación del formulario).
+    responsable: responsableFromSession || String(parsed.data.responsable ?? "").trim(),
+    creado_por: session?.user?.username ?? parsed.data.creado_por ?? null,
   };
+
+  if (!createData.responsable) {
+    throw new Error("No se pudo determinar el responsable (sesión no disponible).");
+  }
 
   const mantenimiento = await createMantenimientoRealizado(createData);
   await logAction({

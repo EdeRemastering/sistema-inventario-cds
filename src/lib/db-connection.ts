@@ -15,11 +15,15 @@ export async function withDatabaseRetry<T>(
       return await operation();
     } catch (error) {
       lastError = error as Error;
-      console.warn(`Intento ${attempt} falló:`, error);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(`Intento ${attempt} falló:`, error);
+      }
       
       // Si es un error de conexión y no es el último intento, esperar y reintentar
       if (attempt < maxRetries && isConnectionError(error)) {
-        console.log(`Esperando ${delayMs}ms antes del siguiente intento...`);
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`Esperando ${delayMs}ms antes del siguiente intento...`);
+        }
         await new Promise(resolve => setTimeout(resolve, delayMs));
         delayMs *= 2; // Aumentar el delay exponencialmente
       } else {

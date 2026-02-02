@@ -108,15 +108,17 @@ export function MantenimientosProgramadosList({
             {mantenimientos.filter(m => m.estado === "PENDIENTE").length} pendientes de {mantenimientos.length} total
           </p>
         </div>
-        <MantenimientoProgramadoUpsertDialog
-          serverAction={onCreateMantenimiento}
-          create={true}
-          elementos={elementos}
-          sedes={sedes}
-          ubicaciones={ubicaciones}
-          categorias={categorias}
-          subcategorias={subcategorias}
-        />
+        <div data-tour="mantenimientos-programados-create">
+          <MantenimientoProgramadoUpsertDialog
+            serverAction={onCreateMantenimiento}
+            create={true}
+            elementos={elementos}
+            sedes={sedes}
+            ubicaciones={ubicaciones}
+            categorias={categorias}
+            subcategorias={subcategorias}
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -138,7 +140,7 @@ export function MantenimientosProgramadosList({
                 </TableCell>
               </TableRow>
             ) : (
-              mantenimientos.map((mantenimiento) => {
+              mantenimientos.map((mantenimiento, idx) => {
                 const isLoading = loadingId === mantenimiento.id;
                 
                 return (
@@ -169,6 +171,7 @@ export function MantenimientosProgramadosList({
                               disabled={isLoading}
                               onClick={() => handleCambiarEstado(mantenimiento.id, "REALIZADO")}
                               title="Marcar como realizado"
+                              data-tour={idx === 0 ? "mantenimientos-programados-marcar-realizado" : undefined}
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -188,7 +191,12 @@ export function MantenimientosProgramadosList({
                         {/* Menú de más opciones */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" disabled={isLoading}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              data-tour={idx === 0 ? "mantenimientos-programados-menu" : undefined}
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

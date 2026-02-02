@@ -6,7 +6,10 @@ import {
   actionDeleteHojaVida,
 } from "../../../modules/hojas_vida/actions";
 import { HojasVidaList } from "../../../components/hojas-vida/hojas-vida-list";
+import { HojasVidaSkeleton } from "../../../components/skeletons";
 import { Suspense } from "react";
+
+export const dynamic = "force-dynamic";
 
 // Componente que maneja la lógica de datos
 async function HojasVidaContent() {
@@ -33,9 +36,8 @@ async function HojasVidaContent() {
 
 export default function HojasVidaPage() {
   return (
-    <Suspense fallback={<div>Cargando...</div>}>
+    <Suspense fallback={<HojasVidaSkeleton />}>
       <HojasVidaContent />
     </Suspense>
   );
 }
-

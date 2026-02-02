@@ -259,8 +259,8 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(0, 0, 0);
 
-    // Fecha de salida
-    pdf.text(`Fecha de Salida:`, 20, y);
+    // Fecha de inicio (antes: fecha de salida)
+    pdf.text(`Fecha de inicio:`, 20, y);
     pdf.text(`${formatDate(ticket.fecha_salida)}`, 65, y);
     y += 6;
 
@@ -385,7 +385,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
 
     y += 15;
 
-    // Dependencias y Personas - sin borde individual (marco unificado)
+    // Resuelve la solicitud (coordinación logística) - sin borde individual (marco unificado)
     // Línea separadora horizontal
     pdf.setLineWidth(0.15);
     pdf.line(20, y - 5, 185, y - 5);
@@ -393,7 +393,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
     pdf.setFontSize(14);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0); // Negro
-    pdf.text("DEPENDENCIA DE ENTREGA", 20, y);
+    pdf.text("RESUELVE LA SOLICITUD", 20, y);
 
     // Línea separadora debajo del título
     pdf.setLineWidth(0.15);
@@ -405,7 +405,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
     pdf.setTextColor(0, 0, 0);
 
     pdf.text(
-      `Dependencia: ${ticket.dependencia_entrega || "N/A"}`,
+      `Dependencia: ${ticket.dependencia_entrega || "Coordinación de Logística"}`,
       20,
       y
     );
@@ -415,7 +415,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       ticket.persona_entrega_apellido || ""
     }`.trim();
     if (nombreEntrega) {
-      pdf.text(`Persona que Entrega: ${nombreEntrega}`, 20, y);
+      pdf.text(`Resuelve: ${nombreEntrega}`, 20, y);
       y += 6;
     }
 
@@ -428,7 +428,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         if (firmaEntregaImg) {
           pdf.addImage(firmaEntregaImg, "PNG", 20, y, 40, 15);
           y += 17;
-          pdf.text("Firma de quien Entrega", 20, y);
+          pdf.text("Firma (Resuelve)", 20, y);
           y += 6;
         }
       } catch (error) {
@@ -440,13 +440,13 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
 
     y += 10;
 
-    // Dependencia de Recibe
+    // Solicitante
     pdf.setLineWidth(0.15);
     pdf.line(20, y - 5, 185, y - 5);
 
     pdf.setFontSize(14);
     pdf.setFont("helvetica", "bold");
-    pdf.text("DEPENDENCIA QUE RECIBE", 20, y);
+    pdf.text("SOLICITANTE", 20, y);
 
     pdf.setLineWidth(0.15);
     pdf.line(20, y + 2, 185, y + 2);
@@ -462,7 +462,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
       ticket.persona_recibe_apellido || ""
     }`.trim();
     if (nombreRecibe) {
-      pdf.text(`Persona que Recibe: ${nombreRecibe}`, 20, y);
+      pdf.text(`Solicitante: ${nombreRecibe}`, 20, y);
       y += 6;
     }
 
@@ -475,7 +475,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
         if (firmaRecibeImg) {
           pdf.addImage(firmaRecibeImg, "PNG", 20, y, 40, 15);
           y += 17;
-          pdf.text("Firma de quien Recibe", 20, y);
+          pdf.text("Firma (Solicitante)", 20, y);
           y += 6;
         }
       } catch (error) {
@@ -920,7 +920,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-sm text-gray-600">
-                          Fecha de Salida:
+                          Fecha de inicio:
                         </span>
                         <span className="text-sm">
                           {formatDate(ticket.fecha_salida)}
@@ -1076,12 +1076,12 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                   </CardContent>
                 </Card>
 
-                {/* Dependencies and Signatures */}
+                {/* Resuelve / Solicitante */}
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2 text-black">
                       <span className="text-black">📤</span>
-                      DEPENDENCIA DE ENTREGA
+                      RESUELVE LA SOLICITUD
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1090,12 +1090,12 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                         Dependencia:
                       </span>
                       <p className="text-gray-700 text-sm mt-1 break-words">
-                        {ticket.dependencia_entrega || "No especificado"}
+                        {ticket.dependencia_entrega || "Coordinación de Logística"}
                       </p>
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm text-gray-600">
-                        Persona que Entrega:
+                        Resuelve:
                       </span>
                       <p className="text-gray-700 text-sm mt-1 break-words">
                         {ticket.persona_entrega_nombre &&
@@ -1106,7 +1106,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm text-gray-600">
-                        Firma del Funcionario:
+                        Firma (Resuelve):
                       </span>
                       <div className="mt-2 flex justify-start">
                         <SignatureDisplay
@@ -1123,7 +1123,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2 text-black">
                       <span className="text-black">📥</span>
-                      DEPENDENCIA QUE RECIBE
+                      SOLICITANTE
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1137,7 +1137,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm text-gray-600">
-                        Persona que Recibe:
+                        Solicitante:
                       </span>
                       <p className="text-gray-700 text-sm mt-1 break-words">
                         {ticket.persona_recibe_nombre &&
@@ -1148,7 +1148,7 @@ export function TicketInvoice({ ticket }: TicketInvoiceProps) {
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm text-gray-600">
-                        Firma del Funcionario:
+                        Firma (Solicitante):
                       </span>
                       <div className="mt-2 flex justify-start">
                         <SignatureDisplay

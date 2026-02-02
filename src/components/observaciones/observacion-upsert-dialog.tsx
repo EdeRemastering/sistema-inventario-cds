@@ -110,22 +110,27 @@ export function ObservacionUpsertDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{btnText}</Button>
+      <Button
+        onClick={() => setOpen(true)}
+        data-tour={create ? "observaciones-create-button" : "observaciones-edit-button"}
+      >
+        {btnText}
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent data-tour="observacion-form">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
             {/* Elemento */}
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="observacion-form-elemento">
               <Label htmlFor="elemento_id">Elemento</Label>
               <Select
                 value={watch("elemento_id")}
                 onValueChange={(value) => setValue("elemento_id", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona elemento" />
+                  <SelectValue placeholder="Ej: busca el elemento por serie/marca/modelo" />
                 </SelectTrigger>
                 <SelectContent>
                   {elementos.map((e) => (
@@ -143,7 +148,7 @@ export function ObservacionUpsertDialog({
             </div>
 
             {/* Fecha de Observación */}
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="observacion-form-fecha">
               <Label htmlFor="fecha_observacion">Fecha de Observación</Label>
               <Input
                 id="fecha_observacion"
@@ -158,12 +163,12 @@ export function ObservacionUpsertDialog({
             </div>
 
             {/* Descripción */}
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="observacion-form-descripcion">
               <Label htmlFor="descripcion">Descripción</Label>
               <textarea
                 id="descripcion"
                 rows={4}
-                placeholder="Describe la observación..."
+                placeholder="Ej: El equipo presenta ruido intermitente. Revisar cableado y conectores. Se recomienda mantenimiento preventivo."
                 {...register("descripcion")}
                 className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
@@ -182,7 +187,11 @@ export function ObservacionUpsertDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-tour="observacion-form-submit"
+              >
                 {submitText}
               </Button>
             </DialogFooter>

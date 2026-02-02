@@ -47,3 +47,4 @@ export async function seedConfiguracionEstados(prisma: PrismaClient) {
   console.log(`✅ ${configuracionEstadosSeed.length} estados de configuración sembrados correctamente`);
 }
 
+

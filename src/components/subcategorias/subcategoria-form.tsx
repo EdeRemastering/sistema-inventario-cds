@@ -17,15 +17,18 @@ export function SubcategoriaForm({
 }: SubcategoriaFormProps) {
   return (
     <form action={action} className="grid gap-3 sm:grid-cols-4">
-      <Input name="nombre" placeholder="Nombre" required />
-      <Input name="descripcion" placeholder="Descripción" />
+      <Input name="nombre" placeholder="Ej: Micrófonos / Parlantes" required />
+      <Input
+        name="descripcion"
+        placeholder="Ej: Subcategoría para equipos de captura de audio (opcional)"
+      />
       <SelectField
         name="categoria_id"
         options={categorias.map((c) => ({
           value: String(c.id),
           label: c.nombre,
         }))}
-        placeholder="Categoría"
+        placeholder="Selecciona una categoría"
       />
       <div className="flex gap-2">
         <Input name="estado" defaultValue="activo" className="hidden" />

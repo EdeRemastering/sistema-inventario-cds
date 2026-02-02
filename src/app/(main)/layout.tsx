@@ -5,6 +5,9 @@ import { DashboardSidebar } from "../../components/dashboard/sidebar";
 import { SidebarHeader } from "../../components/dashboard/sidebar-header";
 import { ThemeProvider } from "../../contexts/theme-context";
 import { SidebarProvider, SidebarInset } from "../../components/ui/sidebar";
+import { AppTourProvider } from "../../components/tour/app-tour-provider";
+
+export const runtime = "nodejs";
 
 export default async function MainLayout({
   children,
@@ -12,7 +15,6 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
-  console.log(session);
   if (!session) redirect("/login");
 
   return (
@@ -21,6 +23,7 @@ export default async function MainLayout({
         <DashboardSidebar />
         <SidebarInset>
           <SidebarHeader />
+          <AppTourProvider />
           <main className="p-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>

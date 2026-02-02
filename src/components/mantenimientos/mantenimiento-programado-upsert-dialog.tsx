@@ -145,7 +145,9 @@ export function MantenimientoProgramadoUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
-  const [open, setOpen] = useState(!defaultValues);
+  // En creación NO debe abrirse automáticamente al entrar a la página.
+  // En edición, el padre ya decide cuándo renderizar este diálogo.
+  const [open, setOpen] = useState(false);
 
   // Obtener el elemento seleccionado para pre-llenar los filtros
   const elementoSeleccionado = defaultValues?.elemento_id
@@ -286,6 +288,12 @@ export function MantenimientoProgramadoUpsertDialog({
       });
     }
   }, [defaultValues, reset, elementos]);
+
+  // Si este componente se renderiza para edición (defaultValues presentes),
+  // lo abrimos automáticamente.
+  useEffect(() => {
+    if (!create && defaultValues) setOpen(true);
+  }, [create, defaultValues]);
 
   // Filtrar ubicaciones por sede seleccionada
   const selectedSedeId = watch("sede_id");

@@ -68,3 +68,4 @@ export async function seedSedes(prisma: PrismaClient) {
   console.log(`✅ ${sedesSeed.length} sedes sembradas correctamente`);
 }
 
+

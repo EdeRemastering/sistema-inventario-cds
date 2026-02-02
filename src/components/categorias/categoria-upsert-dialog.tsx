@@ -107,30 +107,35 @@ export function CategoriaUpsertDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{computedButton}</Button>
+      <Button
+        onClick={() => setOpen(true)}
+        data-tour={create ? "categorias-create-button" : "categorias-edit-button"}
+      >
+        {computedButton}
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent data-tour="categoria-form">
           <DialogHeader>
             <DialogTitle>{computedTitle}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="categoria-form-nombre">
               <Label htmlFor="nombre">Nombre</Label>
               <Input
                 id="nombre"
                 type="text"
-                placeholder="Nombre"
+                placeholder='Ej: Audio, Video, Iluminación'
                 {...register("nombre")}
               />
               {errors.nombre && (
                 <p className="text-red-500 text-sm">{errors.nombre.message}</p>
               )}
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="categoria-form-descripcion">
               <Label htmlFor="descripcion">Descripción</Label>
               <textarea
                 id="descripcion"
-                placeholder="Descripción"
+                placeholder="Ej: Esta categoría agrupa equipos relacionados con sonido (micrófonos, amplificadores, parlantes)."
                 rows={2}
                 {...register("descripcion")}
                 className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -141,7 +146,7 @@ export function CategoriaUpsertDialog({
                 </p>
               )}
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-1" data-tour="categoria-form-estado">
               <Label htmlFor="estado">Estado</Label>
               <Select
                 value={watch("estado")}
@@ -169,7 +174,7 @@ export function CategoriaUpsertDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} data-tour="categoria-form-submit">
                 {computedSubmit}
               </Button>
             </DialogFooter>

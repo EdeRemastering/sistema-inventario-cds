@@ -4,15 +4,15 @@ export interface DashboardStats {
   totalElementos: number;
   totalCategorias: number;
   totalUsuarios: number;
-  totalMovimientos: number;
+  totalTickets: number;
   elementosEnStock: number;
-  elementosPrestados: number;
+  ticketsActivos: number;
   ticketsPendientes: number;
   reportesGenerados: number;
   elementosMesAnterior: number;
   categoriasMesAnterior: number;
   usuariosMesAnterior: number;
-  movimientosSemanaAnterior: number;
+  ticketsSemanaAnterior: number;
 }
 
 export interface ActividadReciente {
@@ -34,21 +34,21 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalElementos,
     totalCategorias,
     totalUsuarios,
-    totalMovimientos,
+    totalTickets,
     elementosEnStock,
-    elementosPrestados,
+    ticketsActivos,
     ticketsPendientes,
     reportesGenerados,
     elementosMesAnterior,
     categoriasMesAnterior,
     usuariosMesAnterior,
-    movimientosSemanaAnterior,
+    ticketsSemanaAnterior,
   ] = await Promise.all([
     // Totales
     prisma.elementos.count(),
     prisma.categorias.count(),
     prisma.usuarios.count(),
-    prisma.movimientos.count(),
+    prisma.tickets_guardados.count(),
     
     // Estados específicos
     prisma.elementos.count({
@@ -58,12 +58,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         }
       }
     }),
-    prisma.movimientos.count({
+    // Tickets activos: tickets cuyo motivo no indique cierre (devuelto / completado / entregado)
+    prisma.tickets_guardados.count({
       where: {
-        fecha_estimada_devolucion: {
-          gte: now
-        },
-        tipo: "SALIDA"
+        NOT: [
+          { motivo: { contains: "devuelto" } },
+          { motivo: { contains: "completado" } },
+          { motivo: { contains: "entregado" } },
+        ],
       }
     }),
     prisma.tickets_guardados.count({
@@ -100,9 +102,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         }
       }
     }),
-    prisma.movimientos.count({
+    prisma.tickets_guardados.count({
       where: {
-        fecha_movimiento: {
+        fecha_salida: {
           gte: inicioSemanaAnterior
         }
       }
@@ -113,15 +115,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalElementos,
     totalCategorias,
     totalUsuarios,
-    totalMovimientos,
+    totalTickets,
     elementosEnStock,
-    elementosPrestados,
+    ticketsActivos,
     ticketsPendientes,
     reportesGenerados,
     elementosMesAnterior,
     categoriasMesAnterior,
     usuariosMesAnterior,
-    movimientosSemanaAnterior,
+    ticketsSemanaAnterior,
   };
 }
 
@@ -146,21 +148,18 @@ export async function getActividadReciente(): Promise<ActividadReciente[]> {
     });
   });
 
-  // Obtener movimientos recientes
-  const movimientosRecientes = await prisma.movimientos.findMany({
+  // Obtener tickets recientes (préstamos)
+  const ticketsRecientes = await prisma.tickets_guardados.findMany({
     take: 3,
-    orderBy: { fecha_movimiento: 'desc' },
-    include: {
-      elemento: true
-    }
+    orderBy: { fecha_salida: "desc" },
   });
 
-  movimientosRecientes.forEach(movimiento => {
+  ticketsRecientes.forEach((ticket) => {
     actividades.push({
-      id: movimiento.id,
-      tipo: 'movimiento',
-      descripcion: `Movimiento de elemento: ${movimiento.elemento.serie}`,
-      fecha: movimiento.fecha_movimiento,
+      id: ticket.id,
+      tipo: "ticket",
+      descripcion: `Ticket (préstamo): ${ticket.numero_ticket}`,
+      fecha: ticket.fecha_salida,
     });
   });
 
@@ -191,33 +190,34 @@ export async function getMovimientosData() {
   const last6Months = new Date();
   last6Months.setMonth(now.getMonth() - 6);
 
-  // Obtener movimientos de los últimos 6 meses agrupados por mes
-  const movimientos = await prisma.movimientos.findMany({
+  // Movimientos quedó deprecado: usamos tickets como "transacciones de préstamo"
+  const tickets = await prisma.tickets_guardados.findMany({
     where: {
-      fecha_movimiento: {
+      fecha_salida: {
         gte: last6Months
       }
     },
     select: {
-      fecha_movimiento: true,
-      tipo: true
+      fecha_salida: true,
+      motivo: true,
     }
   });
 
   // Agrupar por mes
   const movimientosPorMes: { [key: string]: { movimientos: number; prestamos: number; devoluciones: number } } = {};
   
-  movimientos.forEach(movimiento => {
-    const mes = movimiento.fecha_movimiento.toLocaleDateString('es-ES', { month: 'short' });
+  tickets.forEach((ticket) => {
+    const mes = ticket.fecha_salida.toLocaleDateString("es-ES", { month: "short" });
     if (!movimientosPorMes[mes]) {
       movimientosPorMes[mes] = { movimientos: 0, prestamos: 0, devoluciones: 0 };
     }
     movimientosPorMes[mes].movimientos++;
-    if (movimiento.tipo === 'SALIDA') {
-      movimientosPorMes[mes].prestamos++;
-    } else {
-      movimientosPorMes[mes].devoluciones++;
-    }
+    movimientosPorMes[mes].prestamos++;
+
+    const motivo = (ticket.motivo ?? "").toLowerCase();
+    const cerrado =
+      motivo.includes("devuelto") || motivo.includes("completado") || motivo.includes("entregado");
+    if (cerrado) movimientosPorMes[mes].devoluciones++;
   });
 
   return Object.entries(movimientosPorMes).map(([name, data]) => ({

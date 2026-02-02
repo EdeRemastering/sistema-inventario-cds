@@ -35,7 +35,9 @@ export function ObservacionesList({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Observaciones</h1>
+      <h1 className="text-2xl font-semibold" data-tour="page-title">
+        Observaciones
+      </h1>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
@@ -44,11 +46,13 @@ export function ObservacionesList({
               onSearch={handleSearch}
               className="max-w-sm"
             />
-            <ObservacionUpsertDialog
-              create
-              serverAction={onCreateObservacion}
-              elementos={elementos}
-            />
+            <div data-tour="observaciones-create">
+              <ObservacionUpsertDialog
+                create
+                serverAction={onCreateObservacion}
+                elementos={elementos}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -68,7 +72,7 @@ export function ObservacionesList({
             />
           ) : (
             <div className="space-y-3">
-              {filteredData.map((observacion) => (
+              {filteredData.map((observacion, idx) => (
                 <div
                   key={observacion.id}
                   className="flex items-center justify-between gap-3 rounded border p-3"
@@ -82,28 +86,31 @@ export function ObservacionesList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <ObservacionUpsertDialog
-                      create={false}
-                      serverAction={onUpdateObservacion}
-                      elementos={elementos}
-                      defaultValues={{
-                        elemento_id: String(observacion.elemento_id),
-                        fecha_observacion: new Date(
-                          observacion.fecha_observacion
-                        )
-                          .toISOString()
-                          .slice(0, 10),
-                        descripcion: observacion.descripcion,
-                      }}
-                      hiddenFields={{ id: observacion.id }}
-                    />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteObservacion(observacion.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+                    <div data-tour={idx === 0 ? "observaciones-edit-first" : undefined}>
+                      <ObservacionUpsertDialog
+                        create={false}
+                        serverAction={onUpdateObservacion}
+                        elementos={elementos}
+                        defaultValues={{
+                          elemento_id: String(observacion.elemento_id),
+                          fecha_observacion: new Date(observacion.fecha_observacion)
+                            .toISOString()
+                            .slice(0, 10),
+                          descripcion: observacion.descripcion,
+                        }}
+                        hiddenFields={{ id: observacion.id }}
+                      />
+                    </div>
+                    <div data-tour={idx === 0 ? "observaciones-delete-first" : undefined}>
+                      <DeleteButton
+                        tourId={idx === 0 ? "observaciones-delete-first" : undefined}
+                        onConfirm={async () => {
+                          await onDeleteObservacion(observacion.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
+                    </div>
                   </div>
                 </div>
               ))}

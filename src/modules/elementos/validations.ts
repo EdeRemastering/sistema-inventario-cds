@@ -11,6 +11,8 @@ export const elementoCreateSchema = z.object({
   modelo: z.string().optional().or(z.literal("")),
   ubicacion: z.string().optional().or(z.literal("")), // Mantener para compatibilidad
   ubicacion_id: z.coerce.number().int().positive().optional().or(z.literal("")),
+  // URL pública en Cloudflare R2
+  imagen_url: z.string().url().optional().or(z.literal("")),
   estado_funcional: estadoCorto.default("B"),
   estado_fisico: estadoCorto.default("B"),
   fecha_entrada: z.coerce.date().default(new Date()),

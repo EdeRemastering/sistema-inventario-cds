@@ -53,3 +53,4 @@ export async function seedHojasVida(prisma: PrismaClient) {
   console.log(`✅ ${count} hojas de vida sembradas correctamente`);
 }
 
+

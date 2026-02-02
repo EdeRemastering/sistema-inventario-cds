@@ -11,6 +11,7 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 } 
 
 // Enums derivados del SQL
@@ -95,6 +96,7 @@ model ubicaciones {
 
   sede sedes @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   elementos elementos[] @relation("ElementoUbicacion")
+  tickets_guardados tickets_guardados[]
   movimientos_anterior movimientos[] @relation("MovimientoUbicacionAnterior")
   movimientos_nueva movimientos[] @relation("MovimientoUbicacionNueva")
   historico_movimientos_anterior historico_movimientos[] @relation("HistoricoUbicacionAnterior")
@@ -166,6 +168,8 @@ model elementos {
   codigo_equipo    String?     @unique @db.VarChar(100) // Código estructurado SS02-EC-01-01
   especificaciones Json?       // Para datos variables
   observaciones    String?     @db.Text
+  // Imagen principal del elemento (URL pública en Cloudflare R2)
+  imagen_url       String?     @db.Text
   activo           Boolean     @default(true)
   creado_en        DateTime    @default(now()) @db.Timestamp(0)
   actualizado_en   DateTime    @default(now()) @updatedAt @db.Timestamp(0)
@@ -298,9 +302,11 @@ model reportes_generados {
 
 model tickets_guardados {
   id                         Int       @id @default(autoincrement())
-  numero_ticket              String    @db.VarChar(50)
+  numero_ticket              String    @unique @db.VarChar(50)
   fecha_salida               DateTime  @db.DateTime(0)
   fecha_estimada_devolucion  DateTime? @db.DateTime(0)
+  // Nuevo: ahora se presta una ubicación (salón/ambiente)
+  ubicacion_id               Int?
   elemento                   String?   @db.VarChar(255) // Mantener para compatibilidad
   serie                      String?   @db.VarChar(100) // Mantener para compatibilidad
   marca_modelo               String?   @db.VarChar(100) // Mantener para compatibilidad
@@ -318,9 +324,13 @@ model tickets_guardados {
   fecha_guardado             DateTime? @default(now()) @db.DateTime(0)
   usuario_guardado           String?   @default("Sistema") @db.VarChar(100)
 
+  // Relación con ubicación prestada
+  ubicacion ubicaciones? @relation(fields: [ubicacion_id], references: [id], onDelete: SetNull)
+
   // Relación con elementos del ticket
   ticket_elementos ticket_elementos[]
 
+  @@index([ubicacion_id])
   @@map("tickets_guardados")
 }
 
@@ -348,6 +358,9 @@ model usuarios {
   username   String    @unique @db.VarChar(50)
   password   String    @db.VarChar(255)
   nombre     String    @db.VarChar(100)
+  apellido   String?   @db.VarChar(100)
+  // Firma del usuario (URL pública de R2 / ruta local / data URL)
+  firma_url  String?   @db.Text
   rol        Rol       @default(usuario)
   activo     Boolean?  @default(true)
   creado_en  DateTime  @default(now()) @db.Timestamp(0)

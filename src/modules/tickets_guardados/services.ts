@@ -4,6 +4,18 @@ import type { TicketGuardado, CreateTicketInput } from "./types";
 export function listTickets(): Promise<TicketGuardado[]> {
   return prisma.tickets_guardados.findMany({ 
     include: {
+      ubicacion: {
+        include: {
+          sede: {
+            select: {
+              id: true,
+              nombre: true,
+              ciudad: true,
+              municipio: true,
+            },
+          },
+        },
+      },
       ticket_elementos: {
         include: {
           elemento: {

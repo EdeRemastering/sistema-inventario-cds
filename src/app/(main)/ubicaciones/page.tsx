@@ -6,6 +6,7 @@ import {
   actionDeleteUbicacion,
 } from "../../../modules/ubicaciones/actions";
 import { UbicacionesList } from "../../../components/ubicaciones/ubicaciones-list";
+import { UbicacionesSkeleton } from "../../../components/skeletons";
 import { Suspense } from "react";
 
 // Componente que maneja la lógica de datos
@@ -28,7 +29,7 @@ async function UbicacionesContent() {
 
 export default function UbicacionesPage() {
   return (
-    <Suspense fallback={<div>Cargando ubicaciones...</div>}>
+    <Suspense fallback={<UbicacionesSkeleton />}>
       <UbicacionesContent />
     </Suspense>
   );

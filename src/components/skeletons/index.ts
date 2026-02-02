@@ -9,3 +9,5 @@ export { ObservacionesSkeleton } from "./observaciones";
 export { TicketsSkeleton } from "./tickets";
 export { DashboardSkeleton } from "./dashboard";
 export { ListSkeleton } from "./list";
+export { HojasVidaSkeleton } from "./hojas-vida";
+export { UbicacionesSkeleton } from "./ubicaciones";

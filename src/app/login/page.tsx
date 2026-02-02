@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CDSLogo } from "@/components/ui/cds-logo";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function LoginForm() {
   const { status } = useSession();
@@ -139,10 +140,24 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">Cargando...</p>
+        <div className="min-h-screen flex items-center justify-center px-6 py-16">
+          <div className="w-full max-w-md rounded-2xl border bg-card/60 p-8 backdrop-blur shadow-xl sm:p-10">
+            <div className="mx-auto mb-6 h-16 w-16 rounded-xl">
+              <Skeleton className="h-16 w-16 rounded-xl" />
+            </div>
+            <Skeleton className="h-8 w-48 mx-auto" />
+            <Skeleton className="h-4 w-72 mx-auto mt-3" />
+            <div className="mt-8 grid gap-5">
+              <div className="grid gap-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="grid gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
           </div>
         </div>
       }

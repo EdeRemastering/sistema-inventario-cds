@@ -35,7 +35,9 @@ export function SubcategoriasList({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Subcategorías</h1>
+      <h1 className="text-2xl font-semibold" data-tour="page-title">
+        Subcategorías
+      </h1>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
@@ -44,11 +46,13 @@ export function SubcategoriasList({
               onSearch={handleSearch}
               className="max-w-sm"
             />
-            <SubcategoriaUpsertDialog
-              create
-              serverAction={onCreateSubcategoria}
-              categorias={categorias}
-            />
+            <div data-tour="subcategorias-create">
+              <SubcategoriaUpsertDialog
+                create
+                serverAction={onCreateSubcategoria}
+                categorias={categorias}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -68,7 +72,7 @@ export function SubcategoriasList({
             />
           ) : (
             <div className="space-y-3">
-              {filteredData.map((subcategoria) => (
+              {filteredData.map((subcategoria, idx) => (
                 <div
                   key={subcategoria.id}
                   className="flex items-center justify-between gap-3 rounded border p-3"
@@ -80,24 +84,29 @@ export function SubcategoriasList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <SubcategoriaUpsertDialog
-                      create={false}
-                      serverAction={onUpdateSubcategoria}
-                      categorias={categorias}
-                      defaultValues={{
-                        nombre: subcategoria.nombre,
-                        descripcion: subcategoria.descripcion ?? "",
-                        categoria_id: String(subcategoria.categoria_id),
-                      }}
-                      hiddenFields={{ id: subcategoria.id }}
-                    />
-                    <DeleteButton
-                      onConfirm={async () => {
-                        await onDeleteSubcategoria(subcategoria.id);
-                      }}
-                    >
-                      Eliminar
-                    </DeleteButton>
+                    <div data-tour={idx === 0 ? "subcategorias-edit-first" : undefined}>
+                      <SubcategoriaUpsertDialog
+                        create={false}
+                        serverAction={onUpdateSubcategoria}
+                        categorias={categorias}
+                        defaultValues={{
+                          nombre: subcategoria.nombre,
+                          descripcion: subcategoria.descripcion ?? "",
+                          categoria_id: String(subcategoria.categoria_id),
+                        }}
+                        hiddenFields={{ id: subcategoria.id }}
+                      />
+                    </div>
+                    <div data-tour={idx === 0 ? "subcategorias-delete-first" : undefined}>
+                      <DeleteButton
+                        tourId={idx === 0 ? "subcategorias-delete-first" : undefined}
+                        onConfirm={async () => {
+                          await onDeleteSubcategoria(subcategoria.id);
+                        }}
+                      >
+                        Eliminar
+                      </DeleteButton>
+                    </div>
                   </div>
                 </div>
               ))}
