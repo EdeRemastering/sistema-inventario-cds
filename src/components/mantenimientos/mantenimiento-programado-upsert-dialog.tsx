@@ -619,7 +619,7 @@ export function MantenimientoProgramadoUpsertDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-                  <SelectItem value="REALIZADO">Realizado</SelectItem>
+                  <SelectItem value="REALIZADO">Ejecutado</SelectItem>
                   <SelectItem value="APLAZADO">Aplazado</SelectItem>
                   <SelectItem value="CANCELADO">Cancelado</SelectItem>
                 </SelectContent>

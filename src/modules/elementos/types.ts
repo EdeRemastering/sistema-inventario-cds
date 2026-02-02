@@ -18,6 +18,7 @@ export type Elemento = {
   codigo_equipo: string | null;
   especificaciones: Prisma.JsonValue | null;
   observaciones: string | null;
+  imagen_url: string | null;
   activo: boolean;
   creado_en: Date;
   actualizado_en: Date;
@@ -64,6 +65,7 @@ type PrismaElementoBase = {
   codigo_equipo?: string | null;
   especificaciones?: Record<string, unknown> | null;
   observaciones?: string | null;
+  imagen_url?: string | null;
   activo?: boolean;
 };
 

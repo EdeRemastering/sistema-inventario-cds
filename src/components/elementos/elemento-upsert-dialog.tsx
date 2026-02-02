@@ -277,6 +277,7 @@ export function ElementoUpsertDialog({
       if (data.marca) formData.append("marca", data.marca);
       if (data.modelo) formData.append("modelo", data.modelo);
       formData.append("cantidad", data.cantidad);
+      if (data.imagen_url) formData.append("imagen_url", data.imagen_url);
 
       // Imagen (Cloudflare R2):
       // - Si hay una imagen pendiente (vista previa), se sube SOLO al guardar.
@@ -371,9 +372,6 @@ export function ElementoUpsertDialog({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">Tomar o subir foto</div>
-                    <div className="text-xs text-muted-foreground">
-                      Primero revisas la vista previa y luego decides si subir a Cloudflare.
-                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {uploadingImage ? "Subiendo..." : "Opciones"}
@@ -428,8 +426,6 @@ export function ElementoUpsertDialog({
                   if (file) setPendingFromFile(file);
                 }}
               />
-
-              {/* Nota: la imagen pendiente se sube automáticamente al guardar. */}
             </div>
 
             {/* Sede */}
@@ -673,7 +669,6 @@ export function ElementoUpsertDialog({
                 </p>
               )}
             </div>
-
 
             <DialogFooter>
               <Button

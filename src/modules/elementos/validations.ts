@@ -20,6 +20,7 @@ export const elementoCreateSchema = z.object({
   codigo_equipo: z.string().optional().or(z.literal("")),
   especificaciones: z.record(z.string(), z.any()).optional(),
   observaciones: z.string().optional().or(z.literal("")),
+  imagen_url: z.string().url().optional().or(z.literal("")).or(z.null()),
   activo: z.coerce.boolean().default(true),
 });
 
