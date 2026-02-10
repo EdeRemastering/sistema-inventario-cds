@@ -33,7 +33,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
-import { getWeekKeyFromDate } from "@/lib/mantenimientos-semanas";
+import { getWeekKeyFromDate, SEMANAS_KEYS } from "@/lib/mantenimientos-semanas";
 import { MarcarSemanaRealizadaDialog } from "../mantenimientos/marcar-semana-realizada-dialog";
 
 type SedeOption = {
@@ -178,6 +178,24 @@ export function CronogramaView({
     return map;
   }, [mantenimientosDelAno]);
 
+  // Mapa: programacion_id → Set de weekKeys realizadas (ej: "enero_semana1")
+  const realizadosWeekMap = useMemo(() => {
+    const map = new Map<number, Set<string>>();
+    for (const r of realizados) {
+      if (r.programacion_id == null) continue;
+      const fecha =
+        typeof r.fecha_mantenimiento === "string"
+          ? new Date(r.fecha_mantenimiento)
+          : r.fecha_mantenimiento;
+      const weekKey = getWeekKeyFromDate(fecha);
+      if (!map.has(r.programacion_id)) {
+        map.set(r.programacion_id, new Set());
+      }
+      map.get(r.programacion_id)!.add(weekKey);
+    }
+    return map;
+  }, [realizados]);
+
   // Obtener ubicación seleccionada
   const ubicacionSeleccionada = useMemo(() => {
     return ubicaciones.find((u) => u.id.toString() === selectedUbicacionId);
@@ -275,7 +293,7 @@ export function CronogramaView({
     });
   };
 
-  // Obtener color de celda según estado
+  // Obtener color de celda según estado (global o por semana individual)
   const getCellColor = (
     mantenimiento: MantenimientoProgramado | undefined,
     mesKey: string,
@@ -283,11 +301,18 @@ export function CronogramaView({
   ): string => {
     if (!mantenimiento) return "";
 
-    const key = `${mesKey}_semana${semana}` as keyof MantenimientoProgramado;
-    const isMarked = mantenimiento[key] as boolean;
+    const weekKey = `${mesKey}_semana${semana}` as keyof MantenimientoProgramado;
+    const isMarked = mantenimiento[weekKey] as boolean;
 
     if (!isMarked) return "";
 
+    // Primero verificar si esta semana específica fue marcada como realizada
+    const semanasRealizadas = realizadosWeekMap.get(mantenimiento.id);
+    if (semanasRealizadas?.has(`${mesKey}_semana${semana}`)) {
+      return "bg-cyan-400"; // Ejecutada individualmente
+    }
+
+    // Si no fue realizada individualmente, usar el estado global
     switch (mantenimiento.estado) {
       case "REALIZADO":
         return "bg-cyan-400";

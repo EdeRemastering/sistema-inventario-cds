@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { elementoCreateSchema, elementoUpdateSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
 import { createElemento, deleteElemento, updateElemento, getElemento, listElementosWithRelations } from "./services";
@@ -52,12 +54,19 @@ export async function actionCreateElemento(formData: FormData) {
   // Crear automáticamente una hoja de vida por elemento (1:1)
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
+
+  // Obtener el nombre del usuario en sesión como responsable
+  const session = await getServerSession(authOptions);
+  const nombre = (session?.user as { nombre?: string })?.nombre ?? "";
+  const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
+  const responsableNombre = `${nombre} ${apellido}`.trim() || session?.user?.name || null;
+
   await createHojaVida({
     elemento_id: elemento.id,
     fecha_dilegenciamiento: hoy,
     tipo_elemento: "EQUIPO",
     area_ubicacion: null,
-    responsable: null,
+    responsable: responsableNombre,
     especificaciones_tecnicas: null,
     descripcion: null,
     requerimientos_funcionamiento: null,

@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
+import { getWeekKeyFromDate } from "@/lib/mantenimientos-semanas";
 
 type ElementoOption = {
   id: number;
@@ -27,8 +28,15 @@ type ElementoOption = {
   } | null;
 };
 
+type RealizadoParaSemana = {
+  id: number;
+  programacion_id: number | null;
+  fecha_mantenimiento: Date | string;
+};
+
 type Props = {
   mantenimientos: MantenimientoProgramado[];
+  realizados?: RealizadoParaSemana[];
   elementos: ElementoOption[];
   onMarcarSemanaRealizada?: (
     programacionId: number,
@@ -79,6 +87,7 @@ function getWeekOfMonth(date: Date): number {
 
 export function MantenimientosSemanaView({
   mantenimientos,
+  realizados = [],
   elementos,
   onMarcarSemanaRealizada,
   onCambiarEstado,

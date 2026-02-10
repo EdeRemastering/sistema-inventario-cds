@@ -32,13 +32,17 @@ export async function actionCreateHojaVida(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
+  // Si no se proporcionó responsable, usar el usuario en sesión
+  const session = await getServerSession(authOptions);
+  const responsableFromSession = getUsuarioFromSession(session) || null;
+
   // Transformar undefined a null para compatibilidad con el tipo
   const data: CreateHojaVidaInput = {
     elemento_id: parsed.data.elemento_id,
     fecha_dilegenciamiento: parsed.data.fecha_dilegenciamiento!,
     tipo_elemento: parsed.data.tipo_elemento,
     area_ubicacion: parsed.data.area_ubicacion || null,
-    responsable: parsed.data.responsable || null,
+    responsable: parsed.data.responsable || responsableFromSession,
     especificaciones_tecnicas: (parsed.data.especificaciones_tecnicas as Prisma.JsonValue) ?? null,
     descripcion: parsed.data.descripcion ?? null,
     requerimientos_funcionamiento: parsed.data.requerimientos_funcionamiento ?? null,
@@ -174,6 +178,10 @@ export async function actionDeleteCambioElemento(id: number) {
 
 /** Crea una hoja de vida para cada elemento que aún no tenga (migración / sincronización). */
 export async function actionCrearHojasVidaFaltantes(): Promise<{ creadas: number; errores: string[] }> {
+  // Obtener el usuario en sesión como responsable de las hojas creadas
+  const session = await getServerSession(authOptions);
+  const responsableNombre = getUsuarioFromSession(session) || null;
+
   const elementosSinHoja = await prisma.elementos.findMany({
     where: {
       hojas_vida: { none: {} },
@@ -193,7 +201,7 @@ export async function actionCrearHojasVidaFaltantes(): Promise<{ creadas: number
         fecha_dilegenciamiento: hoy,
         tipo_elemento: "EQUIPO",
         area_ubicacion: null,
-        responsable: null,
+        responsable: responsableNombre,
         especificaciones_tecnicas: null,
         descripcion: null,
         requerimientos_funcionamiento: null,

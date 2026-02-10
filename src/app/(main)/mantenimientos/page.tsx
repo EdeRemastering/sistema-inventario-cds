@@ -98,6 +98,7 @@ async function MantenimientosContent() {
         <TabsContent value="semana" className="mt-6">
           <MantenimientosSemanaView
             mantenimientos={programados}
+            realizados={realizadosPlain}
             elementos={options.elementos}
             onMarcarSemanaRealizada={actionMarcarSemanaComoRealizada}
             onCambiarEstado={actionCambiarEstadoMantenimiento}

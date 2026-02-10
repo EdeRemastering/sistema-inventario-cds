@@ -101,7 +101,7 @@ export function MantenimientosRealizadosList({
 }: Props) {
   const [editingMantenimiento, setEditingMantenimiento] =
     useState<MantenimientoRealizado | null>(null);
-  const [filterElementoId, setFilterElementoId] = useState<string>("");
+  const [filterElementoId, setFilterElementoId] = useState<string>("all");
   const [bulkEdit, setBulkEdit] = useState<{
     elemento_id: number;
     label: string;
@@ -114,7 +114,7 @@ export function MantenimientosRealizadosList({
   }, [mantenimientos, elementos]);
 
   const mantenimientosFiltrados = useMemo(() => {
-    if (!filterElementoId) return mantenimientos;
+    if (filterElementoId === "all") return mantenimientos;
     const id = parseInt(filterElementoId, 10);
     return mantenimientos.filter((m) => m.elemento_id === id);
   }, [mantenimientos, filterElementoId]);
@@ -159,7 +159,7 @@ export function MantenimientosRealizadosList({
               <SelectValue placeholder="Todos los equipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos los equipos</SelectItem>
+              <SelectItem value="all">Todos los equipos</SelectItem>
               {elementosConRealizados.map((e) => (
                 <SelectItem key={e.id} value={String(e.id)}>
                   {e.serie}
@@ -169,7 +169,7 @@ export function MantenimientosRealizadosList({
             </SelectContent>
           </Select>
         </div>
-        {filterElementoId && onBulkUpdateByElemento && mantenimientosFiltrados.length > 0 && (
+        {filterElementoId !== "all" && onBulkUpdateByElemento && mantenimientosFiltrados.length > 0 && (
           <Button
             variant="outline"
             size="sm"
@@ -209,7 +209,7 @@ export function MantenimientosRealizadosList({
                   colSpan={6}
                   className="text-center text-muted-foreground"
                 >
-                  {filterElementoId
+                  {filterElementoId !== "all"
                     ? "No hay mantenimientos para este equipo"
                     : "No hay mantenimientos realizados"}
                 </TableCell>
