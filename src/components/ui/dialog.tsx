@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -46,14 +46,58 @@ function DialogOverlay({
   );
 }
 
+/**
+ * Detecta si un evento de pointer/interaccion proviene de contenido
+ * portaleado por Radix (Select, Popover, DropdownMenu, Calendar, etc.).
+ * Si es asi, previene que el Dialog se cierre.
+ */
+function isRadixPortaledContent(event: { target: EventTarget | null }): boolean {
+  const target = event.target as HTMLElement | null;
+  if (!target) return false;
+  return !!(
+    target.closest("[data-radix-popper-content-wrapper]") ||
+    target.closest('[data-slot="select-content"]') ||
+    target.closest('[data-slot="popover-content"]') ||
+    target.closest('[data-slot="dropdown-menu-content"]') ||
+    target.closest('[data-slot="calendar"]') ||
+    target.closest("[role='listbox']") ||
+    target.closest("[role='option']") ||
+    target.closest(".rdp")
+  );
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onPointerDownOutside,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
 }) {
+  const handlePointerDownOutside = React.useCallback(
+    (e: Event & { target: EventTarget | null }) => {
+      if (isRadixPortaledContent(e)) {
+        e.preventDefault();
+        return;
+      }
+      onPointerDownOutside?.(e as Parameters<NonNullable<typeof onPointerDownOutside>>[0]);
+    },
+    [onPointerDownOutside]
+  );
+
+  const handleInteractOutside = React.useCallback(
+    (e: Event & { target: EventTarget | null }) => {
+      if (isRadixPortaledContent(e)) {
+        e.preventDefault();
+        return;
+      }
+      onInteractOutside?.(e as Parameters<NonNullable<typeof onInteractOutside>>[0]);
+    },
+    [onInteractOutside]
+  );
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -63,6 +107,8 @@ function DialogContent({
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed left-[50%] top-[50%] z-[10050] grid min-w-0 w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] max-h-[min(calc(100dvh-1rem),calc(100vh-1rem))] translate-x-[-50%] translate-y-[-50%] gap-3 rounded-lg border p-4 shadow-lg duration-200 sm:w-full sm:max-w-lg sm:max-h-[calc(100vh-2rem)] sm:gap-4 sm:p-6 overflow-y-auto overflow-x-hidden [&>*]:min-w-0",
           className
         )}
+        onPointerDownOutside={handlePointerDownOutside}
+        onInteractOutside={handleInteractOutside}
         {...props}
       >
         {children}
