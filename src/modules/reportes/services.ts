@@ -260,36 +260,9 @@ export async function getTicketsReporteData(
 }
 
 /**
- * Obtiene estadísticas generales para los reportes
+ * Obtiene estadísticas para la página de reportes (solo tickets)
  */
 export async function getReporteStats() {
-  const [
-    totalElementos,
-    totalMovimientos,
-    totalPrestamosActivos,
-    totalCategorias,
-    totalObservaciones,
-    totalTickets
-  ] = await Promise.all([
-    prisma.elementos.count(),
-    prisma.movimientos.count(),
-    prisma.movimientos.count({
-      where: {
-        tipo: 'SALIDA',
-        fecha_real_devolucion: null
-      }
-    }),
-    prisma.categorias.count(),
-    prisma.observaciones.count(),
-    prisma.tickets_guardados.count()
-  ]);
-
-  return {
-    totalElementos,
-    totalMovimientos,
-    totalPrestamosActivos,
-    totalCategorias,
-    totalObservaciones,
-    totalTickets
-  };
+  const totalTickets = await prisma.tickets_guardados.count();
+  return { totalTickets };
 }

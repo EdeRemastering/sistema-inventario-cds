@@ -1,7 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
 import { formDataToObject } from "../../utils/form";
+import { authOptions } from "@/lib/auth";
 import {
   hojaVidaCreateSchema,
   hojaVidaUpdateSchema,
@@ -93,6 +96,13 @@ export async function actionDeleteHojaVida(id: number) {
   revalidatePath("/hojas-vida");
 }
 
+function getUsuarioFromSession(session: Session | null): string {
+  const nombre = (session?.user as { nombre?: string })?.nombre ?? "";
+  const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
+  const full = `${nombre} ${apellido}`.trim();
+  return full || session?.user?.name || (session?.user as { username?: string })?.username || "";
+}
+
 // Actions para Cambios de Elementos
 export async function actionCreateCambioElemento(formData: FormData) {
   const parsed = cambioElementoCreateSchema.safeParse(formDataToObject(formData));
@@ -101,9 +111,19 @@ export async function actionCreateCambioElemento(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
+  const session = await getServerSession(authOptions);
+  const usuarioSesion = getUsuarioFromSession(session);
+  const usuario = (parsed.data.usuario?.trim() || usuarioSesion || null) as string | null;
+
+  const costo =
+    parsed.data.costo === "" || parsed.data.costo === undefined
+      ? null
+      : Number(parsed.data.costo);
+
   const createData = {
     ...parsed.data,
-    usuario: parsed.data.usuario || null,
+    usuario: usuario || null,
+    costo: costo ?? null,
   };
 
   const cambio = await createCambioElemento(createData);
@@ -120,9 +140,15 @@ export async function actionUpdateCambioElemento(formData: FormData) {
   const parsed = cambioElementoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
+  const costo =
+    parsed.data.costo === "" || parsed.data.costo === undefined
+      ? undefined
+      : Number(parsed.data.costo);
+
   const updateData = {
     ...parsed.data,
     usuario: parsed.data.usuario || null,
+    ...(costo !== undefined && { costo: costo ?? null }),
   };
 
   await updateCambioElemento(parsed.data.id!, updateData);

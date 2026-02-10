@@ -191,10 +191,18 @@ export default async function KpisMantenimientosPage({
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Costo</div>
+              <div className="text-xs text-muted-foreground">Costo total</div>
               <div className="text-xl font-semibold">
-                {formatCOP(kpis.costoPeriodo)}
+                {formatCOP(kpis.costoTotalPeriodo)}
               </div>
+              {(kpis.costoPeriodo > 0 || kpis.costoCambiosPeriodo > 0) && (
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  Mantenimientos: {formatCOP(kpis.costoPeriodo)}
+                  {kpis.costoCambiosPeriodo > 0 && (
+                    <> · Cambios: {formatCOP(kpis.costoCambiosPeriodo)}</>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

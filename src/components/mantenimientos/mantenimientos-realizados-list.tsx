@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "../ui/button";
 import {
   Table,
@@ -10,11 +10,27 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Label } from "../ui/label";
 import { MantenimientoRealizadoUpsertDialog } from "./mantenimiento-realizado-upsert-dialog";
+import { EditarTodosMantenimientosEquipoDialog } from "./editar-todos-mantenimientos-equipo-dialog";
 import { DeleteButton } from "../delete-button";
 import type { MantenimientoRealizado } from "../../modules/mantenimientos/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { MoreHorizontal, Pencil, Layers } from "lucide-react";
 
 type SedeOption = {
   id: number;
@@ -60,8 +76,16 @@ type Props = {
   subcategorias: SubcategoriaOption[];
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
+  onBulkUpdateByElemento?: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
 };
+
+function elementLabel(m: MantenimientoRealizado): string {
+  if (m.elemento) {
+    return `${m.elemento.serie}${m.elemento.marca ? ` - ${m.elemento.marca}` : ""}`.trim();
+  }
+  return `Elemento ${m.elemento_id}`;
+}
 
 export function MantenimientosRealizadosList({
   mantenimientos,
@@ -72,10 +96,28 @@ export function MantenimientosRealizadosList({
   subcategorias,
   onCreateMantenimiento,
   onUpdateMantenimiento,
+  onBulkUpdateByElemento,
   onDeleteMantenimiento,
 }: Props) {
   const [editingMantenimiento, setEditingMantenimiento] =
     useState<MantenimientoRealizado | null>(null);
+  const [filterElementoId, setFilterElementoId] = useState<string>("");
+  const [bulkEdit, setBulkEdit] = useState<{
+    elemento_id: number;
+    label: string;
+    count: number;
+  } | null>(null);
+
+  const elementosConRealizados = useMemo(() => {
+    const ids = new Set(mantenimientos.map((m) => m.elemento_id));
+    return elementos.filter((e) => ids.has(e.id));
+  }, [mantenimientos, elementos]);
+
+  const mantenimientosFiltrados = useMemo(() => {
+    if (!filterElementoId) return mantenimientos;
+    const id = parseInt(filterElementoId, 10);
+    return mantenimientos.filter((m) => m.elemento_id === id);
+  }, [mantenimientos, filterElementoId]);
 
   const getTipoColor = (tipo: string) => {
     switch (tipo) {
@@ -109,6 +151,45 @@ export function MantenimientosRealizadosList({
         </div>
       </div>
 
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="space-y-2 min-w-[220px]">
+          <Label>Filtrar por equipo</Label>
+          <Select value={filterElementoId} onValueChange={setFilterElementoId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos los equipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos los equipos</SelectItem>
+              {elementosConRealizados.map((e) => (
+                <SelectItem key={e.id} value={String(e.id)}>
+                  {e.serie}
+                  {e.marca ? ` - ${e.marca}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {filterElementoId && onBulkUpdateByElemento && mantenimientosFiltrados.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const id = parseInt(filterElementoId, 10);
+              const first = mantenimientosFiltrados[0];
+              setBulkEdit({
+                elemento_id: id,
+                label: elementLabel(first),
+                count: mantenimientosFiltrados.length,
+              });
+            }}
+            className="gap-2"
+          >
+            <Layers className="h-4 w-4" />
+            Editar todos los mostrados ({mantenimientosFiltrados.length})
+          </Button>
+        )}
+      </div>
+
       <div className="rounded-md border border-border bg-card dark:border-muted-foreground/30 dark:bg-card/95">
         <Table>
           <TableHeader>
@@ -122,81 +203,119 @@ export function MantenimientosRealizadosList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mantenimientos.length === 0 ? (
+            {mantenimientosFiltrados.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={6}
                   className="text-center text-muted-foreground"
                 >
-                  No hay mantenimientos realizados
+                  {filterElementoId
+                    ? "No hay mantenimientos para este equipo"
+                    : "No hay mantenimientos realizados"}
                 </TableCell>
               </TableRow>
             ) : (
-              mantenimientos.map((mantenimiento, idx) => (
-                <TableRow key={mantenimiento.id}>
-                  <TableCell>
-                    {mantenimiento.elemento
-                      ? `${mantenimiento.elemento.serie} - ${
-                          mantenimiento.elemento.marca || ""
-                        } ${mantenimiento.elemento.modelo || ""}`.trim()
-                      : `Elemento ID: ${mantenimiento.elemento_id}`}
-                  </TableCell>
-                  <TableCell>
-                    {format(
-                      new Date(mantenimiento.fecha_mantenimiento),
-                      "dd/MM/yyyy",
-                      { locale: es }
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${getTipoColor(
-                        mantenimiento.tipo
-                      )}`}
-                    >
-                      {mantenimiento.tipo}
-                    </span>
-                  </TableCell>
-                  <TableCell>{mantenimiento.responsable}</TableCell>
-                  <TableCell>
-                    {mantenimiento.costo
-                      ? new Intl.NumberFormat("es-CO", {
-                          style: "currency",
-                          currency: "COP",
-                        }).format(mantenimiento.costo)
-                      : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingMantenimiento(mantenimiento)}
-                        data-tour={
-                          idx === 0
-                            ? "mantenimientos-realizados-edit-first"
-                            : undefined
-                        }
-                      >
-                        Editar
-                      </Button>
+              mantenimientosFiltrados.map((mantenimiento, idx) => {
+                const countEsteEquipo = mantenimientos.filter(
+                  (m) => m.elemento_id === mantenimiento.elemento_id
+                ).length;
+                return (
+                  <TableRow key={mantenimiento.id}>
+                    <TableCell>
+                      {mantenimiento.elemento
+                        ? `${mantenimiento.elemento.serie} - ${
+                            mantenimiento.elemento.marca || ""
+                          } ${mantenimiento.elemento.modelo || ""}`.trim()
+                        : `Elemento ID: ${mantenimiento.elemento_id}`}
+                    </TableCell>
+                    <TableCell>
+                      {format(
+                        new Date(mantenimiento.fecha_mantenimiento),
+                        "dd/MM/yyyy",
+                        { locale: es }
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <span
-                        data-tour={
-                          idx === 0
-                            ? "mantenimientos-realizados-delete-first"
-                            : undefined
-                        }
+                        className={`px-2 py-1 rounded text-xs ${getTipoColor(
+                          mantenimiento.tipo
+                        )}`}
                       >
-                        <DeleteButton
-                          onConfirm={() =>
-                            onDeleteMantenimiento(mantenimiento.id)
-                          }
-                        />
+                        {mantenimiento.tipo}
                       </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell>{mantenimiento.responsable}</TableCell>
+                    <TableCell>
+                      {mantenimiento.costo
+                        ? new Intl.NumberFormat("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                          }).format(mantenimiento.costo)
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1"
+                              data-tour={
+                                idx === 0
+                                  ? "mantenimientos-realizados-edit-first"
+                                  : undefined
+                              }
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              Acciones
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setEditingMantenimiento(mantenimiento)
+                              }
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar solo este
+                            </DropdownMenuItem>
+                            {onBulkUpdateByElemento &&
+                              countEsteEquipo > 1 && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setBulkEdit({
+                                      elemento_id: mantenimiento.elemento_id,
+                                      label: elementLabel(mantenimiento),
+                                      count: countEsteEquipo,
+                                    })
+                                  }
+                                >
+                                  <Layers className="h-4 w-4 mr-2" />
+                                  Editar todos los de este equipo (
+                                  {countEsteEquipo})
+                                </DropdownMenuItem>
+                              )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <span
+                          data-tour={
+                            idx === 0
+                              ? "mantenimientos-realizados-delete-first"
+                              : undefined
+                          }
+                        >
+                          <DeleteButton
+                            onConfirm={() =>
+                              onDeleteMantenimiento(mantenimiento.id)
+                            }
+                          />
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -214,6 +333,16 @@ export function MantenimientosRealizadosList({
           subcategorias={subcategorias}
           hiddenFields={{ id: editingMantenimiento.id }}
           onClose={() => setEditingMantenimiento(null)}
+        />
+      )}
+
+      {bulkEdit && onBulkUpdateByElemento && (
+        <EditarTodosMantenimientosEquipoDialog
+          elementoId={bulkEdit.elemento_id}
+          elementoLabel={bulkEdit.label}
+          count={bulkEdit.count}
+          onConfirm={onBulkUpdateByElemento}
+          onClose={() => setBulkEdit(null)}
         />
       )}
     </div>

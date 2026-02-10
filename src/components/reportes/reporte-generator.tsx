@@ -5,13 +5,6 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { generateReport, type ReporteType } from "../../lib/report-handler";
@@ -21,7 +14,7 @@ type ReporteGeneratorProps = {
 };
 
 export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
-  const [tipoReporte, setTipoReporte] = useState<ReporteType>("inventario");
+  const [tipoReporte] = useState<ReporteType>("tickets");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [generando, setGenerando] = useState(false);
@@ -60,36 +53,17 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Tipo de Reporte */}
+        {/* Tipo de Reporte - solo tickets */}
         <div className="grid gap-2">
-          <Label htmlFor="tipo-reporte">Tipo de Reporte</Label>
-          <Select
-            value={tipoReporte}
-            onValueChange={(value: ReporteType) => setTipoReporte(value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona el tipo de reporte" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inventario">Inventario Completo</SelectItem>
-              <SelectItem value="movimientos">Movimientos Recientes</SelectItem>
-              <SelectItem value="prestamos-activos">
-                Préstamos Activos
-              </SelectItem>
-              <SelectItem value="categorias">
-                Categorías y Estadísticas
-              </SelectItem>
-              <SelectItem value="observaciones">Observaciones</SelectItem>
-              <SelectItem value="tickets">Tickets Guardados</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label>Tipo de Reporte</Label>
+          <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-muted/50">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            Tickets Guardados
+          </div>
         </div>
 
-        {/* Filtros de Fecha (para reportes que lo requieren) */}
-        {(tipoReporte === "movimientos" ||
-          tipoReporte === "observaciones" ||
-          tipoReporte === "tickets") && (
-          <div className="grid grid-cols-2 gap-4">
+        {/* Filtros de Fecha */}
+        <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="fecha-inicio">Fecha Inicio</Label>
               <Input
@@ -109,7 +83,6 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
               />
             </div>
           </div>
-        )}
 
         {/* Botones de Acción */}
         <div className="flex gap-2">
@@ -156,40 +129,10 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
   );
 }
 
-function getReporteDescription(tipo: ReporteType): string {
-  switch (tipo) {
-    case "inventario":
-      return "Listado completo de todos los elementos del inventario";
-    case "movimientos":
-      return "Historial de todos los movimientos de entrada y salida";
-    case "prestamos-activos":
-      return "Elementos actualmente en préstamo que no han sido devueltos";
-    case "categorias":
-      return "Listado de categorías con estadísticas de elementos y subcategorías";
-    case "observaciones":
-      return "Historial de observaciones realizadas a los elementos";
-    case "tickets":
-      return "Registro de tickets de préstamo guardados en el sistema";
-    default:
-      return "";
-  }
+function getReporteDescription(_tipo: ReporteType): string {
+  return "Registro de tickets de préstamo guardados en el sistema";
 }
 
-function getReporteIncludes(tipo: ReporteType): string {
-  switch (tipo) {
-    case "inventario":
-      return "Serie, marca, modelo, cantidad, ubicación, estados, categorías";
-    case "movimientos":
-      return "Ticket, fecha, tipo, elemento, funcionarios, fechas de devolución";
-    case "prestamos-activos":
-      return "Ticket, elemento, funcionario, fecha de préstamo, fecha estimada de devolución";
-    case "categorias":
-      return "Nombre, descripción, estado, total elementos, total subcategorías";
-    case "observaciones":
-      return "Fecha, descripción, elemento, serie, marca, modelo, categoría";
-    case "tickets":
-      return "Ticket, fechas, elemento, dependencias, funcionarios, motivo";
-    default:
-      return "";
-  }
+function getReporteIncludes(_tipo: ReporteType): string {
+  return "Ticket, fechas, elemento, dependencias, funcionarios, motivo";
 }

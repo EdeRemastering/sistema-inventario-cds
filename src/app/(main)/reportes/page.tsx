@@ -17,7 +17,7 @@ async function ReportesContent() {
       <div>
         <h1 className="text-2xl font-semibold">Reportes</h1>
         <p className="text-muted-foreground">
-          Genera reportes en PDF y Excel de inventario, movimientos y préstamos
+          Genera reportes en PDF y Excel de los tickets guardados
         </p>
       </div>
 

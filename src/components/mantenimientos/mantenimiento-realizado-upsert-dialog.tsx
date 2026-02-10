@@ -471,20 +471,31 @@ export function MantenimientoRealizadoUpsertDialog({
                 )}
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="tipo">Tipo</Label>
+                <Label htmlFor="tipo">Tipo de mantenimiento</Label>
                 <Select
                   value={watch("tipo")}
-                  onValueChange={(value) => setValue("tipo", value as "PREVENTIVO" | "CORRECTIVO")}
+                  onValueChange={(value) =>
+                    setValue("tipo", value as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO")
+                  }
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Ej: Preventivo" />
+                  <SelectTrigger id="tipo">
+                    <SelectValue placeholder="Selecciona el tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PREVENTIVO">Preventivo</SelectItem>
-                    <SelectItem value="CORRECTIVO">Correctivo</SelectItem>
-                    <SelectItem value="PREDICTIVO">Predictivo</SelectItem>
+                    <SelectItem value="PREVENTIVO">
+                      Preventivo — planificado para evitar fallas
+                    </SelectItem>
+                    <SelectItem value="CORRECTIVO">
+                      Correctivo — reparación tras una falla o daño
+                    </SelectItem>
+                    <SelectItem value="PREDICTIVO">
+                      Predictivo — según condición o inspección
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Puedes cambiar el tipo al editar si el mantenimiento pasó de preventivo a correctivo (ej. si el equipo se dañó).
+                </p>
                 {errors.tipo && (
                   <p className="text-red-500 text-sm">{errors.tipo.message}</p>
                 )}

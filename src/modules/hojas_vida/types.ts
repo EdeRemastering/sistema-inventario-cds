@@ -32,6 +32,7 @@ export type CambioElemento = {
   descripcion_cambio: string;
   tipo_cambio: "ACTUALIZACION" | "REPARACION" | "MEJORA" | "REEMPLAZO";
   usuario: string | null;
+  costo: number | null;
   creado_en: Date;
 };
 

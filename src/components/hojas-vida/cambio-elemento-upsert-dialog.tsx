@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +33,7 @@ const schema = z.object({
   descripcion_cambio: z.string().min(1, "Descripción requerida"),
   tipo_cambio: z.enum(["ACTUALIZACION", "REPARACION", "MEJORA", "REEMPLAZO"]),
   usuario: z.string().max(50).optional().or(z.literal("")),
+  costo: z.string().optional().or(z.literal("")),
 });
 
 type CambioFormValues = z.infer<typeof schema>;
@@ -53,6 +55,20 @@ function formatDateForInput(d: Date | string | undefined): string {
   return date.toISOString().slice(0, 10);
 }
 
+function getUsuarioFromSession(
+  session: ReturnType<typeof useSession>["data"]
+): string {
+  const nombre = (session?.user as { nombre?: string })?.nombre ?? "";
+  const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
+  const full = `${nombre} ${apellido}`.trim();
+  return (
+    full ||
+    session?.user?.name ||
+    (session?.user as { username?: string })?.username ||
+    ""
+  );
+}
+
 export function CambioElementoUpsertDialog({
   serverAction,
   create,
@@ -62,6 +78,8 @@ export function CambioElementoUpsertDialog({
   onClose,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  const usuarioSesion = getUsuarioFromSession(session);
 
   const {
     register,
@@ -79,9 +97,19 @@ export function CambioElementoUpsertDialog({
         : new Date().toISOString().slice(0, 10),
       descripcion_cambio: defaultValues?.descripcion_cambio ?? "",
       tipo_cambio: defaultValues?.tipo_cambio ?? "ACTUALIZACION",
-      usuario: defaultValues?.usuario ?? "",
+      usuario: defaultValues?.usuario ?? usuarioSesion ?? "",
+      costo: defaultValues?.costo != null ? String(defaultValues.costo) : "",
     },
   });
+
+  // Al abrir el diálogo en creación, rellenar "Registrado por" con el usuario en sesión
+  useEffect(() => {
+    if (!create || !open) return;
+    const current = watch("usuario");
+    if (!current && usuarioSesion) {
+      setValue("usuario", usuarioSesion);
+    }
+  }, [create, open, usuarioSesion, setValue, watch]);
 
   const onSubmit = async (data: CambioFormValues) => {
     try {
@@ -91,6 +119,8 @@ export function CambioElementoUpsertDialog({
       formData.append("descripcion_cambio", data.descripcion_cambio);
       formData.append("tipo_cambio", data.tipo_cambio);
       formData.append("usuario", data.usuario ?? "");
+      if (data.costo && data.costo.trim() !== "")
+        formData.append("costo", data.costo.trim());
       if (hiddenFields?.id) formData.append("id", String(hiddenFields.id));
 
       await serverAction(formData);
@@ -173,8 +203,27 @@ export function CambioElementoUpsertDialog({
               )}
             </div>
             <div className="grid gap-1">
-              <Label>Usuario (opcional)</Label>
-              <Input {...register("usuario")} placeholder="Ej: Juan Pérez" />
+              <Label>Registrado por</Label>
+              <Input
+                {...register("usuario")}
+                placeholder="Se completa con tu usuario de sesión"
+                title="Se rellena automáticamente con la persona que tiene la sesión iniciada. Puedes editarlo si registras el cambio en nombre de otro."
+              />
+            </div>
+            <div className="grid gap-1">
+              <Label htmlFor="costo-cambio">Costo (COP)</Label>
+              <Input
+                id="costo-cambio"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="Ej: 150000 — se suma a los costos de mantenimiento"
+                {...register("costo")}
+              />
+              <p className="text-xs text-muted-foreground">
+                Los costos de cambios (mejoras, reparaciones no programadas) se
+                suman a los costos de mantenimiento en reportes y KPIs.
+              </p>
             </div>
             <DialogFooter>
               <Button

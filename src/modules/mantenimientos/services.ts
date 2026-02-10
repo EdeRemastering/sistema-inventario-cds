@@ -376,6 +376,28 @@ export function createMantenimientoRealizado(
   }) as Promise<MantenimientoRealizado>;
 }
 
+/**
+ * Actualiza todos los mantenimientos realizados de un mismo equipo (elemento).
+ * Útil para cambiar el tipo en bloque (ej. de preventivo a correctivo).
+ */
+export async function updateMantenimientosRealizadosByElemento(
+  elemento_id: number,
+  data: Pick<UpdateMantenimientoRealizadoInput, "tipo" | "responsable">
+): Promise<{ updated: number }> {
+  const ids = await prisma.mantenimientos_realizados.findMany({
+    where: { elemento_id },
+    select: { id: true },
+  });
+  const payload = mapUpdateRealizadoInputToPrisma(data as UpdateMantenimientoRealizadoInput);
+  for (const { id } of ids) {
+    await prisma.mantenimientos_realizados.update({
+      where: { id },
+      data: payload,
+    });
+  }
+  return { updated: ids.length };
+}
+
 export function updateMantenimientoRealizado(
   id: number,
   data: UpdateMantenimientoRealizadoInput

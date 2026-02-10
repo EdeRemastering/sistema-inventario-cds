@@ -26,6 +26,10 @@ export type MantenimientosKpis = {
   correctivosPeriodo: number;
   predictivosPeriodo: number;
   costoPeriodo: number;
+  /** Costo de cambios de elementos (mejoras/reparaciones no programadas) en el periodo */
+  costoCambiosPeriodo: number;
+  /** Costo total = mantenimientos realizados + cambios */
+  costoTotalPeriodo: number;
 
   topResponsablesPeriodo: Array<{ responsable: string; total: number }>;
   tendenciaMensual: Array<{ name: string; realizados: number }>;
@@ -131,6 +135,7 @@ export async function getMantenimientosKpis(input?: {
       correctivosPeriodo,
       predictivosPeriodo,
       costoAggPeriodo,
+      costoCambiosAggPeriodo,
       topResponsablesRaw,
       realizadosTrendRows,
       realizadosYearRows,
@@ -177,6 +182,13 @@ export async function getMantenimientosKpis(input?: {
         where: { ...realizadosBaseWhere, fecha_mantenimiento: { gte: from, lt: toExclusive } },
         _sum: { costo: true },
       }),
+      prisma.cambios_elementos.aggregate({
+        where: {
+          fecha_cambio: { gte: from, lt: toExclusive },
+          ...(hasElementoFilters ? { hoja_vida: { elemento: elementoWhere } } : {}),
+        },
+        _sum: { costo: true },
+      }),
       prisma.mantenimientos_realizados.findMany({
         where: { ...realizadosBaseWhere, fecha_mantenimiento: { gte: from, lt: toExclusive } },
         select: { responsable: true },
@@ -204,6 +216,8 @@ export async function getMantenimientosKpis(input?: {
       totalBase > 0 ? Math.round((realizados / totalBase) * 1000) / 10 : 0;
 
     const costoPeriodo = Number(costoAggPeriodo._sum.costo ?? 0);
+    const costoCambiosPeriodo = Number(costoCambiosAggPeriodo._sum.costo ?? 0);
+    const costoTotalPeriodo = costoPeriodo + costoCambiosPeriodo;
 
     const responsableCounts = new Map<string, number>();
     for (const r of topResponsablesRaw) {
@@ -286,6 +300,8 @@ export async function getMantenimientosKpis(input?: {
       correctivosPeriodo,
       predictivosPeriodo,
       costoPeriodo,
+      costoCambiosPeriodo,
+      costoTotalPeriodo,
       topResponsablesPeriodo,
       tendenciaMensual,
       realizadosPorMesAnual,

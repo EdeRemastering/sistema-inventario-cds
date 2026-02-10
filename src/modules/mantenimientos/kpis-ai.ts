@@ -146,7 +146,7 @@ export async function getMantenimientosAiTrendAnalysis(kpis: MantenimientosKpis)
       preventivo: kpis.preventivosPeriodo,
       correctivo: kpis.correctivosPeriodo,
       predictivo: kpis.predictivosPeriodo,
-      costoTotal: kpis.costoPeriodo,
+      costoTotal: kpis.costoTotalPeriodo,
       topResponsables: kpis.topResponsablesPeriodo,
     },
     charts: {

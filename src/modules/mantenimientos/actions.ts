@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
+import { z } from "zod";
 import { formDataToObject } from "../../utils/form";
 import {
   mantenimientoProgramadoCreateSchema,
@@ -16,6 +17,7 @@ import {
   deleteMantenimientoProgramado,
   createMantenimientoRealizado,
   updateMantenimientoRealizado,
+  updateMantenimientosRealizadosByElemento,
   deleteMantenimientoRealizado,
   countMantenimientosPendientes,
   updateEstadoMantenimiento,
@@ -161,6 +163,39 @@ export async function actionDeleteMantenimientoRealizado(id: number) {
     entity: "mantenimiento_realizado",
     entityId: id,
     details: `Mantenimiento realizado eliminado: ${id}`,
+  });
+  revalidatePath("/mantenimientos");
+}
+
+const bulkUpdateRealizadosByElementoSchema = z.object({
+  elemento_id: z.coerce.number().int().positive(),
+  tipo: z.enum(["PREVENTIVO", "CORRECTIVO", "PREDICTIVO"]),
+  responsable: z.string().max(100).optional().or(z.literal("")),
+});
+
+/**
+ * Aplica el mismo tipo (y opcionalmente responsable) a todos los mantenimientos
+ * realizados de un mismo equipo. Útil para pasar de preventivo a correctivo en bloque.
+ */
+export async function actionBulkUpdateMantenimientosRealizadosByElemento(
+  formData: FormData
+) {
+  const parsed = bulkUpdateRealizadosByElementoSchema.safeParse(
+    formDataToObject(formData)
+  );
+  if (!parsed.success) throw new Error("Datos inválidos");
+
+  const { elemento_id, tipo, responsable } = parsed.data;
+  const { updated } = await updateMantenimientosRealizadosByElemento(elemento_id, {
+    tipo,
+    ...(responsable !== undefined && responsable !== "" && { responsable }),
+  });
+
+  await logAction({
+    action: "UPDATE",
+    entity: "mantenimiento_realizado",
+    entityId: elemento_id,
+    details: `Actualización masiva: ${updated} mantenimiento(s) del elemento ${elemento_id} → tipo ${tipo}`,
   });
   revalidatePath("/mantenimientos");
 }

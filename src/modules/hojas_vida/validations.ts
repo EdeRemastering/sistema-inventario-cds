@@ -48,6 +48,7 @@ export const cambioElementoCreateSchema = z.object({
   descripcion_cambio: z.string().min(1, "Descripción requerida"),
   tipo_cambio: z.enum(["ACTUALIZACION", "REPARACION", "MEJORA", "REEMPLAZO"]),
   usuario: z.string().max(50).optional().or(z.literal("")),
+  costo: z.coerce.number().nonnegative().optional().or(z.literal("")),
 });
 
 export const cambioElementoUpdateSchema = cambioElementoCreateSchema.partial().extend({

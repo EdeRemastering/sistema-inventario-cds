@@ -528,13 +528,14 @@ model hojas_vida {
 }
 
 model cambios_elementos {
-  id            Int         @id @default(autoincrement())
-  hoja_vida_id  Int
-  fecha_cambio  DateTime    @db.Date
-  descripcion_cambio String @db.Text
-  tipo_cambio   TipoCambio
-  usuario       String?     @db.VarChar(50)
-  creado_en     DateTime    @default(now()) @db.Timestamp(0)
+  id                Int       @id @default(autoincrement())
+  hoja_vida_id      Int
+  fecha_cambio      DateTime  @db.Date
+  descripcion_cambio String   @db.Text
+  tipo_cambio       TipoCambio
+  usuario           String?   @db.VarChar(50)
+  costo             Decimal?  @db.Decimal(10, 2)
+  creado_en         DateTime  @default(now()) @db.Timestamp(0)
 
   hoja_vida hojas_vida @relation(fields: [hoja_vida_id], references: [id], onDelete: Cascade)
 

@@ -78,6 +78,7 @@ function mapCreateCambioInputToPrisma(
     descripcion_cambio: data.descripcion_cambio,
     tipo_cambio: data.tipo_cambio,
     usuario: data.usuario ?? null,
+    costo: data.costo ?? null,
   };
 }
 
@@ -94,6 +95,7 @@ function mapUpdateCambioInputToPrisma(
   if (data.descripcion_cambio !== undefined) payload.descripcion_cambio = data.descripcion_cambio;
   if (data.tipo_cambio !== undefined) payload.tipo_cambio = data.tipo_cambio;
   if (data.usuario !== undefined) payload.usuario = data.usuario ?? null;
+  if (data.costo !== undefined) payload.costo = data.costo ?? null;
 
   return payload;
 }

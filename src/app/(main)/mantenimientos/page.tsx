@@ -9,6 +9,7 @@ import {
   actionDeleteMantenimientoProgramado,
   actionCreateMantenimientoRealizado,
   actionUpdateMantenimientoRealizado,
+  actionBulkUpdateMantenimientosRealizadosByElemento,
   actionDeleteMantenimientoRealizado,
   actionCambiarEstadoMantenimiento,
   actionMarcarSemanaComoRealizada,
@@ -130,6 +131,7 @@ async function MantenimientosContent() {
             subcategorias={options.subcategorias}
             onCreateMantenimiento={actionCreateMantenimientoRealizado}
             onUpdateMantenimiento={actionUpdateMantenimientoRealizado}
+            onBulkUpdateByElemento={actionBulkUpdateMantenimientosRealizadosByElemento}
             onDeleteMantenimiento={actionDeleteMantenimientoRealizado}
           />
         </TabsContent>

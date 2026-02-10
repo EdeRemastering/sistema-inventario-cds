@@ -96,6 +96,32 @@ export function HojaVidaElementoDetail({
         </p>
       </div>
 
+      <Card className="bg-muted/40 border-muted-foreground/20">
+        <CardContent className="pt-4 pb-4">
+          <p className="text-sm font-medium mb-2">¿Qué es cada cosa?</p>
+          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+            <li>
+              <strong className="text-foreground">Observación:</strong> algo que
+              se observa o se encuentra en el elemento (nota, hallazgo,
+              condición). No implica que se haya hecho una intervención.
+            </li>
+            <li>
+              <strong className="text-foreground">Cambio:</strong> algo que el
+              equipo
+              <em> sufrió</em> o se le hizo (ej. se le cambió el cable,
+              reparación, mejora, reemplazo). Puede hacerse sin estar dentro de
+              un mantenimiento programado.
+            </li>
+            <li>
+              <strong className="text-foreground">Mantenimiento:</strong>{" "}
+              actividad formal de mantenimiento (preventivo, correctivo,
+              predictivo) que se programa en el cronograma o se registra como
+              realizada en Mantenimientos.
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="datos" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="datos">Datos</TabsTrigger>
@@ -311,6 +337,15 @@ export function HojaVidaElementoDetail({
                           {format(parseDate(c.fecha_cambio), "dd/MM/yyyy", {
                             locale: es,
                           })}
+                          {c.costo != null && Number(c.costo) > 0 && (
+                            <span className="ml-2">
+                              · Costo:{" "}
+                              {new Intl.NumberFormat("es-CO", {
+                                style: "currency",
+                                currency: "COP",
+                              }).format(Number(c.costo))}
+                            </span>
+                          )}
                         </p>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
@@ -329,6 +364,7 @@ export function HojaVidaElementoDetail({
                               descripcion_cambio: c.descripcion_cambio,
                               tipo_cambio: c.tipo_cambio,
                               usuario: c.usuario ?? "",
+                              costo: c.costo != null ? Number(c.costo) : null,
                             }}
                             hiddenFields={{ id: c.id }}
                           />

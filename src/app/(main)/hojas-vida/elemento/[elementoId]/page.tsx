@@ -55,7 +55,12 @@ export default async function HojaVidaElementoPage({ params }: PageProps) {
 
   if (!elemento) notFound();
 
-  const cambios = hojaVida?.cambios ?? [];
+  const cambios = (hojaVida?.cambios ?? []).map(
+    (c: CambioElemento & { costo?: unknown }) => ({
+      ...c,
+      costo: c.costo != null ? Number(c.costo) : null,
+    })
+  );
   const historial: HistorialItem[] = [
     ...observaciones.map((o: Observacion) => ({
       tipo: "observacion" as const,

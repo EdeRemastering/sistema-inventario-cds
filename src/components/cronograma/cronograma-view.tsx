@@ -33,6 +33,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
+import { getWeekKeyFromDate } from "@/lib/mantenimientos-semanas";
 import { MarcarSemanaRealizadaDialog } from "../mantenimientos/marcar-semana-realizada-dialog";
 
 type SedeOption = {
