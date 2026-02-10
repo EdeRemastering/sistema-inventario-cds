@@ -7,11 +7,6 @@ import {
   actionUpdateUbicacion,
   actionDeleteUbicacion,
 } from "../../../modules/ubicaciones/actions";
-import {
-  actionCreateElemento,
-  actionUpdateElemento,
-  actionDeleteElemento,
-} from "../../../modules/elementos/actions";
 import { UbicacionesList } from "../../../components/ubicaciones/ubicaciones-list";
 import { UbicacionesSkeleton } from "../../../components/skeletons";
 import { Suspense } from "react";
@@ -34,9 +29,6 @@ async function UbicacionesContent() {
       onCreateUbicacion={actionCreateUbicacion}
       onUpdateUbicacion={actionUpdateUbicacion}
       onDeleteUbicacion={actionDeleteUbicacion}
-      onCreateElemento={actionCreateElemento}
-      onUpdateElemento={actionUpdateElemento}
-      onDeleteElemento={actionDeleteElemento}
     />
   );
 }
