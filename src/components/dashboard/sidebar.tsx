@@ -48,11 +48,11 @@ type NavItem = {
 
 const items: NavItem[] = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, tourId: "nav-inicio" },
-  { href: "/tutorial", label: "Tutorial", icon: CircleHelp, tourId: "nav-tutorial" },
+  { href: "/usuarios", label: "Usuarios", icon: Users, tourId: "nav-usuarios" },
+  { href: "/ubicaciones", label: "Ubicaciones", icon: MapPin, tourId: "nav-ubicaciones" },
   { href: "/categorias", label: "Categorías", icon: FolderTree, tourId: "nav-categorias" },
   { href: "/subcategorias", label: "Subcategorías", icon: Boxes, tourId: "nav-subcategorias" },
-  { href: "/ubicaciones", label: "Ubicaciones", icon: MapPin, tourId: "nav-ubicaciones" },
-  { href: "/elementos", label: "Elementos", icon: Package2, tourId: "nav-elementos" },
+  { href: "/elementos", label: "Elementos", icon: Package2, tourId: "nav-elementos" },  
   {
     href: "/mantenimientos",
     label: "Mantenimientos",
@@ -60,13 +60,13 @@ const items: NavItem[] = [
     badge: "mantenimientos",
     tourId: "nav-mantenimientos",
   },
-  { href: "/kpis/mantenimientos", label: "KPIs", icon: LineChart, tourId: "nav-kpis" },
   { href: "/hojas-vida", label: "Hojas de Vida", icon: FileCheck, tourId: "nav-hojas-vida" },
   { href: "/observaciones", label: "Observaciones", icon: FileText, tourId: "nav-observaciones" },
   { href: "/tickets", label: "Tickets", icon: Ticket, tourId: "nav-tickets" },
+  { href: "/kpis/mantenimientos", label: "KPIs", icon: LineChart, tourId: "nav-kpis" },
   { href: "/reportes", label: "Reportes", icon: BarChart3, tourId: "nav-reportes" },
-  { href: "/usuarios", label: "Usuarios", icon: Users, tourId: "nav-usuarios" },
   { href: "/logs", label: "Logs", icon: ListChecks, tourId: "nav-logs" },
+  { href: "/tutorial", label: "Tutorial", icon: CircleHelp, tourId: "nav-tutorial" },
 ];
 
 export function DashboardSidebar() {
