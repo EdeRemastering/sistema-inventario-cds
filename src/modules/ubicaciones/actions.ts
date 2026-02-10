@@ -23,7 +23,10 @@ export async function actionCreateUbicacion(formData: FormData) {
     throw new Error(`Ya existe una ubicación con el código "${parsed.data.codigo}"`);
   }
 
-  const ubicacion = await createUbicacion(parsed.data);
+  const ubicacion = await createUbicacion({
+    ...parsed.data,
+    capacidad: parsed.data.capacidad ?? null,
+  });
   await logAction({
     action: "CREATE",
     entity: "ubicacion",

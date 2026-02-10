@@ -4,6 +4,9 @@ export type Ubicacion = {
   nombre: string;
   sede_id: number;
   activo: boolean;
+  capacidad: number | null;
+  ancho_metros: number | null;
+  largo_metros: number | null;
   creado_en: Date;
   actualizado_en: Date;
   sede?: {

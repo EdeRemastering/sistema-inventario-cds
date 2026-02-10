@@ -5,6 +5,9 @@ export const ubicacionCreateSchema = z.object({
   nombre: z.string().min(1, "Nombre requerido").max(100),
   sede_id: z.coerce.number().int().positive("Sede requerida"),
   activo: z.coerce.boolean().default(true),
+  capacidad: z.coerce.number().int().min(0).optional().nullable(),
+  ancho_metros: z.coerce.number().min(0).optional().nullable(),
+  largo_metros: z.coerce.number().min(0).optional().nullable(),
 });
 
 export const ubicacionUpdateSchema = ubicacionCreateSchema.partial().extend({
