@@ -20,36 +20,49 @@ const optionalDateStringToDate = z
     return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
   });
 
-export const hojaVidaCreateSchema = z.object({
-  elemento_id: z.coerce.number().int().positive(),
-  fecha_dilegenciamiento: dateStringToDate,
-  tipo_elemento: z.enum(["EQUIPO", "RECURSO_DIDACTICO"]),
-  area_ubicacion: z.string().max(100).optional().or(z.literal("")),
-  responsable: z.string().max(100).optional().or(z.literal("")),
-  especificaciones_tecnicas: z.record(z.string(), z.unknown()).optional(),
-  descripcion: z.string().optional(),
-  requerimientos_funcionamiento: z.string().optional(),
-  requerimientos_seguridad: z.string().optional(),
-  rutina_mantenimiento: z
-    .enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"])
-    .optional()
-    .or(z.literal("")),
-  fecha_actualizacion: optionalDateStringToDate.optional(),
-  activo: z.coerce.boolean().default(true),
-});
+export const hojaVidaCreateSchema = z
+  .object({
+    elemento_id: z.coerce.number().int().positive(),
+    fecha_dilegenciamiento: dateStringToDate,
+    tipo_elemento: z.enum(["EQUIPO", "RECURSO_DIDACTICO"]),
+    area_ubicacion: z.string().max(100).optional().or(z.literal("")),
+    responsable: z.string().max(100).optional().or(z.literal("")),
+    especificaciones_tecnicas: z.record(z.string(), z.unknown()).optional(),
+    descripcion: z.string().optional(),
+    requerimientos_funcionamiento: z.string().optional(),
+    requerimientos_seguridad: z.string().optional(),
+    rutina_mantenimiento: z
+      .enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"])
+      .optional()
+      .or(z.literal("")),
+    fecha_actualizacion: optionalDateStringToDate.optional(),
+    activo: z.coerce.boolean().default(true),
+  })
+  .refine(
+    (data) => {
+      if (!data.fecha_actualizacion || !data.fecha_dilegenciamiento) return true;
+      return data.fecha_actualizacion >= data.fecha_dilegenciamiento;
+    },
+    { message: "La fecha de actualización debe ser mayor o igual a la fecha de diligenciamiento", path: ["fecha_actualizacion"] }
+  );
 
 export const hojaVidaUpdateSchema = hojaVidaCreateSchema.partial().extend({
   id: z.number().int().positive(),
 });
 
-export const cambioElementoCreateSchema = z.object({
-  hoja_vida_id: z.coerce.number().int().positive(),
-  fecha_cambio: z.coerce.date(),
-  descripcion_cambio: z.string().min(1, "Descripción requerida"),
-  tipo_cambio: z.enum(["ACTUALIZACION", "REPARACION", "MEJORA", "REEMPLAZO"]),
-  usuario: z.string().max(50).optional().or(z.literal("")),
-  costo: z.coerce.number().nonnegative().optional().or(z.literal("")),
-});
+export const cambioElementoCreateSchema = z
+  .object({
+    hoja_vida_id: z.coerce.number().int().positive(),
+    fecha_cambio: z.coerce.date(),
+    descripcion_cambio: z.string().min(1, "Descripción requerida"),
+    tipo_cambio: z.enum(["ACTUALIZACION", "REPARACION", "MEJORA", "REEMPLAZO"]),
+    usuario: z.string().max(50).optional().or(z.literal("")),
+    costo: z.coerce.number().nonnegative().optional().or(z.literal("")),
+  })
+  .refine(
+    (data) => data.fecha_cambio <= new Date(),
+    { message: "La fecha del cambio no puede ser futura", path: ["fecha_cambio"] }
+  );
 
 export const cambioElementoUpdateSchema = cambioElementoCreateSchema.partial().extend({
   id: z.number().int().positive(),

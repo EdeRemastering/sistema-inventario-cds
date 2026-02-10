@@ -18,18 +18,23 @@ export const mantenimientoProgramadoUpdateSchema = mantenimientoProgramadoCreate
   id: z.number().int().positive(),
 });
 
-export const mantenimientoRealizadoCreateSchema = z.object({
-  elemento_id: z.coerce.number().int().positive(),
-  programacion_id: z.coerce.number().int().positive().optional().or(z.literal("")),
-  fecha_mantenimiento: z.coerce.date(),
-  tipo: z.enum(["PREVENTIVO", "CORRECTIVO", "PREDICTIVO"]),
-  descripcion: z.string().min(1, "Descripción requerida"),
-  averias_encontradas: z.string().optional(),
-  repuestos_utilizados: z.string().optional(),
-  responsable: z.string().max(100).optional().or(z.literal("")),
-  costo: z.coerce.number().nonnegative().optional().or(z.literal("")),
-  creado_por: z.string().optional(),
-});
+export const mantenimientoRealizadoCreateSchema = z
+  .object({
+    elemento_id: z.coerce.number().int().positive(),
+    programacion_id: z.coerce.number().int().positive().optional().or(z.literal("")),
+    fecha_mantenimiento: z.coerce.date(),
+    tipo: z.enum(["PREVENTIVO", "CORRECTIVO", "PREDICTIVO"]),
+    descripcion: z.string().min(1, "Descripción requerida"),
+    averias_encontradas: z.string().optional(),
+    repuestos_utilizados: z.string().optional(),
+    responsable: z.string().max(100).optional().or(z.literal("")),
+    costo: z.coerce.number().nonnegative().optional().or(z.literal("")),
+    creado_por: z.string().optional(),
+  })
+  .refine(
+    (data) => data.fecha_mantenimiento <= new Date(),
+    { message: "La fecha de mantenimiento realizado no puede ser futura", path: ["fecha_mantenimiento"] }
+  );
 
 export const mantenimientoRealizadoUpdateSchema = mantenimientoRealizadoCreateSchema.partial().extend({
   id: z.number().int().positive(),
