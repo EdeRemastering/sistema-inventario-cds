@@ -1,0 +1,66 @@
+export type TicketElemento = {
+  id: number;
+  ticket_id: number;
+  elemento_id: number;
+  cantidad: number;
+  elemento_nombre: string | null;
+  serie: string | null;
+  marca_modelo: string | null;
+  creado_en: Date;
+  elemento?: {
+    id: number;
+    serie: string;
+    marca?: string | null;
+    modelo?: string | null;
+    categoria: {
+      nombre: string;
+    };
+    subcategoria?: {
+      nombre: string;
+    } | null;
+  };
+};
+
+export type PrestamoGuardado = {
+  id: number;
+  numero_ticket: string;
+  fecha_salida: Date;
+  fecha_estimada_devolucion: Date | null;
+  ubicacion_id?: number | null;
+  ubicacion?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    sede?: {
+      id: number;
+      nombre: string;
+      ciudad: string;
+      municipio: string | null;
+    };
+  } | null;
+  dependencia_entrega: string | null;
+  persona_entrega_nombre: string | null;
+  persona_entrega_apellido: string | null;
+  firma_funcionario_entrega: string | null;
+  dependencia_recibe: string | null;
+  persona_recibe_nombre: string | null;
+  persona_recibe_apellido: string | null;
+  firma_funcionario_recibe: string | null;
+  motivo: string | null;
+  orden_numero: string | null;
+  fecha_guardado: Date | null;
+  usuario_guardado: string | null;
+  ticket_elementos?: TicketElemento[];
+};
+
+export type CreatePrestamoInput = Omit<PrestamoGuardado, "id" | "ticket_elementos"> & {
+  ticket_elementos?: Omit<TicketElemento, "id" | "ticket_id" | "creado_en">[];
+};
+
+export type ElementoFormData = {
+  elemento_id: number;
+  cantidad: number;
+  elemento_nombre?: string;
+  serie?: string;
+  marca_modelo?: string;
+};

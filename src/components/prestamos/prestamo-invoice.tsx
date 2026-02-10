@@ -1,0 +1,1296 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { FileText, Download, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { SignatureDisplay } from "../ui/signature-display";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import { CDSLogo } from "../ui/cds-logo";
+import { toast } from "sonner";
+
+/**
+ * Función auxiliar para cargar una firma como imagen con máxima calidad y resolución
+ */
+async function loadSignatureImage(
+  signatureUrl: string
+): Promise<string | null> {
+  if (!signatureUrl) return null;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Crear imagen optimizada para jsPDF con máxima resolución
+      const targetWidth = 200; // Resolución muy alta para mejor calidad
+      const targetHeight = 100;
+      const ratio = Math.min(
+        targetWidth / img.width,
+        targetHeight / img.height
+      );
+
+      // Crear canvas con resolución muy alta para jsPDF
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      if (ctx) {
+        // Configuraciones específicas para máxima calidad en jsPDF
+        ctx.imageSmoothingEnabled = true; // Activar para mejor calidad en PDF
+        ctx.imageSmoothingQuality = "high";
+
+        // Configurar contexto para máxima calidad
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Dibujar con configuración optimizada para PDF
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Usar PNG con máxima calidad para jsPDF
+        resolve(canvas.toDataURL("image/png", 1.0));
+      } else {
+        reject(new Error("No se pudo crear el contexto del canvas"));
+      }
+    };
+    img.onerror = () => reject(new Error("Error al cargar la firma"));
+    img.src = signatureUrl;
+  });
+}
+
+/**
+ * Función auxiliar para cargar la imagen del logo CDS
+ */
+async function loadCDSLogo(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Redimensionar la imagen con calidad máxima (sin comprimir)
+      const maxWidth = 100;
+      const maxHeight = 100;
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      if (ctx) {
+        // Mejorar la calidad del renderizado
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png", 1.0)); // Máxima calidad PNG
+      } else {
+        reject(new Error("No se pudo crear el contexto del canvas"));
+      }
+    };
+    img.onerror = () => reject(new Error("Error al cargar la imagen del logo"));
+    img.src = "/cds-logo.png";
+  });
+}
+
+type PrestamoInvoiceProps = {
+  prestamo: {
+    id: number;
+    numero_ticket: string;
+    fecha_salida: Date;
+    fecha_estimada_devolucion?: Date | null;
+    elemento?: string | null; // Mantener para compatibilidad con tickets antiguos
+    serie?: string | null; // Mantener para compatibilidad con tickets antiguos
+    marca_modelo?: string | null; // Mantener para compatibilidad con tickets antiguos
+    cantidad?: number; // Mantener para compatibilidad con tickets antiguos
+    dependencia_entrega?: string | null;
+    persona_entrega_nombre?: string | null;
+    persona_entrega_apellido?: string | null;
+    firma_funcionario_entrega?: string | null;
+    dependencia_recibe?: string | null;
+    persona_recibe_nombre?: string | null;
+    persona_recibe_apellido?: string | null;
+    firma_funcionario_recibe?: string | null;
+    motivo?: string | null;
+    orden_numero?: string | null;
+    fecha_guardado?: Date | null;
+    usuario_guardado?: string | null;
+    ticket_elementos?: Array<{
+      id: number;
+      cantidad: number;
+      elemento_nombre?: string | null;
+      serie?: string | null;
+      marca_modelo?: string | null;
+      elemento?: {
+        id: number;
+        serie: string;
+        marca?: string | null;
+        modelo?: string | null;
+        categoria: {
+          nombre: string;
+        };
+        subcategoria?: {
+          nombre: string;
+        } | null;
+      };
+    }>;
+    // Información de devolución (si existe)
+    fecha_real_devolucion?: Date | null;
+    devuelto_por?: string | null;
+    recibido_por?: string | null;
+    firma_devuelve?: string | null;
+    firma_recibe_devolucion?: string | null;
+    hora_devolucion?: Date | null;
+  };
+};
+
+export function PrestamoInvoice({ prestamo }: PrestamoInvoiceProps) {
+  const [showPreview, setShowPreview] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return "N/A";
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const generatePDFAlternative = async () => {
+    console.log("Usando método alternativo para generar PDF...");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    let y = 20;
+
+    // Marco unificado para todo el documento
+    pdf.setDrawColor(0, 0, 0); // Negro
+    pdf.setLineWidth(0.3);
+
+    // Calcular la altura total del documento
+    let totalHeight = 40; // Header
+    totalHeight += 45; // Info ticket
+    totalHeight += 15; // Espacio
+
+    // Altura de elementos (ajustada para múltiples elementos)
+    if (prestamo.ticket_elementos && prestamo.ticket_elementos.length > 0) {
+      totalHeight += 20; // Título de elementos
+      totalHeight += prestamo.ticket_elementos.length * 35; // 35mm por elemento
+      totalHeight += (prestamo.ticket_elementos.length - 1) * 5; // Espacio entre elementos
+    } else {
+      totalHeight += 50; // Info elemento (tickets antiguos)
+    }
+
+    totalHeight += 15; // Espacio
+    totalHeight += 100; // Dependencias y Personas (aumentado para incluir firmas reales)
+    totalHeight += 15; // Espacio
+
+    // Información de devolución (si existe)
+    if (
+      prestamo.fecha_real_devolucion ||
+      prestamo.devuelto_por ||
+      prestamo.recibido_por
+    ) {
+      totalHeight += 100; // Información de devolución (aumentado para firmas reales)
+      totalHeight += 10; // Espacio
+    }
+
+    if (prestamo.motivo) {
+      totalHeight += 35; // Motivo
+      totalHeight += 10; // Espacio
+    }
+    totalHeight += 20; // Footer
+    totalHeight += 20; // Espacio final
+
+    // Dibujar el marco unificado
+    pdf.rect(15, 10, 180, totalHeight, "S");
+
+    // Logo CDS (imagen real)
+    try {
+      const logoDataUrl = await loadCDSLogo();
+      pdf.addImage(logoDataUrl, "PNG", 20, 18, 25, 25);
+    } catch (error) {
+      console.warn(
+        "No se pudo cargar el logo, usando texto como fallback:",
+        error
+      );
+      // Fallback a texto si no se puede cargar la imagen
+      pdf.setFontSize(28);
+      pdf.setTextColor(0, 0, 0); // Negro
+      pdf.setFont("helvetica", "bold");
+      pdf.text("CDS", 25, 28);
+    }
+
+    // Título principal (alineado verticalmente con el centro del logo)
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("SISTEMA DE INVENTARIO", 70, 25);
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("COMPROBANTE DE PRÉSTAMO", 70, 32);
+
+    // Número de ticket debajo del título (alineado verticalmente)
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.text(`Préstamo: ${prestamo.numero_ticket}`, 70, 39);
+
+    y = 55;
+
+    // Información del ticket - sin borde individual (marco unificado)
+    // Línea separadora horizontal
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0); // Negro
+    pdf.text("INFORMACIÓN DEL TICKET", 20, y);
+
+    // Línea separadora debajo del título
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+
+    // Fecha de inicio (antes: fecha de salida)
+    pdf.text(`Fecha de inicio:`, 20, y);
+    pdf.text(`${formatDate(prestamo.fecha_salida)}`, 65, y);
+    y += 6;
+
+    // Fecha de devolución debajo de la fecha de salida
+    pdf.text(`Fecha Est. Devolución:`, 20, y);
+    pdf.text(`${formatDate(prestamo.fecha_estimada_devolucion)}`, 65, y);
+    y += 6;
+
+    if (prestamo.orden_numero) {
+      pdf.text(`Orden Número:`, 20, y);
+      pdf.text(`${prestamo.orden_numero}`, 65, y);
+      y += 6;
+    }
+
+    y += 15;
+
+    // Información de los elementos - sin borde individual (marco unificado)
+    // Línea separadora horizontal
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0); // Negro
+    pdf.text("INFORMACIÓN DE LOS ELEMENTOS", 20, y);
+
+    // Línea separadora debajo del título
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+
+    // Tickets nuevos con múltiples elementos
+    if (prestamo.ticket_elementos && prestamo.ticket_elementos.length > 0) {
+      pdf.text(
+        `Total de elementos: ${prestamo.ticket_elementos.length}`,
+        20,
+        y
+      );
+      y += 6;
+
+      prestamo.ticket_elementos.forEach((ticketElemento, index) => {
+        // Título del elemento
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`Elemento ${index + 1}:`, 20, y);
+        y += 6;
+
+        pdf.setFont("helvetica", "normal");
+
+        // Nombre del elemento
+        const elementoNombre =
+          ticketElemento.elemento_nombre ||
+          (ticketElemento.elemento
+            ? `${ticketElemento.elemento.categoria.nombre}${
+                ticketElemento.elemento.subcategoria
+                  ? ` - ${ticketElemento.elemento.subcategoria.nombre}`
+                  : ""
+              }`
+            : "N/A");
+        pdf.text(`Elemento: ${elementoNombre}`, 25, y);
+        y += 5;
+
+        // Serie
+        const serie =
+          ticketElemento.serie || ticketElemento.elemento?.serie || "N/A";
+        pdf.text(`Serie: ${serie}`, 25, y);
+        y += 5;
+
+        // Marca/Modelo
+        const marcaModelo =
+          ticketElemento.marca_modelo ||
+          (ticketElemento.elemento
+            ? `${ticketElemento.elemento.marca || ""} ${
+                ticketElemento.elemento.modelo || ""
+              }`.trim()
+            : "N/A");
+        pdf.text(`Marca/Modelo: ${marcaModelo}`, 25, y);
+        y += 5;
+
+        // Cantidad
+        pdf.text(`Cantidad: ${ticketElemento.cantidad}`, 25, y);
+        y += 8;
+
+        // Línea separadora entre elementos
+        if (
+          prestamo.ticket_elementos &&
+          index < prestamo.ticket_elementos.length - 1
+        ) {
+          pdf.setLineWidth(0.1);
+          pdf.line(20, y - 2, 185, y - 2);
+          y += 3;
+        }
+      });
+    } else {
+      // Tickets antiguos con un solo elemento (compatibilidad)
+      const legacyTicket = prestamo as unknown as {
+        elemento?: string;
+        serie?: string;
+        marca_modelo?: string;
+        cantidad?: number;
+      };
+      
+      if (legacyTicket.elemento) {
+        pdf.text(`Elemento: ${legacyTicket.elemento}`, 20, y);
+        y += 6;
+      }
+
+      if (legacyTicket.serie) {
+        pdf.text(`Serie: ${legacyTicket.serie}`, 20, y);
+      }
+
+      if (legacyTicket.marca_modelo) {
+        pdf.text(`Marca/Modelo: ${legacyTicket.marca_modelo}`, 110, y);
+      }
+      y += 6;
+
+      pdf.text(`Cantidad: ${legacyTicket.cantidad || 1}`, 20, y);
+    }
+
+    y += 15;
+
+    // Resuelve la solicitud (coordinación logística) - sin borde individual (marco unificado)
+    // Línea separadora horizontal
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0); // Negro
+    pdf.text("RESUELVE LA SOLICITUD", 20, y);
+
+    // Línea separadora debajo del título
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+
+    pdf.text(
+      `Dependencia: ${prestamo.dependencia_entrega || "Coordinación de Logística"}`,
+      20,
+      y
+    );
+    y += 6;
+
+    const nombreEntrega = `${prestamo.persona_entrega_nombre || ""} ${
+      prestamo.persona_entrega_apellido || ""
+    }`.trim();
+    if (nombreEntrega) {
+      pdf.text(`Resuelve: ${nombreEntrega}`, 20, y);
+      y += 6;
+    }
+
+    // Cargar y agregar firma de entrega
+    if (prestamo.firma_funcionario_entrega) {
+      try {
+        const firmaEntregaImg = await loadSignatureImage(
+          prestamo.firma_funcionario_entrega
+        );
+        if (firmaEntregaImg) {
+          pdf.addImage(firmaEntregaImg, "PNG", 20, y, 40, 15);
+          y += 17;
+          pdf.text("Firma (Resuelve)", 20, y);
+          y += 6;
+        }
+      } catch (error) {
+        console.warn("No se pudo cargar firma de entrega:", error);
+        pdf.text("Firma: No disponible", 20, y);
+        y += 6;
+      }
+    }
+
+    y += 10;
+
+    // Solicitante
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("SOLICITANTE", 20, y);
+
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y + 2, 185, y + 2);
+    y += 8;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+
+    pdf.text(`Dependencia: ${prestamo.dependencia_recibe || "N/A"}`, 20, y);
+    y += 6;
+
+    const nombreRecibe = `${prestamo.persona_recibe_nombre || ""} ${
+      prestamo.persona_recibe_apellido || ""
+    }`.trim();
+    if (nombreRecibe) {
+      pdf.text(`Solicitante: ${nombreRecibe}`, 20, y);
+      y += 6;
+    }
+
+    // Cargar y agregar firma de recibe
+    if (prestamo.firma_funcionario_recibe) {
+      try {
+        const firmaRecibeImg = await loadSignatureImage(
+          prestamo.firma_funcionario_recibe
+        );
+        if (firmaRecibeImg) {
+          pdf.addImage(firmaRecibeImg, "PNG", 20, y, 40, 15);
+          y += 17;
+          pdf.text("Firma (Solicitante)", 20, y);
+          y += 6;
+        }
+      } catch (error) {
+        console.warn("No se pudo cargar firma de recibe:", error);
+        pdf.text("Firma: No disponible", 20, y);
+        y += 6;
+      }
+    }
+
+    // Motivo si existe
+    if (prestamo.motivo) {
+      y += 15;
+      pdf.setLineWidth(0.15);
+      pdf.line(20, y - 5, 185, y - 5);
+
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("MOTIVO", 20, y);
+
+      pdf.setLineWidth(0.15);
+      pdf.line(20, y + 2, 185, y + 2);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+
+      const motivoLines = pdf.splitTextToSize(prestamo.motivo, 160);
+      pdf.text(motivoLines, 20, y);
+      y += motivoLines.length * 5 + 5;
+    }
+
+    // Footer
+    y += 10;
+    pdf.setLineWidth(0.15);
+    pdf.line(20, y - 5, 185, y - 5);
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(
+      `Generado el ${new Date().toLocaleDateString("es-CO")} a las ${new Date().toLocaleTimeString("es-CO")}`,
+      105,
+      y,
+      { align: "center" }
+    );
+
+    pdf.save(`prestamo-${prestamo.numero_ticket}.pdf`);
+    toast.success("PDF generado exitosamente");
+  };
+
+  const generatePDF = async () => {
+    setIsGenerating(true);
+    
+    // Intentar primero con el método alternativo más confiable
+    const useAlternativeMethod = true;
+    
+    if (useAlternativeMethod) {
+      try {
+        await generatePDFAlternative();
+        return;
+      } catch (error) {
+        console.error("Error en método alternativo, intentando con html2canvas:", error);
+        // Si falla el alternativo, intentar con html2canvas
+      }
+    }
+    
+    try {
+      const invoiceElement = document.getElementById("ticket-invoice-content");
+      if (!invoiceElement) {
+        throw new Error("No se encontró el contenido de la factura");
+      }
+
+      // Esperar un momento para que se renderice completamente
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Crear una versión simplificada del contenido para PDF
+      const simplifiedElement = invoiceElement.cloneNode(true) as HTMLElement;
+
+      // Remover elementos problemáticos que pueden causar el error del iframe
+      const problematicElements = simplifiedElement.querySelectorAll(
+        "iframe, embed, object, video, audio, canvas, svg, script, style"
+      );
+      problematicElements.forEach((el) => el.remove());
+
+      // Limpiar completamente todos los estilos problemáticos
+      const cleanElementStyles = (element: HTMLElement) => {
+        // Remover todos los estilos inline
+        element.removeAttribute("style");
+
+        // Remover clases que puedan causar problemas
+        const classList = element.classList;
+        if (classList) {
+          // Mantener solo clases básicas necesarias
+          const allowedClasses = [
+            "text-sm",
+            "font-medium",
+            "font-mono",
+            "break-words",
+            "break-all",
+          ];
+          const classesToRemove = [];
+
+          for (let i = 0; i < classList.length; i++) {
+            const className = classList[i];
+            if (!allowedClasses.includes(className)) {
+              classesToRemove.push(className);
+            }
+          }
+
+          classesToRemove.forEach((cls) => classList.remove(cls));
+        }
+
+        // Aplicar estilos básicos seguros
+        if (element.tagName === "H1") {
+          element.style.cssText =
+            "font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 8px 0;";
+        } else if (element.tagName === "H2") {
+          element.style.cssText =
+            "font-size: 18px; font-weight: 600; color: #4b5563; margin: 0 0 16px 0;";
+        } else if (element.tagName === "P") {
+          element.style.cssText = "color: #374151; margin: 4px 0;";
+        } else if (element.tagName === "SPAN") {
+          element.style.cssText = "color: #4b5563;";
+        } else if (element.classList.contains("font-medium")) {
+          element.style.cssText = "font-weight: 500; color: #4b5563;";
+        } else if (element.classList.contains("font-mono")) {
+          element.style.cssText = "font-family: monospace; color: #374151;";
+        } else {
+          element.style.cssText = "color: #000000;";
+        }
+
+        // Procesar elementos hijos
+        const children = element.children;
+        for (let i = 0; i < children.length; i++) {
+          cleanElementStyles(children[i] as HTMLElement);
+        }
+      };
+
+      cleanElementStyles(simplifiedElement);
+
+      // Agregar estilos CSS seguros
+      const safeStyles = document.createElement("style");
+      safeStyles.textContent = `
+        * {
+          color: #000000 !important;
+          background-color: transparent !important;
+        }
+        .bg-white {
+          background-color: #ffffff !important;
+        }
+        .border-l-4 {
+          border-left: 4px solid #e5e7eb !important;
+        }
+        .border-t {
+          border-top: 1px solid #e5e7eb !important;
+        }
+        .p-8 {
+          padding: 32px !important;
+        }
+        .p-6 {
+          padding: 24px !important;
+        }
+        .mb-8 {
+          margin-bottom: 32px !important;
+        }
+        .space-y-4 > * + * {
+          margin-top: 16px !important;
+        }
+        .space-y-3 > * + * {
+          margin-top: 12px !important;
+        }
+        .grid {
+          display: grid !important;
+        }
+        .grid-cols-2 {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+        .gap-8 {
+          gap: 32px !important;
+        }
+        .gap-6 {
+          gap: 24px !important;
+        }
+        .gap-4 {
+          gap: 16px !important;
+        }
+        .flex {
+          display: flex !important;
+        }
+        .flex-col {
+          flex-direction: column !important;
+        }
+        .items-center {
+          align-items: center !important;
+        }
+        .justify-between {
+          justify-content: space-between !important;
+        }
+        .text-center {
+          text-align: center !important;
+        }
+        .rounded {
+          border-radius: 4px !important;
+        }
+        .border {
+          border: 1px solid #e5e7eb !important;
+        }
+        .shadow-sm {
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+        h1 { font-size: 24px; font-weight: bold; color: #1f2937; }
+        h2 { font-size: 18px; font-weight: 600; color: #4b5563; }
+        h3 { font-size: 16px; font-weight: 600; color: #374151; }
+        p { color: #374151; margin: 4px 0; }
+        .font-medium { font-weight: 500; }
+        .font-mono { font-family: monospace; }
+        .text-sm { font-size: 14px; }
+        .break-words { word-break: break-word; }
+        .break-all { word-break: break-all; }
+      `;
+      simplifiedElement.appendChild(safeStyles);
+
+      // Configuración ultra conservadora para html2canvas
+      const canvas = await html2canvas(simplifiedElement, {
+        scale: 1,
+        useCORS: false,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: invoiceElement.scrollWidth,
+        height: invoiceElement.scrollHeight,
+        foreignObjectRendering: false,
+        removeContainer: true,
+        imageTimeout: 10000,
+        ignoreElements: (element) => {
+          // Ignorar elementos que pueden causar problemas
+          const tagName = element.tagName?.toLowerCase();
+          const problematicTags = [
+            "iframe",
+            "embed",
+            "object",
+            "video",
+            "audio",
+            "canvas",
+            "svg",
+            "script",
+            "style",
+          ];
+          return problematicTags.includes(tagName);
+        },
+        onclone: (clonedDoc) => {
+          try {
+            // Remover elementos problemáticos del documento clonado
+            const problematicElements = clonedDoc.querySelectorAll(
+              "iframe, embed, object, video, audio, canvas, svg, script, style"
+            );
+            problematicElements.forEach((el) => el.remove());
+
+            // Asegurar que no hay estilos problemáticos
+            const allElements = clonedDoc.querySelectorAll("*");
+            allElements.forEach((el) => {
+              const element = el as HTMLElement;
+              if (element.style) {
+                // Forzar colores básicos
+                element.style.color = element.style.color || "#000000";
+                element.style.backgroundColor =
+                  element.style.backgroundColor || "transparent";
+              }
+            });
+          } catch (cloneError) {
+            console.warn("Error en onclone:", cloneError);
+          }
+        },
+      });
+
+      const imgData = canvas.toDataURL("image/png", 0.9);
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      const ratio = imgHeight / imgWidth;
+      let finalWidth = pdfWidth;
+      let finalHeight = pdfWidth * ratio;
+
+      // Si el contenido es muy alto, ajustar el ancho
+      if (finalHeight > pdfHeight) {
+        finalHeight = pdfHeight;
+        finalWidth = pdfHeight / ratio;
+      }
+
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = 10;
+
+      pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
+
+      // Si el contenido es muy alto, dividir en páginas
+      if (finalHeight > pdfHeight - 20) {
+        const pages = Math.ceil(finalHeight / (pdfHeight - 20));
+        const pageHeight = pdfHeight - 20;
+
+        for (let i = 1; i < pages; i++) {
+          pdf.addPage();
+          const sourceY = i * pageHeight * (imgHeight / finalHeight);
+          const sourceHeight = Math.min(
+            pageHeight * (imgHeight / finalHeight),
+            imgHeight - sourceY
+          );
+
+          pdf.addImage(
+            imgData,
+            "PNG",
+            x,
+            10,
+            finalWidth,
+            sourceHeight * (finalWidth / imgWidth)
+          );
+        }
+      }
+
+      pdf.save(`prestamo-${prestamo.numero_ticket}.pdf`);
+      toast.success("PDF generado exitosamente");
+    } catch (error) {
+      console.error("Error generando PDF con html2canvas:", error);
+
+      // Intentar método alternativo simple sin mostrar error al usuario aún
+      try {
+        console.log("Primer método falló, intentando método alternativo...");
+        await generatePDFAlternative();
+        toast.success("PDF generado exitosamente con método alternativo");
+      } catch (fallbackError) {
+        console.error("Error en método alternativo:", fallbackError);
+
+        // Solo mostrar error si ambos métodos fallan
+        if (error instanceof Error) {
+          if (
+            error.message.includes("Unable to find element in cloned iframe")
+          ) {
+            toast.error(
+              "Error al generar PDF: Problema con elementos del documento. El método alternativo también falló."
+            );
+          } else {
+            toast.error(`Error al generar PDF: ${error.message}`);
+          }
+        } else {
+          toast.error("Error desconocido al generar PDF");
+        }
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowPreview(true)}
+        className="text-primary hover:text-primary/80 hover:bg-primary/10"
+      >
+        <FileText className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Ver Factura</span>
+      </Button>
+
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center justify-around">
+              <span>Comprobante de Préstamo</span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={generatePDF}
+                  disabled={isGenerating}
+                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {isGenerating ? "Generando..." : "Exportar PDF"}
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+            <div id="ticket-invoice-content" className="bg-white p-8 w-full">
+              {/* Header Profesional */}
+              <div className="p-6 mb-8">
+                <div className="flex items-center justify-center gap-6 mb-4">
+                  <CDSLogo size="xl" showText={false} />
+                  <div className="text-center">
+                    <h1 className="text-3xl font-bold text-black mb-2">
+                      SISTEMA DE INVENTARIO CDS
+                    </h1>
+                    <h2 className="text-xl font-semibold text-black">
+                      COMPROBANTE DE PRÉSTAMO
+                    </h2>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <p className="text-center font-bold text-lg">
+                    Préstamo: {prestamo.numero_ticket}
+                  </p>
+                </div>
+              </div>
+
+              {/* Ticket Info */}
+              <div className="flex flex-col gap-8 mb-8">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <FileText className="h-5 w-5 text-black" />
+                      INFORMACIÓN DEL TICKET
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm text-gray-600">
+                          Número:
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-sm w-fit"
+                        >
+                          {prestamo.numero_ticket}
+                        </Badge>
+                      </div>
+                      {prestamo.orden_numero && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Orden Número:
+                          </span>
+                          <span className="text-sm font-mono">
+                            {prestamo.orden_numero}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm text-gray-600">
+                          Fecha de inicio:
+                        </span>
+                        <span className="text-sm">
+                          {formatDate(prestamo.fecha_salida)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm text-gray-600">
+                          Fecha Estimada Devolución:
+                        </span>
+                        <span className="text-sm">
+                          {formatDate(prestamo.fecha_estimada_devolucion)}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <Eye className="h-5 w-5 text-black" />
+                      INFORMACIÓN DE LOS ELEMENTOS
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Tickets nuevos con múltiples elementos */}
+                    {prestamo.ticket_elementos &&
+                    prestamo.ticket_elementos.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="text-sm text-gray-600">
+                          Total de elementos:{" "}
+                          <span className="font-medium">
+                            {prestamo.ticket_elementos.length}
+                          </span>
+                        </div>
+                        {prestamo.ticket_elementos.map(
+                          (ticketElemento, index) => (
+                            <div
+                              key={ticketElemento.id || index}
+                              className="border rounded-lg p-4 bg-gray-50"
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-medium text-sm text-gray-800">
+                                  Elemento {index + 1}
+                                </h4>
+                                <Badge
+                                  variant="secondary"
+                                  className="font-mono text-xs"
+                                >
+                                  Cantidad: {ticketElemento.cantidad}
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs text-gray-600">
+                                    Elemento:
+                                  </span>
+                                  <span className="text-sm break-words">
+                                    {ticketElemento.elemento_nombre ||
+                                      (ticketElemento.elemento
+                                        ? `${
+                                            ticketElemento.elemento.categoria
+                                              .nombre
+                                          }${
+                                            ticketElemento.elemento.subcategoria
+                                              ? ` - ${ticketElemento.elemento.subcategoria.nombre}`
+                                              : ""
+                                          }`
+                                        : "N/A")}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs text-gray-600">
+                                    Serie:
+                                  </span>
+                                  <span className="text-sm font-mono break-all">
+                                    {ticketElemento.serie ||
+                                      ticketElemento.elemento?.serie ||
+                                      "N/A"}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-xs text-gray-600">
+                                    Marca/Modelo:
+                                  </span>
+                                  <span className="text-sm break-words">
+                                    {ticketElemento.marca_modelo ||
+                                      (ticketElemento.elemento
+                                        ? `${
+                                            ticketElemento.elemento.marca || ""
+                                          } ${
+                                            ticketElemento.elemento.modelo || ""
+                                          }`.trim()
+                                        : "N/A")}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ) : (
+                      /* Tickets antiguos con un solo elemento (compatibilidad) */
+                      <div className="space-y-4">
+                        {prestamo.elemento && (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-gray-600">
+                              Elemento:
+                            </span>
+                            <span className="text-sm break-words">
+                              {prestamo.elemento}
+                            </span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {prestamo.serie && (
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm text-gray-600">
+                                Serie:
+                              </span>
+                              <span className="text-sm font-mono break-all">
+                                {prestamo.serie}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-gray-600">
+                              Cantidad:
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className="font-mono text-sm w-fit"
+                            >
+                              {prestamo.cantidad || 1}
+                            </Badge>
+                          </div>
+                        </div>
+                        {prestamo.marca_modelo && (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-gray-600">
+                              Marca/Modelo:
+                            </span>
+                            <span className="text-sm break-words">
+                              {prestamo.marca_modelo}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Resuelve / Solicitante */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <span className="text-black">📤</span>
+                      RESUELVE LA SOLICITUD
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
+                        Dependencia:
+                      </span>
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {prestamo.dependencia_entrega || "Coordinación de Logística"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
+                        Resuelve:
+                      </span>
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {prestamo.persona_entrega_nombre &&
+                        prestamo.persona_entrega_apellido
+                          ? `${prestamo.persona_entrega_nombre} ${prestamo.persona_entrega_apellido}`
+                          : "No especificado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
+                        Firma (Resuelve):
+                      </span>
+                      <div className="mt-2 flex justify-start">
+                        <SignatureDisplay
+                          signatureUrl={prestamo.firma_funcionario_entrega}
+                          label="Ver Firma"
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2 text-black">
+                      <span className="text-black">📥</span>
+                      SOLICITANTE
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
+                        Dependencia:
+                      </span>
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {prestamo.dependencia_recibe || "No especificado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
+                        Solicitante:
+                      </span>
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {prestamo.persona_recibe_nombre &&
+                        prestamo.persona_recibe_apellido
+                          ? `${prestamo.persona_recibe_nombre} ${prestamo.persona_recibe_apellido}`
+                          : "No especificado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm text-gray-600">
+                        Firma (Solicitante):
+                      </span>
+                      <div className="mt-2 flex justify-start">
+                        <SignatureDisplay
+                          signatureUrl={prestamo.firma_funcionario_recibe}
+                          label="Ver Firma"
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Información de Devolución (si existe) */}
+                {(prestamo.fecha_real_devolucion ||
+                  prestamo.devuelto_por ||
+                  prestamo.recibido_por) && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2 text-black">
+                        <span className="text-black">🔄</span>
+                        INFORMACIÓN DE DEVOLUCIÓN
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {prestamo.fecha_real_devolucion && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Fecha Real de Devolución:
+                          </span>
+                          <span className="text-sm">
+                            {formatDate(prestamo.fecha_real_devolucion)}
+                          </span>
+                        </div>
+                      )}
+
+                      {prestamo.hora_devolucion && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Hora de Devolución:
+                          </span>
+                          <span className="text-sm">
+                            {formatDate(prestamo.hora_devolucion)}
+                          </span>
+                        </div>
+                      )}
+
+                      {prestamo.devuelto_por && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Devuelto por:
+                          </span>
+                          <p className="text-gray-700 text-sm mt-1 break-words">
+                            {prestamo.devuelto_por}
+                          </p>
+                        </div>
+                      )}
+
+                      {prestamo.recibido_por && (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Recibido por:
+                          </span>
+                          <p className="text-gray-700 text-sm mt-1 break-words">
+                            {prestamo.recibido_por}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Firma de quien devuelve:
+                          </span>
+                          <div className="mt-2 flex justify-start">
+                            <SignatureDisplay
+                              signatureUrl={prestamo.firma_devuelve}
+                              label="Ver Firma"
+                              className="text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm text-gray-600">
+                            Firma de quien recibe devolución:
+                          </span>
+                          <div className="mt-2 flex justify-start">
+                            <SignatureDisplay
+                              signatureUrl={prestamo.firma_recibe_devolucion}
+                              label="Ver Firma"
+                              className="text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Additional Information */}
+              {prestamo.motivo && (
+                <Card className="mb-8">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-black">
+                      MOTIVO DEL PRÉSTAMO
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed">
+                      {prestamo.motivo}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Footer */}
+              <div className="p-4 mt-8">
+                <div className="grid grid-cols-2 gap-8 text-sm text-black">
+                  <div>
+                    <p>
+                      <strong>Fecha de Generación:</strong>{" "}
+                      {formatDate(new Date())}
+                    </p>
+                    {prestamo.usuario_guardado && (
+                      <p>
+                        <strong>Generado por:</strong> {prestamo.usuario_guardado}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p>
+                      <strong>Sistema de Inventario CDS</strong>
+                    </p>
+                    <p>Comprobante de Préstamo</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
