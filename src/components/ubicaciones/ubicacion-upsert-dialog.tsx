@@ -30,6 +30,9 @@ const schema = z.object({
   codigo: z.string().min(1, "Código requerido").max(20),
   nombre: z.string().min(1, "Nombre requerido").max(100),
   sede_id: z.string().min(1, "Sede requerida"),
+  capacidad: z.string().optional(),
+  ancho_metros: z.string().optional(),
+  largo_metros: z.string().optional(),
   activo: z.boolean(),
 });
 
@@ -69,6 +72,9 @@ export function UbicacionUpsertDialog({
       codigo: defaultValues?.codigo || "",
       nombre: defaultValues?.nombre || "",
       sede_id: defaultValues?.sede_id?.toString() || "",
+      capacidad: defaultValues?.capacidad?.toString() ?? "",
+      ancho_metros: defaultValues?.ancho_metros?.toString() ?? "",
+      largo_metros: defaultValues?.largo_metros?.toString() ?? "",
       activo: defaultValues?.activo ?? true,
     },
   });
@@ -79,6 +85,9 @@ export function UbicacionUpsertDialog({
         codigo: defaultValues.codigo || "",
         nombre: defaultValues.nombre || "",
         sede_id: defaultValues.sede_id?.toString() || "",
+        capacidad: defaultValues.capacidad?.toString() ?? "",
+        ancho_metros: defaultValues.ancho_metros?.toString() ?? "",
+        largo_metros: defaultValues.largo_metros?.toString() ?? "",
         activo: defaultValues.activo ?? true,
       });
     }
@@ -96,6 +105,18 @@ export function UbicacionUpsertDialog({
       formData.append("codigo", data.codigo);
       formData.append("nombre", data.nombre);
       formData.append("sede_id", data.sede_id);
+      const cap = data.capacidad?.trim();
+      if (cap && !isNaN(parseInt(cap, 10))) {
+        formData.append("capacidad", cap);
+      }
+      const ancho = data.ancho_metros?.trim();
+      if (ancho && !isNaN(parseFloat(ancho))) {
+        formData.append("ancho_metros", ancho);
+      }
+      const largo = data.largo_metros?.trim();
+      if (largo && !isNaN(parseFloat(largo))) {
+        formData.append("largo_metros", largo);
+      }
       formData.append("activo", String(data.activo));
 
       if (hiddenFields) {
@@ -129,14 +150,20 @@ export function UbicacionUpsertDialog({
   return (
     <>
       {create && (
-        <Button onClick={() => setOpen(true)} data-tour="ubicaciones-create-button">
+        <Button
+          onClick={() => setOpen(true)}
+          data-tour="ubicaciones-create-button"
+        >
           {btnText}
         </Button>
       )}
-      <Dialog open={open} onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen && onClose) onClose();
-      }}>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen && onClose) onClose();
+        }}
+      >
         <DialogContent data-tour="ubicacion-form">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -170,22 +197,66 @@ export function UbicacionUpsertDialog({
               )}
             </div>
 
+            {/* Capacidad */}
+            <div className="grid gap-1" data-tour="ubicacion-form-capacidad">
+              <Label htmlFor="capacidad">Capacidad (opcional)</Label>
+              <Input
+                id="capacidad"
+                type="number"
+                min={0}
+                placeholder="Ej: 30 (puestos o equipos)"
+                {...register("capacidad")}
+              />
+              <p className="text-xs text-muted-foreground">
+                Número de puestos o capacidad del ambiente
+              </p>
+            </div>
+
+            {/* Dimensiones */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="ancho_metros">Ancho (m)</Label>
+                <Input
+                  id="ancho_metros"
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  placeholder="Ej: 4"
+                  {...register("ancho_metros")}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="largo_metros">Largo (m)</Label>
+                <Input
+                  id="largo_metros"
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  placeholder="Ej: 8"
+                  {...register("largo_metros")}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Dimensiones del ambiente, ej. 4 x 8 metros
+            </p>
+
             {/* Sede */}
             <div className="grid gap-1" data-tour="ubicacion-form-sede">
               <Label htmlFor="sede_id">Sede</Label>
               <Select
                 value={watch("sede_id") || undefined}
-                onValueChange={(value) =>
-                  setValue("sede_id", value || "")
-                }
+                onValueChange={(value) => setValue("sede_id", value || "")}
                 disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    sedes.length === 0 
-                      ? "No hay sedes disponibles" 
-                      : "Selecciona una sede"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      sedes.length === 0
+                        ? "No hay sedes disponibles"
+                        : "Selecciona una sede"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {sedes.length === 0 ? (
@@ -244,4 +315,3 @@ export function UbicacionUpsertDialog({
     </>
   );
 }
-
