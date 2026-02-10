@@ -31,7 +31,7 @@ export async function updateUsuario(input: UpdateUsuarioInput) {
     nombre: string;
     apellido: string | null;
     firma_url: string | null;
-    rol: "administrador" | "usuario" | undefined;
+    rol: "administrador" | "usuario" | "autorizador" | undefined;
     activo: boolean | undefined;
   }> = {};
   if (input.password) data.password = await bcrypt.hash(input.password, 10);

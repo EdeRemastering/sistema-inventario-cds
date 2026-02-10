@@ -32,7 +32,7 @@ const createSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   apellido: z.string().optional().or(z.literal("")),
   firma: z.string().optional().or(z.literal("")),
-  rol: z.enum(["administrador", "usuario"]),
+  rol: z.enum(["administrador", "usuario", "autorizador"]),
   activo: z.boolean().optional(),
 });
 
@@ -46,7 +46,7 @@ const updateSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido").optional(),
   apellido: z.string().optional().or(z.literal("")),
   firma: z.string().optional().or(z.literal("")),
-  rol: z.enum(["administrador", "usuario"]),
+  rol: z.enum(["administrador", "usuario", "autorizador"]),
   activo: z.boolean().optional(),
 });
 
@@ -56,7 +56,7 @@ type UsuarioFormData = {
   nombre: string;
   apellido: string;
   firma?: string;
-  rol: "administrador" | "usuario";
+  rol: "administrador" | "usuario" | "autorizador";
   activo?: boolean;
 };
 
@@ -251,7 +251,7 @@ export function UsuarioUpsertDialog({
               <Select
                 value={watch("rol")}
                 onValueChange={(value) =>
-                  setValue("rol", value as "administrador" | "usuario")
+                  setValue("rol", value as "administrador" | "usuario" | "autorizador")
                 }
               >
                 <SelectTrigger>
@@ -259,6 +259,7 @@ export function UsuarioUpsertDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="usuario">Usuario</SelectItem>
+                  <SelectItem value="autorizador">Autorizador</SelectItem>
                   <SelectItem value="administrador">Administrador</SelectItem>
                 </SelectContent>
               </Select>

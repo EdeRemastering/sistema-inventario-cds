@@ -4,7 +4,7 @@ export type Usuario = {
   nombre: string;
   apellido: string | null;
   firma_url: string | null;
-  rol: "administrador" | "usuario";
+  rol: "administrador" | "usuario" | "autorizador";
   activo: boolean | null;
   creado_en: Date;
   actualizado_en: Date;
@@ -16,7 +16,7 @@ export type CreateUsuarioInput = {
   nombre: string;
   apellido?: string | null;
   firma_url?: string | null;
-  rol?: "administrador" | "usuario";
+  rol?: "administrador" | "usuario" | "autorizador";
   activo?: boolean;
 };
 
