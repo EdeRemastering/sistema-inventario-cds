@@ -47,6 +47,21 @@ type ElementoDetails = {
   actualizado_en: string;
 };
 
+const ESTADO_LABELS: Record<string, string> = {
+  B: "Bueno",
+  D: "Deficiente",
+  I: "Inservible",
+  FS: "Fuera de Servicio",
+  O: "Óptimo",
+  R: "Regular",
+  OB: "Óptimo Bueno",
+};
+
+function fmtEstado(codigo?: string | null) {
+  if (!codigo) return "—";
+  return ESTADO_LABELS[codigo] ?? codigo;
+}
+
 function fmtDate(value?: string | null) {
   if (!value) return "—";
   const d = new Date(value);
@@ -246,9 +261,12 @@ export function ElementoDetailDialog({
               />
               <Field
                 label="Estado funcional"
-                value={data.estado_funcional || "—"}
+                value={fmtEstado(data.estado_funcional)}
               />
-              <Field label="Estado físico" value={data.estado_fisico || "—"} />
+              <Field
+                label="Estado físico"
+                value={fmtEstado(data.estado_fisico)}
+              />
               <Field
                 label="Fecha de entrada"
                 value={fmtDate(data.fecha_entrada)}
