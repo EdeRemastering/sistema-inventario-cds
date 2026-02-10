@@ -62,6 +62,40 @@ export async function saveImageToR2(
   return buildR2PublicUrl(key);
 }
 
+/**
+ * Sube un PDF a R2 (para evidencias de baja, comprobantes, etc.)
+ */
+export async function savePdfToR2(
+  input: File | Blob | Buffer,
+  opts: { folder?: string; prefix?: string } = {}
+): Promise<string> {
+  const client = getR2Client();
+  const cfg = getR2Config();
+  if (!client || !cfg) {
+    throw new Error("R2 no está configurado");
+  }
+  const folder = (opts.folder ?? "pdfs").replace(/^\/+|\/+$/g, "");
+  const prefix = opts.prefix ? `${opts.prefix}_` : "";
+
+  let body: Buffer;
+  if (typeof (input as File).arrayBuffer === "function") {
+    const ab = await (input as File).arrayBuffer();
+    body = Buffer.from(ab);
+  } else {
+    body = input as Buffer;
+  }
+  const key = `${folder}/${prefix}${randomUUID()}.pdf`;
+  await client.send(
+    new PutObjectCommand({
+      Bucket: cfg.bucketName,
+      Key: key,
+      Body: body,
+      ContentType: "application/pdf",
+    })
+  );
+  return buildR2PublicUrl(key);
+}
+
 export async function deleteImageFromR2(imageUrl: string): Promise<void> {
   const client = getR2Client();
   const cfg = getR2Config();

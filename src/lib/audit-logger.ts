@@ -28,7 +28,8 @@ export type LogEntity =
   | "hoja_vida"
   | "cambio_elemento"
   | "mantenimiento_programado"
-  | "mantenimiento_realizado";
+  | "mantenimiento_realizado"
+  | "baja_elemento";
 
 export interface AuditLogData {
   action: LogAction;
