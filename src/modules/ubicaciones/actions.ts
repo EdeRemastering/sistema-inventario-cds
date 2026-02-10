@@ -26,6 +26,8 @@ export async function actionCreateUbicacion(formData: FormData) {
   const ubicacion = await createUbicacion({
     ...parsed.data,
     capacidad: parsed.data.capacidad ?? null,
+    ancho_metros: parsed.data.ancho_metros ?? null,
+    largo_metros: parsed.data.largo_metros ?? null,
   });
   await logAction({
     action: "CREATE",
