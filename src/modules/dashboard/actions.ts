@@ -138,9 +138,9 @@ export async function getRecentActivityAction() {
         motivo.includes("devuelto") || motivo.includes("completado") || motivo.includes("entregado");
 
       actividades.push({
-        id: `ticket-${t.id}`,
+        id: `prestamo-${t.id}`,
         tipo: cerrado ? "devolucion" : "prestamo",
-        descripcion: `${cerrado ? "Devolución" : "Préstamo"} - Ticket: ${t.numero_ticket} (${t.dependencia_entrega} → ${t.dependencia_recibe})`,
+        descripcion: `${cerrado ? "Devolución" : "Préstamo"}: ${t.numero_ticket} (${t.dependencia_entrega} → ${t.dependencia_recibe})`,
         fecha: t.fecha_salida,
       });
     });

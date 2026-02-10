@@ -75,7 +75,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
 
       <Card className="border-primary/20">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">Tickets</h3>
+          <h3 className="text-sm font-medium">Préstamos</h3>
           <TrendingUp className="h-4 w-4 text-primary" />
         </CardHeader>
         <CardContent>
@@ -104,11 +104,11 @@ export function DashboardQuickStats({ stats }: DashboardStatsProps) {
             <span className="font-medium text-primary">{stats.elementosEnStock}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm">Tickets activos</span>
+            <span className="text-sm">Préstamos activos</span>
             <span className="font-medium text-primary">{stats.ticketsActivos}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm">Tickets pendientes</span>
+            <span className="text-sm">Préstamos pendientes</span>
             <span className="font-medium text-primary">{stats.ticketsPendientes}</span>
           </div>
           <div className="flex justify-between items-center">

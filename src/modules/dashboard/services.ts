@@ -157,8 +157,8 @@ export async function getActividadReciente(): Promise<ActividadReciente[]> {
   ticketsRecientes.forEach((ticket) => {
     actividades.push({
       id: ticket.id,
-      tipo: "ticket",
-      descripcion: `Ticket (préstamo): ${ticket.numero_ticket}`,
+      tipo: "prestamo",
+      descripcion: `Préstamo: ${ticket.numero_ticket}`,
       fecha: ticket.fecha_salida,
     });
   });

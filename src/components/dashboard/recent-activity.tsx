@@ -12,7 +12,7 @@ export function RecentActivity({ actividades }: RecentActivityProps) {
     switch (tipo) {
       case "elemento":
         return "📦";
-      case "ticket":
+      case "prestamo":
         return "🎫";
       case "usuario":
         return "👤";
@@ -25,7 +25,7 @@ export function RecentActivity({ actividades }: RecentActivityProps) {
     switch (tipo) {
       case "elemento":
         return "bg-primary";
-      case "ticket":
+      case "prestamo":
         return "bg-secondary";
       case "usuario":
         return "bg-accent";

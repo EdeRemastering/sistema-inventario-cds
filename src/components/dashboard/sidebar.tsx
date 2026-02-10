@@ -9,7 +9,7 @@ import {
   Boxes,
   FolderTree,
   Package2,
-  Ticket,
+  HandCoins,
   ListChecks,
   Users,
   BarChart3,
@@ -19,6 +19,8 @@ import {
   Wrench,
   FileCheck,
   CircleHelp,
+  ShieldAlert,
+  CalendarRange,
 } from "lucide-react";
 
 import {
@@ -90,7 +92,14 @@ const items: NavItem[] = [
     icon: FileCheck,
     tourId: "nav-hojas-vida",
   },
-  { href: "/tickets", label: "Tickets", icon: Ticket, tourId: "nav-tickets" },
+  { href: "/prestamos", label: "Préstamos", icon: HandCoins, tourId: "nav-prestamos" },
+  { href: "/bajas", label: "Bajas", icon: ShieldAlert, tourId: "nav-bajas" },
+  {
+    href: "/programacion-ambientes",
+    label: "Programación Ambientes",
+    icon: CalendarRange,
+    tourId: "nav-programacion-ambientes",
+  },
   {
     href: "/kpis/mantenimientos",
     label: "KPIs",

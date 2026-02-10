@@ -112,7 +112,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {/* Gráfico de Tickets (Préstamos) por Mes */}
+      {/* Gráfico de Préstamos por Mes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 stackId="1"
                 stroke="hsl(var(--chart-1))"
                 fill="hsl(var(--chart-1))"
-                name="Total Tickets"
+                name="Total Préstamos"
               />
               <Area
                 type="monotone"
@@ -142,7 +142,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 stackId="2"
                 stroke="hsl(var(--chart-2))"
                 fill="hsl(var(--chart-2))"
-                name="Préstamos (Tickets creados)"
+                name="Préstamos creados"
               />
               <Area
                 type="monotone"
@@ -150,7 +150,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
                 stackId="3"
                 stroke="hsl(var(--chart-3))"
                 fill="hsl(var(--chart-3))"
-                name="Tickets cerrados"
+                name="Préstamos cerrados"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -282,7 +282,7 @@ export function AdvancedCharts({ stats }: { stats: DashboardStats }) {
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-muted-foreground/20">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Tickets Pendientes
+                  Préstamos Pendientes
                 </p>
                 <p className="text-2xl font-bold text-muted-foreground">
                   {stats.ticketsPendientes}
