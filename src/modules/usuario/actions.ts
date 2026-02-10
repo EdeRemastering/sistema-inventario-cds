@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../lib/auth";
 import { createUsuarioSchema, updateUsuarioSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
 import { createUsuario, deleteUsuario, updateUsuario } from "./services";
@@ -62,7 +64,9 @@ export async function actionUpdateUsuario(formData: FormData) {
 }
 
 export async function actionDeleteUsuario(id: number) {
-  await deleteUsuario(id);
+  const session = await getServerSession(authOptions);
+  const userId = session?.user ? parseInt((session.user as { id?: string }).id ?? "0", 10) : undefined;
+  await deleteUsuario(id, isNaN(userId ?? 0) ? undefined : userId);
   revalidatePath("/usuarios");
 }
 

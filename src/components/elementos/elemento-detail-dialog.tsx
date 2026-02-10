@@ -47,20 +47,7 @@ type ElementoDetails = {
   actualizado_en: string;
 };
 
-const ESTADO_LABELS: Record<string, string> = {
-  B: "Bueno",
-  D: "Deficiente",
-  I: "Inservible",
-  FS: "Fuera de Servicio",
-  O: "Óptimo",
-  R: "Regular",
-  OB: "Óptimo Bueno",
-};
-
-function fmtEstado(codigo?: string | null) {
-  if (!codigo) return "—";
-  return ESTADO_LABELS[codigo] ?? codigo;
-}
+import { fmtEstado } from "../../lib/formato-estados";
 
 function fmtDate(value?: string | null) {
   if (!value) return "—";

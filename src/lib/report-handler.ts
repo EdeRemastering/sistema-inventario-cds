@@ -26,11 +26,17 @@ export type ReporteType =
   | "observaciones"
   | "tickets";
 
+export type ReporteFilters = {
+  fechaInicio?: string;
+  fechaFin?: string;
+  ubicacionId?: number;
+  categoriaId?: number;
+};
+
 // Función para obtener datos usando actions
 async function fetchReportData(
-  tipoReporte: ReporteType, 
-  fechaInicio?: string, 
-  fechaFin?: string
+  tipoReporte: ReporteType,
+  filters?: ReporteFilters
 ) {
   const { 
     actionGetInventarioReporteData,
@@ -40,23 +46,28 @@ async function fetchReportData(
     actionGetObservacionesReporteData,
     actionGetTicketsReporteData
   } = await import("../modules/reportes/actions");
-  
-  const fechaInicioDate = fechaInicio ? new Date(fechaInicio) : undefined;
-  const fechaFinDate = fechaFin ? new Date(fechaFin) : undefined;
-  
+
+  const fechaInicioDate = filters?.fechaInicio ? new Date(filters.fechaInicio) : undefined;
+  const fechaFinDate = filters?.fechaFin ? new Date(filters.fechaFin) : undefined;
+
   switch (tipoReporte) {
     case 'inventario':
-      return await actionGetInventarioReporteData();
+      return await actionGetInventarioReporteData({
+        ubicacionId: filters?.ubicacionId,
+        categoriaId: filters?.categoriaId,
+        fechaEntradaInicio: fechaInicioDate,
+        fechaEntradaFin: fechaFinDate,
+      });
     case 'movimientos':
-      return await actionGetMovimientosReporteData(fechaInicioDate, fechaFinDate);
+      return await actionGetMovimientosReporteData(fechaInicioDate, fechaFinDate, filters?.ubicacionId);
     case 'prestamos-activos':
-      return await actionGetPrestamosActivosReporteData();
+      return await actionGetPrestamosActivosReporteData(filters?.ubicacionId);
     case 'categorias':
-      return await actionGetCategoriasReporteData();
+      return await actionGetCategoriasReporteData(filters?.categoriaId);
     case 'observaciones':
-      return await actionGetObservacionesReporteData(fechaInicioDate, fechaFinDate);
+      return await actionGetObservacionesReporteData(fechaInicioDate, fechaFinDate, filters?.categoriaId);
     case 'tickets':
-      return await actionGetTicketsReporteData(fechaInicioDate, fechaFinDate);
+      return await actionGetTicketsReporteData(fechaInicioDate, fechaFinDate, filters?.ubicacionId);
     default:
       throw new Error(`Tipo de reporte no válido: ${tipoReporte}`);
   }
@@ -113,8 +124,8 @@ function downloadFile(dataUrl: string, fileName: string) {
 
 // ===== FUNCIONES ESPECÍFICAS PARA CADA TIPO DE REPORTE =====
 
-export async function generateInventarioReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('inventario', fechaInicio, fechaFin) as unknown as InventarioReporteData;
+export async function generateInventarioReport(tipo: 'pdf' | 'excel', filters?: ReporteFilters) {
+  const datos = await fetchReportData('inventario', filters) as unknown as InventarioReporteData;
   const nombreArchivo = generateFileName('inventario', tipo);
   
   let dataUrl: string;
@@ -130,9 +141,9 @@ export async function generateInventarioReport(tipo: 'pdf' | 'excel', fechaInici
   return { success: true, message: `Reporte de inventario generado exitosamente` };
 }
 
-export async function generateMovimientosReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('movimientos', fechaInicio, fechaFin) as unknown as MovimientosReporteData;
-  const nombreArchivo = generateFileName('movimientos', tipo, fechaInicio);
+export async function generateMovimientosReport(tipo: 'pdf' | 'excel', filters?: ReporteFilters) {
+  const datos = await fetchReportData('movimientos', filters) as unknown as MovimientosReporteData;
+  const nombreArchivo = generateFileName('movimientos', tipo, filters?.fechaInicio);
   
   let dataUrl: string;
   
@@ -147,8 +158,8 @@ export async function generateMovimientosReport(tipo: 'pdf' | 'excel', fechaInic
   return { success: true, message: `Reporte de movimientos generado exitosamente` };
 }
 
-export async function generatePrestamosActivosReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('prestamos-activos', fechaInicio, fechaFin) as unknown as PrestamosActivosReporteData;
+export async function generatePrestamosActivosReport(tipo: 'pdf' | 'excel', filters?: ReporteFilters) {
+  const datos = await fetchReportData('prestamos-activos', filters) as unknown as PrestamosActivosReporteData;
   const nombreArchivo = generateFileName('prestamos-activos', tipo);
   
   let dataUrl: string;
@@ -164,8 +175,8 @@ export async function generatePrestamosActivosReport(tipo: 'pdf' | 'excel', fech
   return { success: true, message: `Reporte de préstamos activos generado exitosamente` };
 }
 
-export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('categorias', fechaInicio, fechaFin) as unknown as CategoriasReporteData;
+export async function generateCategoriasReport(tipo: 'pdf' | 'excel', filters?: ReporteFilters) {
+  const datos = await fetchReportData('categorias', filters) as unknown as CategoriasReporteData;
   const nombreArchivo = generateFileName('categorias', tipo);
   
   if (tipo === 'pdf') {
@@ -181,9 +192,9 @@ export async function generateCategoriasReport(tipo: 'pdf' | 'excel', fechaInici
   return { success: true, message: `Reporte de categorías generado exitosamente` };
 }
 
-export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
-  const datos = await fetchReportData('observaciones', fechaInicio, fechaFin) as unknown as ObservacionesReporteData;
-  const nombreArchivo = generateFileName('observaciones', tipo, fechaInicio);
+export async function generateObservacionesReport(tipo: 'pdf' | 'excel', filters?: ReporteFilters) {
+  const datos = await fetchReportData('observaciones', filters) as unknown as ObservacionesReporteData;
+  const nombreArchivo = generateFileName('observaciones', tipo, filters?.fechaInicio);
   
   if (tipo === 'pdf') {
     // Generar PDF con el nuevo estilo profesional
@@ -198,10 +209,10 @@ export async function generateObservacionesReport(tipo: 'pdf' | 'excel', fechaIn
   return { success: true, message: `Reporte de observaciones generado exitosamente` };
 }
 
-export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?: string, fechaFin?: string) {
+export async function generateTicketsReport(tipo: 'pdf' | 'excel', filters?: ReporteFilters) {
   try {
-    const datos = await fetchReportData('tickets', fechaInicio, fechaFin) as unknown as TicketsReporteData;
-    const nombreArchivo = generateFileName('tickets', tipo, fechaInicio);
+    const datos = await fetchReportData('tickets', filters) as unknown as TicketsReporteData;
+    const nombreArchivo = generateFileName('tickets', tipo, filters?.fechaInicio);
     
     if (tipo === 'pdf') {
       // Generar PDF con el nuevo estilo profesional
@@ -224,23 +235,22 @@ export async function generateTicketsReport(tipo: 'pdf' | 'excel', fechaInicio?:
 export async function generateReport(
   tipoReporte: ReporteType,
   formato: 'pdf' | 'excel',
-  fechaInicio?: string,
-  fechaFin?: string
+  filters?: ReporteFilters
 ) {
   try {
     switch (tipoReporte) {
       case 'inventario':
-        return await generateInventarioReport(formato, fechaInicio, fechaFin);
+        return await generateInventarioReport(formato, filters);
       case 'movimientos':
-        return await generateMovimientosReport(formato, fechaInicio, fechaFin);
+        return await generateMovimientosReport(formato, filters);
       case 'prestamos-activos':
-        return await generatePrestamosActivosReport(formato, fechaInicio, fechaFin);
+        return await generatePrestamosActivosReport(formato, filters);
       case 'categorias':
-        return await generateCategoriasReport(formato, fechaInicio, fechaFin);
+        return await generateCategoriasReport(formato, filters);
       case 'observaciones':
-        return await generateObservacionesReport(formato, fechaInicio, fechaFin);
+        return await generateObservacionesReport(formato, filters);
       case 'tickets':
-        return await generateTicketsReport(formato, fechaInicio, fechaFin);
+        return await generateTicketsReport(formato, filters);
       default:
         return { success: false, message: "Tipo de reporte no válido" };
     }

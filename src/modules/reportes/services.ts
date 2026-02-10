@@ -1,11 +1,29 @@
 import { prisma } from "../../lib/prisma";
 import type { InventarioReporteData, MovimientosReporteData, PrestamosActivosReporteData, CategoriasReporteData, ObservacionesReporteData, TicketsReporteData } from "../../lib/report-generator";
 
+type InventarioFilters = {
+  ubicacionId?: number;
+  categoriaId?: number;
+  fechaEntradaInicio?: Date;
+  fechaEntradaFin?: Date;
+};
+
 /**
  * Obtiene todos los elementos del inventario con sus relaciones para el reporte
  */
-export async function getInventarioReporteData(): Promise<InventarioReporteData> {
+export async function getInventarioReporteData(filters?: InventarioFilters): Promise<InventarioReporteData> {
+  const where: Record<string, unknown> = { deleted_at: null };
+
+  if (filters?.ubicacionId) where.ubicacion_id = filters.ubicacionId;
+  if (filters?.categoriaId) where.categoria_id = filters.categoriaId;
+  if (filters?.fechaEntradaInicio || filters?.fechaEntradaFin) {
+    where.fecha_entrada = {};
+    if (filters.fechaEntradaInicio) (where.fecha_entrada as Record<string, Date>).gte = filters.fechaEntradaInicio;
+    if (filters.fechaEntradaFin) (where.fecha_entrada as Record<string, Date>).lte = filters.fechaEntradaFin;
+  }
+
   const elementos = await prisma.elementos.findMany({
+    where,
     include: {
       categoria: { select: { nombre: true } },
       subcategoria: { select: { nombre: true } },
@@ -34,20 +52,29 @@ export async function getInventarioReporteData(): Promise<InventarioReporteData>
 }
 
 /**
- * Obtiene movimientos filtrados por rango de fechas para el reporte
+ * Obtiene movimientos filtrados por rango de fechas y ubicación para el reporte
  */
 export async function getMovimientosReporteData(
   fechaInicio?: Date,
-  fechaFin?: Date
+  fechaFin?: Date,
+  ubicacionId?: number
 ): Promise<MovimientosReporteData> {
-  const whereClause: { fecha_movimiento?: { gte: Date; lte: Date } } = {};
-  
-  if (fechaInicio && fechaFin) {
-    whereClause.fecha_movimiento = {
-      gte: fechaInicio,
-      lte: fechaFin
-    };
+  const andClauses: Record<string, unknown>[] = [];
+  if (fechaInicio || fechaFin) {
+    const fechaFilter: Record<string, Date> = {};
+    if (fechaInicio) fechaFilter.gte = fechaInicio;
+    if (fechaFin) fechaFilter.lte = fechaFin;
+    andClauses.push({ fecha_movimiento: fechaFilter });
   }
+  if (ubicacionId) {
+    andClauses.push({
+      OR: [
+        { ubicacion_anterior_id: ubicacionId },
+        { ubicacion_nueva_id: ubicacionId },
+      ],
+    });
+  }
+  const whereClause = andClauses.length > 0 ? { AND: andClauses } : {};
 
   const movimientos = await prisma.movimientos.findMany({
     where: whereClause,
@@ -90,17 +117,29 @@ export async function getMovimientosReporteData(
 /**
  * Obtiene préstamos activos (movimientos sin fecha de devolución real) para el reporte
  */
-export async function getPrestamosActivosReporteData(): Promise<PrestamosActivosReporteData> {
+export async function getPrestamosActivosReporteData(ubicacionId?: number): Promise<PrestamosActivosReporteData> {
+  const movimientosWhere = ubicacionId
+    ? {
+        tipo: "SALIDA" as const,
+        fecha_real_devolucion: null,
+        OR: [
+          { ubicacion_anterior_id: ubicacionId },
+          { ubicacion_nueva_id: ubicacionId },
+        ],
+      }
+    : { tipo: "SALIDA" as const, fecha_real_devolucion: null };
   const movimientos = await prisma.movimientos.findMany({
-    where: { tipo: "SALIDA", fecha_real_devolucion: null },
+    where: movimientosWhere,
     include: {
       elemento: { select: { serie: true, marca: true, modelo: true } },
     },
     orderBy: { fecha_movimiento: "desc" },
   });
 
+  const whereTickets: Record<string, unknown> = { fecha_devolucion_real: null };
+  if (ubicacionId) whereTickets.ubicacion_id = ubicacionId;
   const ticketsActivos = await prisma.tickets_guardados.findMany({
-    where: { fecha_devolucion_real: null },
+    where: whereTickets,
     include: {
       ticket_elementos: {
         include: { elemento: { select: { serie: true, marca: true, modelo: true } } },
@@ -136,9 +175,9 @@ export async function getPrestamosActivosReporteData(): Promise<PrestamosActivos
         modelo: te.elemento?.modelo ?? null,
       },
       dependencia_recibe: t.dependencia_recibe || "N/A",
-      funcionario_recibe: t.responsable_nombre || t.persona_recibe_nombre
-        ? `${t.persona_recibe_nombre ?? ""} ${t.persona_recibe_apellido ?? ""}`.trim() || t.responsable_nombre || "N/A"
-        : "N/A",
+      funcionario_recibe: (t as { persona_recibe_nombre?: string; persona_recibe_apellido?: string; responsable_nombre?: string }).persona_recibe_nombre
+        ? `${(t as { persona_recibe_nombre: string; persona_recibe_apellido?: string }).persona_recibe_nombre} ${(t as { persona_recibe_apellido?: string }).persona_recibe_apellido ?? ""}`.trim()
+        : (t as { responsable_nombre?: string }).responsable_nombre || "N/A",
       fecha_estimada_devolucion: t.fecha_estimada_devolucion,
     }))
   );
@@ -151,8 +190,9 @@ export async function getPrestamosActivosReporteData(): Promise<PrestamosActivos
 /**
  * Obtiene reporte de categorías con estadísticas
  */
-export async function getCategoriasReporteData(): Promise<CategoriasReporteData> {
+export async function getCategoriasReporteData(categoriaId?: number): Promise<CategoriasReporteData> {
   const categorias = await prisma.categorias.findMany({
+    where: categoriaId ? { id: categoriaId } : undefined,
     include: {
       _count: {
         select: {
@@ -184,19 +224,22 @@ export async function getCategoriasReporteData(): Promise<CategoriasReporteData>
  */
 export async function getObservacionesReporteData(
   fechaInicio?: Date,
-  fechaFin?: Date
+  fechaFin?: Date,
+  categoriaId?: number
 ): Promise<ObservacionesReporteData> {
-  const whereClause: { fecha_observacion?: { gte: Date; lte: Date } } = {};
-  
-  if (fechaInicio && fechaFin) {
-    whereClause.fecha_observacion = {
-      gte: fechaInicio,
-      lte: fechaFin
-    };
+  const whereClause: Record<string, unknown> = {};
+
+  if (fechaInicio || fechaFin) {
+    whereClause.fecha_observacion = {};
+    if (fechaInicio) (whereClause.fecha_observacion as Record<string, Date>).gte = fechaInicio;
+    if (fechaFin) (whereClause.fecha_observacion as Record<string, Date>).lte = fechaFin;
+  }
+  if (categoriaId) {
+    whereClause.elemento = { categoria_id: categoriaId };
   }
 
   const observaciones = await prisma.observaciones.findMany({
-    where: whereClause,
+    where: Object.keys(whereClause).length ? whereClause : undefined,
     include: {
       elemento: {
         select: {
@@ -235,19 +278,20 @@ export async function getObservacionesReporteData(
  */
 export async function getTicketsReporteData(
   fechaInicio?: Date,
-  fechaFin?: Date
+  fechaFin?: Date,
+  ubicacionId?: number
 ): Promise<TicketsReporteData> {
-  const whereClause: { fecha_salida?: { gte: Date; lte: Date } } = {};
-  
-  if (fechaInicio && fechaFin) {
-    whereClause.fecha_salida = {
-      gte: fechaInicio,
-      lte: fechaFin
-    };
+  const whereClause: Record<string, unknown> = {};
+
+  if (fechaInicio || fechaFin) {
+    whereClause.fecha_salida = {};
+    if (fechaInicio) (whereClause.fecha_salida as Record<string, Date>).gte = fechaInicio;
+    if (fechaFin) (whereClause.fecha_salida as Record<string, Date>).lte = fechaFin;
   }
+  if (ubicacionId) whereClause.ubicacion_id = ubicacionId;
 
   const tickets = await prisma.tickets_guardados.findMany({
-    where: whereClause,
+    where: Object.keys(whereClause).length ? whereClause : undefined,
     orderBy: {
       fecha_salida: 'desc'
     }

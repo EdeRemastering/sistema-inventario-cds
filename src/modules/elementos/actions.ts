@@ -139,7 +139,9 @@ export async function actionDeleteElemento(id: number) {
     where: { id },
     select: { imagen_url: true } as any,
   } as any)) as { imagen_url?: string | null } | null;
-  await deleteElemento(id);
+  const session = await getServerSession(authOptions);
+  const userId = session?.user ? parseInt((session.user as { id?: string }).id ?? "0", 10) : undefined;
+  await deleteElemento(id, isNaN(userId ?? 0) ? undefined : userId);
   if (current?.imagen_url) {
     await deleteImageFromR2(current.imagen_url);
   }

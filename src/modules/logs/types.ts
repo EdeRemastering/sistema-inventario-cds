@@ -4,6 +4,10 @@ export type Log = {
   accion: string;
   detalles: string | null;
   ip: string | null;
+  user_agent: string | null;
+  autor_nombre: string | null;
+  entity_type: string | null;
+  entity_id: number | null;
   creado_en: Date;
 };
 

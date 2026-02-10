@@ -10,28 +10,35 @@ import {
   getReporteStats
 } from "./services";
 
-export async function actionGetInventarioReporteData() {
-  return await getInventarioReporteData();
+type InventarioFilters = {
+  ubicacionId?: number;
+  categoriaId?: number;
+  fechaEntradaInicio?: Date;
+  fechaEntradaFin?: Date;
+};
+
+export async function actionGetInventarioReporteData(filters?: InventarioFilters) {
+  return await getInventarioReporteData(filters);
 }
 
-export async function actionGetMovimientosReporteData(fechaInicio?: Date, fechaFin?: Date) {
-  return await getMovimientosReporteData(fechaInicio, fechaFin);
+export async function actionGetMovimientosReporteData(fechaInicio?: Date, fechaFin?: Date, ubicacionId?: number) {
+  return await getMovimientosReporteData(fechaInicio, fechaFin, ubicacionId);
 }
 
-export async function actionGetPrestamosActivosReporteData() {
-  return await getPrestamosActivosReporteData();
+export async function actionGetPrestamosActivosReporteData(ubicacionId?: number) {
+  return await getPrestamosActivosReporteData(ubicacionId);
 }
 
-export async function actionGetCategoriasReporteData() {
-  return await getCategoriasReporteData();
+export async function actionGetCategoriasReporteData(categoriaId?: number) {
+  return await getCategoriasReporteData(categoriaId);
 }
 
-export async function actionGetObservacionesReporteData(fechaInicio?: Date, fechaFin?: Date) {
-  return await getObservacionesReporteData(fechaInicio, fechaFin);
+export async function actionGetObservacionesReporteData(fechaInicio?: Date, fechaFin?: Date, categoriaId?: number) {
+  return await getObservacionesReporteData(fechaInicio, fechaFin, categoriaId);
 }
 
-export async function actionGetTicketsReporteData(fechaInicio?: Date, fechaFin?: Date) {
-  return await getTicketsReporteData(fechaInicio, fechaFin);
+export async function actionGetTicketsReporteData(fechaInicio?: Date, fechaFin?: Date, ubicacionId?: number) {
+  return await getTicketsReporteData(fechaInicio, fechaFin, ubicacionId);
 }
 
 export async function actionGetReporteStats() {

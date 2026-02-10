@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Package2 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -12,7 +13,6 @@ import {
   TableRow,
 } from "../ui/table";
 import { UbicacionUpsertDialog } from "./ubicacion-upsert-dialog";
-import { UbicacionElementosSheet } from "./ubicacion-elementos-sheet";
 import { DeleteButton } from "../delete-button";
 import type { Ubicacion } from "../../modules/ubicaciones/types";
 import type { Sede } from "../../modules/sedes/types";
@@ -27,9 +27,6 @@ type Props = {
   onCreateUbicacion: (formData: FormData) => Promise<void>;
   onUpdateUbicacion: (formData: FormData) => Promise<void>;
   onDeleteUbicacion: (id: number) => Promise<void>;
-  onCreateElemento: (formData: FormData) => Promise<void>;
-  onUpdateElemento: (formData: FormData) => Promise<void>;
-  onDeleteElemento: (id: number) => Promise<void>;
 };
 
 export function UbicacionesList({
@@ -40,15 +37,10 @@ export function UbicacionesList({
   onCreateUbicacion,
   onUpdateUbicacion,
   onDeleteUbicacion,
-  onCreateElemento,
-  onUpdateElemento,
-  onDeleteElemento,
 }: Props) {
   const [editingUbicacion, setEditingUbicacion] = useState<Ubicacion | null>(
     null
   );
-  const [elementosSheetUbicacion, setElementosSheetUbicacion] =
-    useState<Ubicacion | null>(null);
 
   return (
     <div className="space-y-4">
@@ -121,11 +113,13 @@ export function UbicacionesList({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setElementosSheetUbicacion(ubicacion)}
-                        title="Ver y agregar elementos"
+                        asChild
+                        title="Ver elementos de esta ubicación"
                       >
-                        <Package2 className="h-4 w-4 mr-1" />
-                        Elementos
+                        <Link href={`/elementos?ubicacion=${ubicacion.id}`}>
+                          <Package2 className="h-4 w-4 mr-1" />
+                          Elementos
+                        </Link>
                       </Button>
                       <Button
                         variant="outline"
@@ -168,19 +162,6 @@ export function UbicacionesList({
           onClose={() => setEditingUbicacion(null)}
         />
       )}
-
-      <UbicacionElementosSheet
-        open={elementosSheetUbicacion !== null}
-        onOpenChange={(open) => !open && setElementosSheetUbicacion(null)}
-        ubicacion={elementosSheetUbicacion}
-        sedes={sedes}
-        categorias={categorias}
-        subcategorias={subcategorias}
-        ubicaciones={ubicaciones}
-        onCreateElemento={onCreateElemento}
-        onUpdateElemento={onUpdateElemento}
-        onDeleteElemento={onDeleteElemento}
-      />
     </div>
   );
 }

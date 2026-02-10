@@ -46,29 +46,44 @@ export interface AuditLogData {
 export async function logAction(data: AuditLogData): Promise<void> {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      console.warn("No se pudo obtener la sesión del usuario para el log");
+
+    const u = session?.user as { id?: string; nombre?: string; apellido?: string } | undefined;
+    const userId = u?.id;
+    const autorNombre = u?.nombre
+      ? `${u.nombre}${u.apellido ? ` ${u.apellido}` : ""}`.trim()
+      : session?.user?.name || session?.user?.email || "Sistema";
+
+    // Si hay sesión, usar userId; si no, intentar buscar por nombre
+    let usuarioId: number | null = null;
+    if (userId) {
+      usuarioId = parseInt(userId, 10);
+      if (Number.isNaN(usuarioId)) usuarioId = null;
+    }
+    if (!usuarioId) {
+      const usuario = await prisma.usuarios.findFirst({
+        where: { deleted_at: null, nombre: session?.user?.name || undefined },
+        select: { id: true },
+      });
+      usuarioId = usuario?.id ?? null;
+    }
+    if (!usuarioId) {
+      console.warn("No se pudo obtener usuario para el log");
       return;
     }
 
-    // Para el sistema actual, usamos el nombre del usuario como identificador
-    // En una implementación completa, deberíamos tener el ID del usuario en la sesión
-    const usuario = await prisma.usuarios.findFirst({
-      where: { nombre: session.user.name || session.user.email || 'Sistema' }
-    });
-
-    if (!usuario) {
-      console.warn("Usuario no encontrado en la base de datos");
-      return;
-    }
+    const detalles =
+      data.details || `${data.action} ${data.entity}${data.entityId ? ` ID: ${data.entityId}` : ""}`;
 
     await prisma.logs.create({
       data: {
-        usuario_id: usuario.id,
+        usuario_id: usuarioId,
         accion: `${data.action}_${data.entity.toUpperCase()}`,
-        detalles: data.details || `${data.action} ${data.entity}${data.entityId ? ` ID: ${data.entityId}` : ''}`,
+        detalles,
         ip: data.ip || null,
+        user_agent: data.userAgent || null,
+        autor_nombre: autorNombre,
+        entity_type: data.entity,
+        entity_id: data.entityId ?? null,
       },
     });
   } catch (error) {

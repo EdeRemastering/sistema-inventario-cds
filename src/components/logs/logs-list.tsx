@@ -28,8 +28,16 @@ export function LogsList({
   const { searchQuery, filteredData, handleSearch, hasResults, hasData } =
     useSearch({
       data: logs,
-      searchFields: ["accion", "detalles"],
+      searchFields: ["accion", "detalles", "autor_nombre", "entity_type"],
     });
+
+  function formatDateTime(date: Date | string): string {
+    const d = typeof date === "string" ? new Date(date) : date;
+    return d.toLocaleString("es-CO", {
+      dateStyle: "short",
+      timeStyle: "medium",
+    });
+  }
 
   const showEmptyState = !hasData || !hasResults;
 
@@ -71,12 +79,31 @@ export function LogsList({
               {filteredData.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-center justify-between gap-3 rounded border p-3"
+                  className="flex flex-col gap-2 rounded border p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="text-sm">
-                    <div className="font-medium">{log.accion}</div>
+                  <div className="min-w-0 flex-1 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{log.accion}</span>
+                      {log.autor_nombre && (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                          {log.autor_nombre}
+                        </span>
+                      )}
+                      {log.entity_type && (
+                        <span className="text-muted-foreground">
+                          {log.entity_type}
+                          {log.entity_id != null && <> #{log.entity_id}</>}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-muted-foreground">
                       {log.detalles ?? ""}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0 text-xs text-muted-foreground">
+                      <span title="Fecha y hora">
+                        {formatDateTime(log.creado_en)}
+                      </span>
+                      {log.ip && <span title="IP">{log.ip}</span>}
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">

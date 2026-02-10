@@ -14,10 +14,18 @@ import {
 } from "../ui/select";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { generateReport, type ReporteType } from "../../lib/report-handler";
+import {
+  generateReport,
+  type ReporteType,
+  type ReporteFilters,
+} from "../../lib/report-handler";
+import type { Ubicacion } from "../../modules/ubicaciones/types";
+import type { Categoria } from "../../modules/categorias/types";
 
 type ReporteGeneratorProps = {
   onGenerate: (tipo: string, datos: string) => void;
+  ubicaciones: Ubicacion[];
+  categorias: Categoria[];
 };
 
 const reporteOptions: { value: ReporteType; label: string }[] = [
@@ -47,27 +55,37 @@ function getReporteIncludes(tipo: ReporteType): string {
     "prestamos-activos": "Elemento, fecha salida, ubicaci\u00f3n, responsable",
     categorias: "Categor\u00eda, subcategor\u00edas, cantidad de elementos",
     observaciones: "Elemento, fecha, descripci\u00f3n de la observaci\u00f3n",
-    tickets: "Pr\u00e9stamo, fechas, ubicaci\u00f3n, dependencias, funcionarios, motivo",
+    tickets:
+      "Pr\u00e9stamo, fechas, ubicaci\u00f3n, dependencias, funcionarios, motivo",
   };
   return includes[tipo];
 }
 
-export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
+export function ReporteGenerator({
+  onGenerate,
+  ubicaciones,
+  categorias,
+}: ReporteGeneratorProps) {
   const [tipoReporte, setTipoReporte] = useState<ReporteType>("tickets");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
+  const [ubicacionId, setUbicacionId] = useState<string>("__todas__");
+  const [categoriaId, setCategoriaId] = useState<string>("__todas__");
   const [generando, setGenerando] = useState(false);
 
   const handleGenerar = async (formato: "pdf" | "excel") => {
     setGenerando(true);
 
+    const filters: ReporteFilters = {};
+    if (fechaInicio) filters.fechaInicio = fechaInicio;
+    if (fechaFin) filters.fechaFin = fechaFin;
+    if (ubicacionId && ubicacionId !== "__todas__")
+      filters.ubicacionId = parseInt(ubicacionId, 10);
+    if (categoriaId && categoriaId !== "__todas__")
+      filters.categoriaId = parseInt(categoriaId, 10);
+
     try {
-      const result = await generateReport(
-        tipoReporte,
-        formato,
-        fechaInicio || undefined,
-        fechaFin || undefined
-      );
+      const result = await generateReport(tipoReporte, formato, filters);
 
       if (result.success) {
         toast.success(result.message);
@@ -112,26 +130,88 @@ export function ReporteGenerator({ onGenerate }: ReporteGeneratorProps) {
           </Select>
         </div>
 
-        {/* Filtros de Fecha */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="fecha-inicio">Fecha Inicio</Label>
-            <Input
-              id="fecha-inicio"
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="fecha-fin">Fecha Fin</Label>
-            <Input
-              id="fecha-fin"
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-            />
-          </div>
+        {/* Filtros dinámicos según tipo de reporte */}
+        <div className="space-y-4 rounded-lg border bg-muted/30 p-3">
+          <p className="text-sm font-medium text-muted-foreground">
+            Filtros (opcionales)
+          </p>
+
+          {(tipoReporte === "inventario" ||
+            tipoReporte === "movimientos" ||
+            tipoReporte === "prestamos-activos" ||
+            tipoReporte === "tickets") && (
+            <div className="grid gap-2">
+              <Label htmlFor="filtro-ubicacion">Ubicación</Label>
+              <Select value={ubicacionId} onValueChange={setUbicacionId}>
+                <SelectTrigger id="filtro-ubicacion">
+                  <SelectValue placeholder="Todas las ubicaciones" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__todas__">Todas</SelectItem>
+                  {ubicaciones.map((u) => (
+                    <SelectItem key={u.id} value={String(u.id)}>
+                      {u.codigo} - {u.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {(tipoReporte === "inventario" ||
+            tipoReporte === "observaciones" ||
+            tipoReporte === "categorias") && (
+            <div className="grid gap-2">
+              <Label htmlFor="filtro-categoria">Categoría</Label>
+              <Select value={categoriaId} onValueChange={setCategoriaId}>
+                <SelectTrigger id="filtro-categoria">
+                  <SelectValue placeholder="Todas las categorías" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__todas__">Todas</SelectItem>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {(tipoReporte === "inventario" ||
+            tipoReporte === "movimientos" ||
+            tipoReporte === "observaciones" ||
+            tipoReporte === "tickets") && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="fecha-inicio">
+                  {tipoReporte === "inventario"
+                    ? "Fecha entrada desde"
+                    : "Fecha desde"}
+                </Label>
+                <Input
+                  id="fecha-inicio"
+                  type="date"
+                  value={fechaInicio}
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="fecha-fin">
+                  {tipoReporte === "inventario"
+                    ? "Fecha entrada hasta"
+                    : "Fecha hasta"}
+                </Label>
+                <Input
+                  id="fecha-fin"
+                  type="date"
+                  value={fechaFin}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Botones de Acci\u00f3n */}

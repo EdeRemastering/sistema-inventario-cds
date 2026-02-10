@@ -28,15 +28,18 @@ function mapUpdateInputToPrisma(data: UpdateSedeInput): Prisma.sedesUncheckedUpd
   return payload;
 }
 
+const deletedFilter = { deleted_at: null };
+
 export function listSedes(): Promise<Sede[]> {
   return prisma.sedes.findMany({
+    where: deletedFilter,
     orderBy: { nombre: "asc" },
   }) as Promise<Sede[]>;
 }
 
 export function listSedesActivas(): Promise<Sede[]> {
   return prisma.sedes.findMany({
-    where: { activo: true },
+    where: { ...deletedFilter, activo: true },
     orderBy: { nombre: "asc" },
   }) as Promise<Sede[]>;
 }
@@ -45,6 +48,7 @@ export function listSedesActivas(): Promise<Sede[]> {
 export function listSedesConElementos(): Promise<Sede[]> {
   return prisma.sedes.findMany({
     where: {
+      ...deletedFilter,
       activo: true,
       ubicaciones: {
         some: {
@@ -59,7 +63,7 @@ export function listSedesConElementos(): Promise<Sede[]> {
 }
 
 export function getSede(id: number): Promise<Sede | null> {
-  return prisma.sedes.findUnique({ where: { id } }) as Promise<Sede | null>;
+  return prisma.sedes.findFirst({ where: { id, ...deletedFilter } }) as Promise<Sede | null>;
 }
 
 export function createSede(data: CreateSedeInput): Promise<Sede> {
@@ -77,8 +81,11 @@ export function updateSede(id: number, data: UpdateSedeInput): Promise<Sede> {
   }) as Promise<Sede>;
 }
 
-export function deleteSede(id: number): Promise<Sede> {
-  return prisma.sedes.delete({ where: { id } }) as Promise<Sede>;
+export function deleteSede(id: number, userId?: number): Promise<Sede> {
+  return prisma.sedes.update({
+    where: { id },
+    data: { deleted_at: new Date(), deleted_by: userId ?? null },
+  }) as Promise<Sede>;
 }
 
 

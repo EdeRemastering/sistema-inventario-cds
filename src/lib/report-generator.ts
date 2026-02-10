@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { fmtEstado } from "./formato-estados";
 
 // Extender jsPDF para incluir autoTable
 declare module "jspdf" {
@@ -302,8 +303,8 @@ export async function generateInventarioReport(data: InventarioReporteData): Pro
     elemento.modelo || 'N/A',
     elemento.cantidad.toString(),
     elemento.ubicacion || 'N/A',
-    elemento.estado_funcional,
-    elemento.estado_fisico,
+    fmtEstado(elemento.estado_funcional),
+    fmtEstado(elemento.estado_fisico),
     elemento.categoria.nombre,
     elemento.subcategoria?.nombre || 'N/A'
   ]);
@@ -929,6 +930,7 @@ export async function exportToExcel(data: Record<string, unknown>[], filename: s
  * Exporta inventario completo a Excel
  */
 export async function exportInventarioToExcel(data: InventarioReporteData): Promise<string> {
+  const { fmtEstado } = await import("./formato-estados");
   const excelData = data.elementos.map(elemento => ({
     'ID': elemento.id,
     'Serie': elemento.serie,
@@ -936,8 +938,8 @@ export async function exportInventarioToExcel(data: InventarioReporteData): Prom
     'Modelo': elemento.modelo || 'N/A',
     'Cantidad': elemento.cantidad,
     'Ubicación': elemento.ubicacion || 'N/A',
-    'Estado Funcional': elemento.estado_funcional,
-    'Estado Físico': elemento.estado_fisico,
+    'Estado Funcional': fmtEstado(elemento.estado_funcional),
+    'Estado Físico': fmtEstado(elemento.estado_fisico),
     'Categoría': elemento.categoria.nombre,
     'Subcategoría': elemento.subcategoria?.nombre || 'N/A'
   }));

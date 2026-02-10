@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../lib/auth";
 import { categoriaCreateSchema, categoriaUpdateSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
 import { createCategoria, deleteCategoria, updateCategoria } from "./services";
@@ -24,7 +26,9 @@ export async function actionUpdateCategoria(formData: FormData) {
 }
 
 export async function actionDeleteCategoria(id: number) {
-  await deleteCategoria(id);
+  const session = await getServerSession(authOptions);
+  const userId = session?.user ? parseInt((session.user as { id?: string }).id ?? "0", 10) : undefined;
+  await deleteCategoria(id, isNaN(userId ?? 0) ? undefined : userId);
   revalidatePath("/categorias");
 }
 

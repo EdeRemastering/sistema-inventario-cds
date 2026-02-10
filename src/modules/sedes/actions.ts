@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../lib/auth";
 import { formDataToObject } from "../../utils/form";
 import { sedeCreateSchema, sedeUpdateSchema } from "./validations";
 import { createSede, updateSede, deleteSede } from "./services";
@@ -48,7 +50,9 @@ export async function actionUpdateSede(formData: FormData) {
 }
 
 export async function actionDeleteSede(id: number) {
-  await deleteSede(id);
+  const session = await getServerSession(authOptions);
+  const userId = session?.user ? parseInt((session.user as { id?: string }).id ?? "0", 10) : undefined;
+  await deleteSede(id, isNaN(userId ?? 0) ? undefined : userId);
   await logAction({
     action: "DELETE",
     entity: "sede",

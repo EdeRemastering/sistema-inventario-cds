@@ -33,6 +33,7 @@ type PaginationInfo = {
 type ElementosListProps = {
   elementos: ElementoListItem[];
   pagination: PaginationInfo;
+  ubicacionFiltro?: Ubicacion;
   sedes: Sede[];
   categorias: Categoria[];
   subcategorias: Subcategoria[];
@@ -45,6 +46,7 @@ type ElementosListProps = {
 export function ElementosList({
   elementos,
   pagination,
+  ubicacionFiltro,
   sedes,
   categorias,
   subcategorias,
@@ -62,10 +64,16 @@ export function ElementosList({
   const [detailElementoId, setDetailElementoId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  const baseParams = () => {
+    const p = new URLSearchParams();
+    if (ubicacionFiltro) p.set("ubicacion", String(ubicacionFiltro.id));
+    return p;
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(() => {
-      const params = new URLSearchParams();
+      const params = baseParams();
       if (searchValue) params.set("search", searchValue);
       params.set("page", "1");
       router.push(`/elementos?${params.toString()}`);
@@ -83,7 +91,8 @@ export function ElementosList({
   const clearSearch = () => {
     setSearchValue("");
     startTransition(() => {
-      router.push("/elementos");
+      const params = baseParams();
+      router.push(`/elementos${params.toString() ? `?${params.toString()}` : ""}`);
     });
   };
 
@@ -92,10 +101,22 @@ export function ElementosList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold" data-tour="page-title">
-          Elementos
-        </h1>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold" data-tour="page-title">
+            {ubicacionFiltro
+              ? `Elementos en ${ubicacionFiltro.codigo} - ${ubicacionFiltro.nombre}`
+              : "Elementos"}
+          </h1>
+          {ubicacionFiltro && (
+            <Link
+              href="/ubicaciones"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              ← Volver a ubicaciones
+            </Link>
+          )}
+        </div>
         <span className="text-sm text-muted-foreground">
           {pagination.total.toLocaleString()} elementos totales
         </span>
@@ -137,6 +158,14 @@ export function ElementosList({
                 categorias={categorias}
                 subcategorias={subcategorias}
                 ubicaciones={ubicaciones}
+                defaultValues={
+                  ubicacionFiltro && ubicacionFiltro.sede
+                    ? {
+                        ubicacion_id: String(ubicacionFiltro.id),
+                        sede_id: String(ubicacionFiltro.sede.id),
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>

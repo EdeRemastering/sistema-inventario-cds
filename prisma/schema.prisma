@@ -79,9 +79,12 @@ model sedes {
   activo      Boolean   @default(true)
   creado_en   DateTime  @default(now()) @db.Timestamp(0)
   actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at  DateTime? @db.Timestamp(0)  // Soft delete
+  deleted_by  Int?      @db.Int
 
   ubicaciones ubicaciones[]
 
+  @@index([deleted_at])
   @@map("sedes")
 }
 
@@ -96,6 +99,8 @@ model ubicaciones {
   largo_metros  Decimal? @db.Decimal(8, 2)
   creado_en   DateTime  @default(now()) @db.Timestamp(0)
   actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at  DateTime? @db.Timestamp(0)  // Soft delete
+  deleted_by  Int?      @db.Int
 
   sede sedes @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   elementos elementos[] @relation("ElementoUbicacion")
@@ -107,6 +112,7 @@ model ubicaciones {
   programacion_ambientes programacion_ambientes[]
 
   @@index([sede_id])
+  @@index([deleted_at])
   @@map("ubicaciones")
 }
 
@@ -131,10 +137,13 @@ model categorias {
   estado      EstadoGeneral @default(activo)
   created_at  DateTime  @default(now()) @db.Timestamp(0)
   updated_at  DateTime  @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at  DateTime? @db.Timestamp(0)  // Soft delete
+  deleted_by  Int?      @db.Int
 
   subcategorias subcategorias[]
   elementos     elementos[]
 
+  @@index([deleted_at])
   @@map("categorias")
 }
 
@@ -146,12 +155,15 @@ model subcategorias {
   estado      EstadoGeneral @default(activo)
   created_at  DateTime  @default(now()) @db.Timestamp(0)
   updated_at  DateTime  @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at  DateTime? @db.Timestamp(0)  // Soft delete
+  deleted_by  Int?      @db.Int
 
   categoria categorias @relation(fields: [categoria_id], references: [id], onDelete: Cascade)
   elementos elementos[]
 
   @@unique([nombre, categoria_id], map: "unique_subcategoria")
   @@index([categoria_id])
+  @@index([deleted_at])
   @@map("subcategorias")
 }
 
@@ -177,6 +189,8 @@ model elementos {
   activo           Boolean     @default(true)
   creado_en        DateTime    @default(now()) @db.Timestamp(0)
   actualizado_en   DateTime    @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at       DateTime?   @db.Timestamp(0)  // Soft delete
+  deleted_by       Int?        @db.Int
 
   categoria    categorias   @relation(fields: [categoria_id], references: [id])
   subcategoria subcategorias? @relation(fields: [subcategoria_id], references: [id], onDelete: SetNull)
@@ -194,20 +208,27 @@ model elementos {
   @@index([subcategoria_id], map: "idx_elementos_subcategoria")
   @@index([ubicacion_id], map: "idx_elementos_ubicacion")
   @@index([codigo_equipo], map: "idx_elementos_codigo")
+  @@index([deleted_at])
   @@map("elementos")
 }
 
 model logs {
-  id         Int      @id @default(autoincrement())
-  usuario_id Int
-  accion     String   @db.VarChar(100)
-  detalles   String?  @db.Text
-  ip         String?  @db.VarChar(45)
-  creado_en  DateTime @default(now()) @db.Timestamp(0)
+  id          Int      @id @default(autoincrement())
+  usuario_id  Int
+  accion      String   @db.VarChar(100)
+  detalles    String?  @db.Text
+  ip          String?  @db.VarChar(45)
+  user_agent  String?  @db.VarChar(500)  // Navegador/dispositivo
+  autor_nombre String? @db.VarChar(200)  // Nombre del usuario (denormalizado para auditoría)
+  entity_type String?  @db.VarChar(50)   // elemento, ubicacion, etc.
+  entity_id   Int?     @db.Int
+  creado_en   DateTime @default(now()) @db.Timestamp(0)
 
   usuario usuarios @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 
   @@index([usuario_id])
+  @@index([creado_en])
+  @@index([entity_type])
   @@map("logs")
 }
 
@@ -366,18 +387,20 @@ model usuarios {
   password   String    @db.VarChar(255)
   nombre     String    @db.VarChar(100)
   apellido   String?   @db.VarChar(100)
-  // Firma del usuario (URL pública de R2 / ruta local / data URL)
   firma_url  String?   @db.Text
   rol        Rol       @default(usuario)
   activo     Boolean?  @default(true)
   creado_en  DateTime  @default(now()) @db.Timestamp(0)
   actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at DateTime? @db.Timestamp(0)  // Soft delete
+  deleted_by Int?      @db.Int
 
   logs logs[]
   notifications notifications[]
   bajas_autorizadas bajas_elementos[] @relation("BajaAutorizadoPor")
   bajas_solicitadas bajas_elementos[] @relation("BajaCreadoPor")
 
+  @@index([deleted_at])
   @@map("usuarios")
 }
 

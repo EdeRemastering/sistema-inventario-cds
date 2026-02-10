@@ -24,8 +24,10 @@ export type ElementoListItem = {
   } | null;
 };
 
+const deletedFilter = { deleted_at: null };
+
 export function listElementos(): Promise<Elemento[]> {
-  return prisma.elementos.findMany({ orderBy: { id: "desc" } }) as unknown as Promise<Elemento[]>;
+  return prisma.elementos.findMany({ where: deletedFilter, orderBy: { id: "desc" } }) as unknown as Promise<Elemento[]>;
 }
 
 // Tipo para respuesta paginada
@@ -41,18 +43,23 @@ export type PaginatedElementos = {
 async function fetchElementosPaginated(
   page: number = 1,
   pageSize: number = 50,
-  search?: string
+  search?: string,
+  ubicacionId?: number
 ): Promise<PaginatedElementos> {
   const skip = (page - 1) * pageSize;
   
-  // Condición de búsqueda
-  const whereClause = search ? {
-    OR: [
-      { serie: { contains: search } },
-      { marca: { contains: search } },
-      { modelo: { contains: search } },
-    ]
-  } : {};
+  // Condición de búsqueda + excluir eliminados + filtro por ubicación
+  const whereClause = {
+    ...deletedFilter,
+    ...(ubicacionId ? { ubicacion_id: ubicacionId } : {}),
+    ...(search ? {
+      OR: [
+        { serie: { contains: search } },
+        { marca: { contains: search } },
+        { modelo: { contains: search } },
+      ]
+    } : {}),
+  };
 
   // Ejecutar consultas en paralelo
   const [data, total] = await Promise.all([
@@ -107,15 +114,16 @@ async function fetchElementosPaginated(
 export async function listElementosPaginated(
   page: number = 1,
   pageSize: number = 50,
-  search?: string
+  search?: string,
+  ubicacionId?: number
 ): Promise<PaginatedElementos> {
-  return fetchElementosPaginated(page, pageSize, search);
+  return fetchElementosPaginated(page, pageSize, search, ubicacionId);
 }
 
 /** Lista elementos de una ubicación específica */
 export function listElementosByUbicacion(ubicacionId: number): Promise<ElementoListItem[]> {
   return prisma.elementos.findMany({
-    where: { ubicacion_id: ubicacionId },
+    where: { ...deletedFilter, ubicacion_id: ubicacionId },
     select: {
       id: true,
       serie: true,
@@ -150,6 +158,7 @@ export function listElementosByUbicacion(ubicacionId: number): Promise<ElementoL
 // Versión simple para compatibilidad (limitada a 100 elementos)
 async function fetchElementosForList(): Promise<ElementoListItem[]> {
   return prisma.elementos.findMany({
+    where: deletedFilter,
     select: {
       id: true,
       serie: true,
@@ -192,6 +201,7 @@ export const listElementosForList = unstable_cache(
 // Versión completa con todas las relaciones (para cuando se necesiten todos los datos)
 export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
   return prisma.elementos.findMany({ 
+    where: deletedFilter,
     select: {
       id: true,
       categoria_id: true,
@@ -235,7 +245,7 @@ export function listElementosWithRelations(): Promise<ElementoWithRelations[]> {
 }
 
 export function getElemento(id: number): Promise<Elemento | null> {
-  return prisma.elementos.findUnique({ where: { id } }) as unknown as Promise<Elemento | null>;
+  return prisma.elementos.findFirst({ where: { id, ...deletedFilter } }) as unknown as Promise<Elemento | null>;
 }
 
 export function createElemento(data: CreateElementoInput): Promise<Elemento> {
@@ -303,8 +313,11 @@ export function updateElemento(id: number, data: UpdateElementoInput): Promise<E
   return prisma.elementos.update({ where: { id }, data: payload } as any) as unknown as Promise<Elemento>;
 }
 
-export function deleteElemento(id: number): Promise<Elemento> {
-  return prisma.elementos.delete({ where: { id } }) as unknown as Promise<Elemento>;
+export function deleteElemento(id: number, userId?: number): Promise<Elemento> {
+  return prisma.elementos.update({
+    where: { id },
+    data: { deleted_at: new Date(), deleted_by: userId ?? null },
+  } as any) as unknown as Promise<Elemento>;
 }
 
 

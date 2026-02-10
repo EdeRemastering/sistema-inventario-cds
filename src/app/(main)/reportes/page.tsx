@@ -1,15 +1,19 @@
 import { listReportes } from "../../../modules/reportes_generados/services";
 import { actionDeleteReporte } from "../../../modules/reportes_generados/actions";
 import { getReporteStats } from "../../../modules/reportes/services";
+import { listUbicacionesActivas } from "../../../modules/ubicaciones/services";
+import { listCategorias } from "../../../modules/categorias/services";
 import { ReportesPageClient } from "../../../components/reportes/reportes-page-client";
 import { ReporteStats } from "../../../components/reportes/reporte-stats";
 import { ReportesSkeleton } from "../../../components/skeletons/reportes";
 import { Suspense } from "react";
 
 async function ReportesContent() {
-  const [reportes, stats] = await Promise.all([
+  const [reportes, stats, ubicaciones, categorias] = await Promise.all([
     listReportes(),
     getReporteStats(),
+    listUbicacionesActivas(),
+    listCategorias(),
   ]);
 
   return (
@@ -25,6 +29,8 @@ async function ReportesContent() {
 
       <ReportesPageClient
         reportes={reportes}
+        ubicaciones={ubicaciones}
+        categorias={categorias}
         onDeleteReporte={actionDeleteReporte}
       />
     </div>

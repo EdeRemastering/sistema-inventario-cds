@@ -55,8 +55,11 @@ function mapUpdateInputToPrisma(data: UpdateUbicacionInput): Prisma.ubicacionesU
   return payload;
 }
 
+const deletedFilter = { deleted_at: null };
+
 export async function listUbicaciones(): Promise<Ubicacion[]> {
   const rows = await prisma.ubicaciones.findMany({
+    where: deletedFilter,
     include: {
       sede: {
         select: {
@@ -74,7 +77,7 @@ export async function listUbicaciones(): Promise<Ubicacion[]> {
 
 export async function listUbicacionesActivas(): Promise<Ubicacion[]> {
   const rows = await prisma.ubicaciones.findMany({
-    where: { activo: true },
+    where: { ...deletedFilter, activo: true },
     include: {
       sede: {
         select: {
@@ -94,6 +97,7 @@ export async function listUbicacionesActivas(): Promise<Ubicacion[]> {
 export async function listUbicacionesConElementos(): Promise<Ubicacion[]> {
   const rows = await prisma.ubicaciones.findMany({
     where: {
+      ...deletedFilter,
       activo: true,
       elementos: {
         some: {} // Al menos un elemento
@@ -115,8 +119,8 @@ export async function listUbicacionesConElementos(): Promise<Ubicacion[]> {
 }
 
 export async function getUbicacion(id: number): Promise<Ubicacion | null> {
-  const row = await prisma.ubicaciones.findUnique({
-    where: { id },
+  const row = await prisma.ubicaciones.findFirst({
+    where: { id, ...deletedFilter },
     include: {
       sede: {
         select: {
@@ -132,8 +136,8 @@ export async function getUbicacion(id: number): Promise<Ubicacion | null> {
 }
 
 export async function getUbicacionByCodigo(codigo: string): Promise<Ubicacion | null> {
-  const row = await prisma.ubicaciones.findUnique({
-    where: { codigo },
+  const row = await prisma.ubicaciones.findFirst({
+    where: { codigo, ...deletedFilter },
     include: {
       sede: {
         select: {
@@ -185,9 +189,10 @@ export async function updateUbicacion(id: number, data: UpdateUbicacionInput): P
   return mapToUbicacion(row as unknown as Record<string, unknown>);
 }
 
-export async function deleteUbicacion(id: number): Promise<Ubicacion> {
-  const row = await prisma.ubicaciones.delete({
+export async function deleteUbicacion(id: number, userId?: number): Promise<Ubicacion> {
+  const row = await prisma.ubicaciones.update({
     where: { id },
+    data: { deleted_at: new Date(), deleted_by: userId ?? null },
     include: {
       sede: {
         select: {

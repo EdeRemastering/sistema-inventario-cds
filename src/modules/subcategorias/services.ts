@@ -2,9 +2,11 @@ import { prisma } from "../../lib/prisma";
 import { withDatabaseRetry } from "../../lib/db-connection";
 import type { Subcategoria } from "./types";
 
+const deletedFilter = { deleted_at: null };
+
 export async function listSubcategorias(): Promise<Subcategoria[]> {
   return withDatabaseRetry(async () => {
-    return await prisma.subcategorias.findMany({ orderBy: { id: "desc" } }) as unknown as Promise<Subcategoria[]>;
+    return await prisma.subcategorias.findMany({ where: deletedFilter, orderBy: { id: "desc" } }) as unknown as Promise<Subcategoria[]>;
   });
 }
 
@@ -13,6 +15,7 @@ export async function listSubcategoriasConElementos(): Promise<Subcategoria[]> {
   return withDatabaseRetry(async () => {
     return await prisma.subcategorias.findMany({
       where: {
+        ...deletedFilter,
         elementos: {
           some: {} // Al menos un elemento
         }
@@ -24,7 +27,7 @@ export async function listSubcategoriasConElementos(): Promise<Subcategoria[]> {
 
 export async function getSubcategoria(id: number): Promise<Subcategoria | null> {
   return withDatabaseRetry(async () => {
-    return await prisma.subcategorias.findUnique({ where: { id } }) as unknown as Promise<Subcategoria | null>;
+    return await prisma.subcategorias.findFirst({ where: { id, ...deletedFilter } }) as unknown as Promise<Subcategoria | null>;
   });
 }
 
@@ -60,9 +63,12 @@ export async function updateSubcategoria(id: number, data: UpdateSubcategoriaInp
   });
 }
 
-export async function deleteSubcategoria(id: number): Promise<Subcategoria> {
+export async function deleteSubcategoria(id: number, userId?: number): Promise<Subcategoria> {
   return withDatabaseRetry(async () => {
-    return await prisma.subcategorias.delete({ where: { id } });
+    return await prisma.subcategorias.update({
+      where: { id },
+      data: { deleted_at: new Date(), deleted_by: userId ?? null },
+    });
   });
 }
 

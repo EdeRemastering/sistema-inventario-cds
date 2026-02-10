@@ -2,12 +2,14 @@ import { prisma } from "../../lib/prisma";
 import type { CreateUsuarioInput, UpdateUsuarioInput } from "./types";
 import bcrypt from "bcryptjs";
 
+const deletedFilter = { deleted_at: null };
+
 export async function listUsuarios() {
-  return prisma.usuarios.findMany({ orderBy: { id: "desc" } });
+  return prisma.usuarios.findMany({ where: deletedFilter, orderBy: { id: "desc" } });
 }
 
 export async function getUsuarioById(id: number) {
-  return prisma.usuarios.findUnique({ where: { id } });
+  return prisma.usuarios.findFirst({ where: { id, ...deletedFilter } });
 }
 
 export async function createUsuario(input: CreateUsuarioInput) {
@@ -43,8 +45,11 @@ export async function updateUsuario(input: UpdateUsuarioInput) {
   return prisma.usuarios.update({ where: { id: input.id }, data });
 }
 
-export async function deleteUsuario(id: number) {
-  return prisma.usuarios.delete({ where: { id } });
+export async function deleteUsuario(id: number, deletedByUserId?: number) {
+  return prisma.usuarios.update({
+    where: { id },
+    data: { deleted_at: new Date(), deleted_by: deletedByUserId ?? null },
+  });
 }
 
 
