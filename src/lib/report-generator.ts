@@ -145,7 +145,7 @@ export type MovimientosReporteData = {
     funcionario_entrega: string;
     dependencia_recibe: string;
     funcionario_recibe: string;
-    fecha_estimada_devolucion: Date;
+    fecha_estimada_devolucion: Date | null;
     fecha_real_devolucion: Date | null;
   }>;
 };
@@ -163,7 +163,7 @@ export type PrestamosActivosReporteData = {
     };
     dependencia_recibe: string;
     funcionario_recibe: string;
-    fecha_estimada_devolucion: Date;
+    fecha_estimada_devolucion: Date | null;
   }>;
 };
 
@@ -408,7 +408,7 @@ export async function generateMovimientosReport(data: MovimientosReporteData): P
     movimiento.funcionario_entrega,
     movimiento.dependencia_recibe,
     movimiento.funcionario_recibe,
-    movimiento.fecha_estimada_devolucion.toLocaleDateString('es-ES'),
+    movimiento.fecha_estimada_devolucion?.toLocaleDateString('es-ES') ?? 'No especificado',
     movimiento.fecha_real_devolucion?.toLocaleDateString('es-ES') || 'Pendiente'
   ]);
   
@@ -510,8 +510,8 @@ export async function generatePrestamosActivosReport(data: PrestamosActivosRepor
     prestamo.cantidad.toString(),
     prestamo.dependencia_recibe,
     prestamo.funcionario_recibe,
-    prestamo.fecha_estimada_devolucion.toLocaleDateString('es-ES'),
-    prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
+    prestamo.fecha_estimada_devolucion?.toLocaleDateString('es-ES') ?? 'No especificado',
+    prestamo.fecha_estimada_devolucion ? (prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE') : 'N/A'
   ]);
   
   autoTable(doc, {
@@ -961,7 +961,7 @@ export async function exportMovimientosToExcel(data: MovimientosReporteData): Pr
     'Funcionario Entrega': movimiento.funcionario_entrega,
     'Dependencia Recibe': movimiento.dependencia_recibe,
     'Funcionario Recibe': movimiento.funcionario_recibe,
-    'Fecha Est. Devolución': movimiento.fecha_estimada_devolucion.toLocaleDateString(),
+    'Fecha Est. Devolución': movimiento.fecha_estimada_devolucion?.toLocaleDateString() ?? 'No especificado',
     'Fecha Real Devolución': movimiento.fecha_real_devolucion?.toLocaleDateString() || 'Pendiente'
   }));
 
@@ -981,8 +981,8 @@ export async function exportPrestamosActivosToExcel(data: PrestamosActivosReport
     'Cantidad': prestamo.cantidad,
     'Dependencia': prestamo.dependencia_recibe,
     'Funcionario': prestamo.funcionario_recibe,
-    'Fecha Est. Devolución': prestamo.fecha_estimada_devolucion.toLocaleDateString(),
-    'Estado': prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE'
+    'Fecha Est. Devolución': prestamo.fecha_estimada_devolucion?.toLocaleDateString() ?? 'No especificado',
+    'Estado': prestamo.fecha_estimada_devolucion ? (prestamo.fecha_estimada_devolucion < new Date() ? 'VENCIDO' : 'VIGENTE') : 'N/A'
   }));
 
   await exportToExcel(excelData, `prestamos_activos_${new Date().toISOString().split('T')[0]}.csv`, 'REPORTE DE PRÉSTAMOS ACTIVOS');

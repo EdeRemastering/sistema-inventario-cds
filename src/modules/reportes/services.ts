@@ -7,35 +7,29 @@ import type { InventarioReporteData, MovimientosReporteData, PrestamosActivosRep
 export async function getInventarioReporteData(): Promise<InventarioReporteData> {
   const elementos = await prisma.elementos.findMany({
     include: {
-      categoria: {
-        select: {
-          nombre: true
-        }
-      },
-      subcategoria: {
-        select: {
-          nombre: true
-        }
-      }
+      categoria: { select: { nombre: true } },
+      subcategoria: { select: { nombre: true } },
+      ubicacion_rel: { select: { codigo: true, nombre: true, sede: { select: { nombre: true } } } },
     },
-    orderBy: {
-      id: 'asc'
-    }
+    orderBy: { id: "asc" },
   });
 
   return {
-    elementos: elementos.map(elemento => ({
-      id: elemento.id,
-      serie: elemento.serie,
-      marca: elemento.marca,
-      modelo: elemento.modelo,
-      cantidad: elemento.cantidad,
-      ubicacion: elemento.ubicacion,
-      estado_funcional: elemento.estado_funcional,
-      estado_fisico: elemento.estado_fisico,
-      categoria: { nombre: elemento.categoria.nombre },
-      subcategoria: elemento.subcategoria ? { nombre: elemento.subcategoria.nombre } : null
-    }))
+    elementos: elementos.map((e) => ({
+      id: e.id,
+      serie: e.serie,
+      marca: e.marca,
+      modelo: e.modelo,
+      cantidad: e.cantidad,
+      ubicacion:
+        e.ubicacion_rel
+          ? `${e.ubicacion_rel.codigo} - ${e.ubicacion_rel.nombre}${e.ubicacion_rel.sede ? ` (${e.ubicacion_rel.sede.nombre})` : ""}`
+          : e.ubicacion ?? "",
+      estado_funcional: e.estado_funcional,
+      estado_fisico: e.estado_fisico,
+      categoria: { nombre: e.categoria.nombre },
+      subcategoria: e.subcategoria ? { nombre: e.subcategoria.nombre } : null,
+    })),
   };
 }
 
@@ -98,39 +92,59 @@ export async function getMovimientosReporteData(
  */
 export async function getPrestamosActivosReporteData(): Promise<PrestamosActivosReporteData> {
   const movimientos = await prisma.movimientos.findMany({
-    where: {
-      tipo: 'SALIDA',
-      fecha_real_devolucion: null
-    },
+    where: { tipo: "SALIDA", fecha_real_devolucion: null },
     include: {
-      elemento: {
-        select: {
-          serie: true,
-          marca: true,
-          modelo: true
-        }
-      }
+      elemento: { select: { serie: true, marca: true, modelo: true } },
     },
-    orderBy: {
-      fecha_movimiento: 'desc'
-    }
+    orderBy: { fecha_movimiento: "desc" },
   });
 
-  return {
-    prestamos: movimientos.map(movimiento => ({
-      id: movimiento.id,
-      numero_ticket: movimiento.numero_ticket,
-      fecha_movimiento: movimiento.fecha_movimiento,
-      cantidad: movimiento.cantidad,
-      elemento: {
-        serie: movimiento.elemento.serie,
-        marca: movimiento.elemento.marca,
-        modelo: movimiento.elemento.modelo
+  const ticketsActivos = await prisma.tickets_guardados.findMany({
+    where: { fecha_devolucion_real: null },
+    include: {
+      ticket_elementos: {
+        include: { elemento: { select: { serie: true, marca: true, modelo: true } } },
       },
-      dependencia_recibe: movimiento.dependencia_recibe,
-      funcionario_recibe: movimiento.firma_funcionario_recibe || 'N/A',
-      fecha_estimada_devolucion: movimiento.fecha_estimada_devolucion
+    },
+    orderBy: { fecha_salida: "desc" },
+  });
+
+  const prestamosMov = movimientos.map((m) => ({
+    id: m.id,
+    numero_ticket: m.numero_ticket,
+    fecha_movimiento: m.fecha_movimiento,
+    cantidad: m.cantidad,
+    elemento: {
+      serie: m.elemento.serie,
+      marca: m.elemento.marca,
+      modelo: m.elemento.modelo,
+    },
+    dependencia_recibe: m.dependencia_recibe,
+    funcionario_recibe: m.firma_funcionario_recibe || "N/A",
+    fecha_estimada_devolucion: m.fecha_estimada_devolucion,
+  }));
+
+  const prestamosTickets = ticketsActivos.flatMap((t) =>
+    (t.ticket_elementos ?? []).map((te) => ({
+      id: t.id,
+      numero_ticket: t.numero_ticket,
+      fecha_movimiento: t.fecha_salida,
+      cantidad: te.cantidad,
+      elemento: {
+        serie: te.elemento?.serie ?? "",
+        marca: te.elemento?.marca ?? null,
+        modelo: te.elemento?.modelo ?? null,
+      },
+      dependencia_recibe: t.dependencia_recibe || "N/A",
+      funcionario_recibe: t.responsable_nombre || t.persona_recibe_nombre
+        ? `${t.persona_recibe_nombre ?? ""} ${t.persona_recibe_apellido ?? ""}`.trim() || t.responsable_nombre || "N/A"
+        : "N/A",
+      fecha_estimada_devolucion: t.fecha_estimada_devolucion,
     }))
+  );
+
+  return {
+    prestamos: [...prestamosMov, ...prestamosTickets],
   };
 }
 

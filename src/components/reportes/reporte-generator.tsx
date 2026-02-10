@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Button } from "../ui/button";
@@ -21,7 +21,7 @@ type ReporteGeneratorProps = {
 };
 
 const reporteOptions: { value: ReporteType; label: string }[] = [
-  { value: "tickets", label: "Tickets Guardados" },
+  { value: "tickets", label: "Préstamos" },
   { value: "inventario", label: "Inventario Completo" },
   { value: "prestamos-activos", label: "Pr\u00e9stamos Activos" },
   { value: "categorias", label: "Categor\u00edas" },
@@ -47,7 +47,7 @@ function getReporteIncludes(tipo: ReporteType): string {
     "prestamos-activos": "Elemento, fecha salida, ubicaci\u00f3n, responsable",
     categorias: "Categor\u00eda, subcategor\u00edas, cantidad de elementos",
     observaciones: "Elemento, fecha, descripci\u00f3n de la observaci\u00f3n",
-    tickets: "Ticket, fechas, elemento, dependencias, funcionarios, motivo",
+    tickets: "Pr\u00e9stamo, fechas, ubicaci\u00f3n, dependencias, funcionarios, motivo",
   };
   return includes[tipo];
 }
