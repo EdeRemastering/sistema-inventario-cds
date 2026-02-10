@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { MantenimientoProgramadoUpsertDialog } from "./mantenimiento-programado-upsert-dialog";
+import { MarcarSemanaRealizadaDialog } from "./marcar-semana-realizada-dialog";
 import {
   Check,
   Clock,
@@ -28,6 +29,12 @@ import {
   Trash2,
 } from "lucide-react";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
+
+type MantenimientoRealizadoParaLista = {
+  id: number;
+  programacion_id: number | null;
+  fecha_mantenimiento: Date | string;
+};
 
 type SedeOption = {
   id: number;
@@ -66,6 +73,7 @@ type ElementoOption = {
 
 type Props = {
   mantenimientos: MantenimientoProgramado[];
+  realizados: MantenimientoRealizadoParaLista[];
   elementos: ElementoOption[];
   sedes: SedeOption[];
   ubicaciones: UbicacionOption[];
@@ -74,6 +82,10 @@ type Props = {
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
+  onMarcarSemanaRealizada: (
+    programacionId: number,
+    weekKey: string
+  ) => Promise<void>;
   onCambiarEstado?: (
     id: number,
     estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
@@ -82,6 +94,7 @@ type Props = {
 
 export function MantenimientosProgramadosList({
   mantenimientos,
+  realizados,
   elementos,
   sedes,
   ubicaciones,
@@ -90,9 +103,12 @@ export function MantenimientosProgramadosList({
   onCreateMantenimiento,
   onUpdateMantenimiento,
   onDeleteMantenimiento,
+  onMarcarSemanaRealizada,
   onCambiarEstado,
 }: Props) {
   const [editingMantenimiento, setEditingMantenimiento] =
+    useState<MantenimientoProgramado | null>(null);
+  const [programacionParaMarcar, setProgramacionParaMarcar] =
     useState<MantenimientoProgramado | null>(null);
   const [loadingId, setLoadingId] = useState<number | null>(null);
 
@@ -197,46 +213,42 @@ export function MantenimientosProgramadosList({
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {/* Botones de acción rápida */}
-                        {mantenimiento.estado === "PENDIENTE" &&
-                          onCambiarEstado && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
-                                disabled={isLoading}
-                                onClick={() =>
-                                  handleCambiarEstado(
-                                    mantenimiento.id,
-                                    "REALIZADO"
-                                  )
-                                }
-                                title="Marcar como realizado"
-                                data-tour={
-                                  idx === 0
-                                    ? "mantenimientos-programados-marcar-realizado"
-                                    : undefined
-                                }
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                disabled={isLoading}
-                                onClick={() =>
-                                  handleCambiarEstado(
-                                    mantenimiento.id,
-                                    "APLAZADO"
-                                  )
-                                }
-                                title="Marcar como aplazado"
-                              >
-                                <Clock className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
+                        {mantenimiento.estado === "PENDIENTE" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
+                              disabled={isLoading}
+                              onClick={() =>
+                                setProgramacionParaMarcar(mantenimiento)
+                              }
+                              title="Marcar una semana como ejecutada"
+                              data-tour={
+                                idx === 0
+                                  ? "mantenimientos-programados-marcar-realizado"
+                                  : undefined
+                              }
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={isLoading}
+                              onClick={() =>
+                                handleCambiarEstado(
+                                  mantenimiento.id,
+                                  "APLAZADO"
+                                )
+                              }
+                              title="Marcar como aplazado"
+                            >
+                              <Clock className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
 
                         {/* Menú de más opciones */}
                         <DropdownMenu>
@@ -270,15 +282,12 @@ export function MantenimientosProgramadosList({
                                 {mantenimiento.estado !== "REALIZADO" && (
                                   <DropdownMenuItem
                                     onClick={() =>
-                                      handleCambiarEstado(
-                                        mantenimiento.id,
-                                        "REALIZADO"
-                                      )
+                                      setProgramacionParaMarcar(mantenimiento)
                                     }
                                     className="text-cyan-600"
                                   >
                                     <Check className="h-4 w-4 mr-2" />
-                                    Marcar Ejecutado
+                                    Marcar semana como ejecutada
                                   </DropdownMenuItem>
                                 )}
                                 {mantenimiento.estado !== "APLAZADO" && (
@@ -361,6 +370,19 @@ export function MantenimientosProgramadosList({
           subcategorias={subcategorias}
           hiddenFields={{ id: editingMantenimiento.id }}
           onClose={() => setEditingMantenimiento(null)}
+        />
+      )}
+
+      {programacionParaMarcar && (
+        <MarcarSemanaRealizadaDialog
+          programacion={programacionParaMarcar}
+          realizadosDeEstaProgramacion={realizados.filter(
+            (r) => r.programacion_id === programacionParaMarcar.id
+          )}
+          onConfirm={(weekKey) =>
+            onMarcarSemanaRealizada(programacionParaMarcar.id, weekKey)
+          }
+          onClose={() => setProgramacionParaMarcar(null)}
         />
       )}
     </div>

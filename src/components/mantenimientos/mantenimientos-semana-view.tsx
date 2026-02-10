@@ -4,7 +4,14 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Calendar, Check, Clock, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  Clock,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
 
 type ElementoOption = {
@@ -23,17 +30,44 @@ type ElementoOption = {
 type Props = {
   mantenimientos: MantenimientoProgramado[];
   elementos: ElementoOption[];
-  onCambiarEstado?: (id: number, estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO") => Promise<void>;
+  onMarcarSemanaRealizada?: (
+    programacionId: number,
+    weekKey: string
+  ) => Promise<void>;
+  onCambiarEstado?: (
+    id: number,
+    estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
+  ) => Promise<void>;
 };
 
 const MESES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
 ];
 
 const MESES_NOMBRES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 function getWeekOfMonth(date: Date): number {
@@ -46,6 +80,7 @@ function getWeekOfMonth(date: Date): number {
 export function MantenimientosSemanaView({
   mantenimientos,
   elementos,
+  onMarcarSemanaRealizada,
   onCambiarEstado,
 }: Props) {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -60,15 +95,16 @@ export function MantenimientosSemanaView({
   // Crear mapa de elementos para acceso rápido
   const elementosMap = useMemo(() => {
     const map = new Map<number, ElementoOption>();
-    elementos.forEach(e => map.set(e.id, e));
+    elementos.forEach((e) => map.set(e.id, e));
     return map;
   }, [elementos]);
 
   // Filtrar mantenimientos de la semana actual
   const mantenimientosSemana = useMemo(() => {
-    const semanaKey = `${mesKey}_semana${currentWeek}` as keyof MantenimientoProgramado;
-    
-    return mantenimientos.filter(m => {
+    const semanaKey =
+      `${mesKey}_semana${currentWeek}` as keyof MantenimientoProgramado;
+
+    return mantenimientos.filter((m) => {
       if (m.año !== currentYear) return false;
       return m[semanaKey] === true;
     });
@@ -80,7 +116,7 @@ export function MantenimientosSemanaView({
     const realizados: MantenimientoProgramado[] = [];
     const aplazados: MantenimientoProgramado[] = [];
 
-    mantenimientosSemana.forEach(m => {
+    mantenimientosSemana.forEach((m) => {
       if (m.estado === "PENDIENTE") pendientes.push(m);
       else if (m.estado === "REALIZADO") realizados.push(m);
       else if (m.estado === "APLAZADO") aplazados.push(m);
@@ -89,7 +125,10 @@ export function MantenimientosSemanaView({
     return { pendientes, realizados, aplazados };
   }, [mantenimientosSemana]);
 
-  const handleCambiarEstado = async (id: number, estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO") => {
+  const handleCambiarEstado = async (
+    id: number,
+    estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
+  ) => {
     if (!onCambiarEstado) return;
     setLoadingId(id);
     try {
@@ -121,29 +160,48 @@ export function MantenimientosSemanaView({
     const startOfWeek = new Date(selectedDate);
     const day = startOfWeek.getDay();
     startOfWeek.setDate(startOfWeek.getDate() - day + (day === 0 ? -6 : 1)); // Lunes
-    
+
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(endOfWeek.getDate() + 6); // Domingo
 
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+      return date.toLocaleDateString("es-CO", {
+        day: "numeric",
+        month: "short",
+      });
     };
 
     return `${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
   };
 
-  const MantenimientoCard = ({ mantenimiento }: { mantenimiento: MantenimientoProgramado }) => {
+  const MantenimientoCard = ({
+    mantenimiento,
+  }: {
+    mantenimiento: MantenimientoProgramado;
+  }) => {
     const elemento = elementosMap.get(mantenimiento.elemento_id);
     const isLoading = loadingId === mantenimiento.id;
 
     const getEstadoBadge = () => {
       switch (mantenimiento.estado) {
         case "PENDIENTE":
-          return <Badge className="bg-yellow-500 text-black dark:bg-yellow-600 dark:text-yellow-950 dark:border dark:border-yellow-400/50">Pendiente</Badge>;
+          return (
+            <Badge className="bg-yellow-500 text-black dark:bg-yellow-600 dark:text-yellow-950 dark:border dark:border-yellow-400/50">
+              Pendiente
+            </Badge>
+          );
         case "REALIZADO":
-          return <Badge className="bg-cyan-500 text-white dark:bg-cyan-600 dark:border dark:border-cyan-400/50">Ejecutado</Badge>;
+          return (
+            <Badge className="bg-cyan-500 text-white dark:bg-cyan-600 dark:border dark:border-cyan-400/50">
+              Ejecutado
+            </Badge>
+          );
         case "APLAZADO":
-          return <Badge className="bg-red-500 text-white dark:bg-red-600 dark:border dark:border-red-400/50">Aplazado</Badge>;
+          return (
+            <Badge className="bg-red-500 text-white dark:bg-red-600 dark:border dark:border-red-400/50">
+              Aplazado
+            </Badge>
+          );
         default:
           return <Badge variant="secondary">{mantenimiento.estado}</Badge>;
       }
@@ -165,7 +223,8 @@ export function MantenimientosSemanaView({
               {elemento?.ubicacion_rel && (
                 <div className="text-xs text-muted-foreground mt-1">
                   📍 {elemento.ubicacion_rel.nombre}
-                  {elemento.ubicacion_rel.sede && ` (${elemento.ubicacion_rel.sede.nombre})`}
+                  {elemento.ubicacion_rel.sede &&
+                    ` (${elemento.ubicacion_rel.sede.nombre})`}
                 </div>
               )}
               <div className="flex items-center gap-2 mt-2">
@@ -182,37 +241,63 @@ export function MantenimientosSemanaView({
             </div>
 
             {/* Acciones rápidas */}
-            {mantenimiento.estado === "PENDIENTE" && onCambiarEstado && (
-              <div className="flex flex-col gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-cyan-600 border-cyan-300 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-600 dark:hover:bg-cyan-950/50"
-                  disabled={isLoading}
-                  onClick={() => handleCambiarEstado(mantenimiento.id, "REALIZADO")}
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Hecho
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-950/50"
-                  disabled={isLoading}
-                  onClick={() => handleCambiarEstado(mantenimiento.id, "APLAZADO")}
-                >
-                  <Clock className="h-4 w-4 mr-1" />
-                  Aplazar
-                </Button>
-              </div>
-            )}
+            {mantenimiento.estado === "PENDIENTE" &&
+              (onMarcarSemanaRealizada || onCambiarEstado) && (
+                <div className="flex flex-col gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-cyan-600 border-cyan-300 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-600 dark:hover:bg-cyan-950/50"
+                    disabled={isLoading}
+                    onClick={async () => {
+                      if (onMarcarSemanaRealizada) {
+                        setLoadingId(mantenimiento.id);
+                        try {
+                          const weekKey = `${mesKey}_semana${Math.min(
+                            4,
+                            currentWeek
+                          )}`;
+                          await onMarcarSemanaRealizada(
+                            mantenimiento.id,
+                            weekKey
+                          );
+                        } finally {
+                          setLoadingId(null);
+                        }
+                      } else if (onCambiarEstado) {
+                        await handleCambiarEstado(
+                          mantenimiento.id,
+                          "REALIZADO"
+                        );
+                      }
+                    }}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Hecho
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-950/50"
+                    disabled={isLoading}
+                    onClick={() =>
+                      handleCambiarEstado(mantenimiento.id, "APLAZADO")
+                    }
+                  >
+                    <Clock className="h-4 w-4 mr-1" />
+                    Aplazar
+                  </Button>
+                </div>
+              )}
 
             {mantenimiento.estado !== "PENDIENTE" && onCambiarEstado && (
               <Button
                 size="sm"
                 variant="outline"
                 disabled={isLoading}
-                onClick={() => handleCambiarEstado(mantenimiento.id, "PENDIENTE")}
+                onClick={() =>
+                  handleCambiarEstado(mantenimiento.id, "PENDIENTE")
+                }
               >
                 Restaurar
               </Button>
@@ -291,8 +376,12 @@ export function MantenimientosSemanaView({
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">No hay mantenimientos esta semana</p>
-              <p className="text-sm">Selecciona otra semana o revisa el cronograma</p>
+              <p className="text-lg font-medium">
+                No hay mantenimientos esta semana
+              </p>
+              <p className="text-sm">
+                Selecciona otra semana o revisa el cronograma
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -306,7 +395,7 @@ export function MantenimientosSemanaView({
                 Pendientes ({pendientes.length})
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {pendientes.map(m => (
+                {pendientes.map((m) => (
                   <MantenimientoCard key={m.id} mantenimiento={m} />
                 ))}
               </div>
@@ -321,7 +410,7 @@ export function MantenimientosSemanaView({
                 Ejecutados ({realizados.length})
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {realizados.map(m => (
+                {realizados.map((m) => (
                   <MantenimientoCard key={m.id} mantenimiento={m} />
                 ))}
               </div>
@@ -336,7 +425,7 @@ export function MantenimientosSemanaView({
                 Aplazados ({aplazados.length})
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {aplazados.map(m => (
+                {aplazados.map((m) => (
                   <MantenimientoCard key={m.id} mantenimiento={m} />
                 ))}
               </div>
@@ -347,5 +436,3 @@ export function MantenimientosSemanaView({
     </div>
   );
 }
-
-

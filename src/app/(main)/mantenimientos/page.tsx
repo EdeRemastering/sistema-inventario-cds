@@ -11,6 +11,7 @@ import {
   actionUpdateMantenimientoRealizado,
   actionDeleteMantenimientoRealizado,
   actionCambiarEstadoMantenimiento,
+  actionMarcarSemanaComoRealizada,
 } from "../../../modules/mantenimientos/actions";
 import { MantenimientosProgramadosList } from "../../../components/mantenimientos/mantenimientos-programados-list";
 import { MantenimientosRealizadosList } from "../../../components/mantenimientos/mantenimientos-realizados-list";
@@ -97,6 +98,7 @@ async function MantenimientosContent() {
           <MantenimientosSemanaView
             mantenimientos={programados}
             elementos={options.elementos}
+            onMarcarSemanaRealizada={actionMarcarSemanaComoRealizada}
             onCambiarEstado={actionCambiarEstadoMantenimiento}
           />
         </TabsContent>
@@ -104,6 +106,7 @@ async function MantenimientosContent() {
         <TabsContent value="programados" className="mt-6">
           <MantenimientosProgramadosList
             mantenimientos={programados}
+            realizados={realizadosPlain}
             elementos={options.elementos}
             sedes={options.sedes}
             ubicaciones={options.ubicaciones}
@@ -112,6 +115,7 @@ async function MantenimientosContent() {
             onCreateMantenimiento={actionCreateMantenimientoProgramado}
             onUpdateMantenimiento={actionUpdateMantenimientoProgramado}
             onDeleteMantenimiento={actionDeleteMantenimientoProgramado}
+            onMarcarSemanaRealizada={actionMarcarSemanaComoRealizada}
             onCambiarEstado={actionCambiarEstadoMantenimiento}
           />
         </TabsContent>
@@ -136,9 +140,11 @@ async function MantenimientosContent() {
             ubicaciones={options.ubicaciones}
             elementos={options.elementos}
             mantenimientos={programados}
+            realizados={realizadosPlain}
             onCreateMantenimiento={actionCreateMantenimientoProgramado}
             onUpdateMantenimiento={actionUpdateMantenimientoProgramado}
             onDeleteMantenimiento={actionDeleteMantenimientoProgramado}
+            onMarcarSemanaRealizada={actionMarcarSemanaComoRealizada}
             onCambiarEstado={actionCambiarEstadoMantenimiento}
           />
         </TabsContent>

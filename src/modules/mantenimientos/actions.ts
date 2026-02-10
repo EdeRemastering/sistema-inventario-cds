@@ -19,9 +19,16 @@ import {
   deleteMantenimientoRealizado,
   countMantenimientosPendientes,
   updateEstadoMantenimiento,
+  getMantenimientoProgramado,
 } from "./services";
 import { logAction } from "../../lib/audit-logger";
 import { authOptions } from "@/lib/auth";
+import {
+  SEMANAS_KEYS,
+  getDateFromWeekKey,
+  getWeekLabel,
+  isWeekProgrammed,
+} from "../../lib/mantenimientos-semanas";
 
 /**
  * Normaliza el nombre del usuario autenticado para usarlo como "responsable".
@@ -163,7 +170,7 @@ export async function actionGetMantenimientosPendientes(): Promise<number> {
   return countMantenimientosPendientes();
 }
 
-// Cambiar estado de mantenimiento (acción rápida)
+// Cambiar estado de mantenimiento (acción rápida: aplazado, cancelado, restaurar pendiente)
 export async function actionCambiarEstadoMantenimiento(
   id: number,
   estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
@@ -177,5 +184,56 @@ export async function actionCambiarEstadoMantenimiento(
   });
   revalidatePath("/mantenimientos");
   revalidatePath("/cronograma");
+}
+
+/**
+ * Marcar UNA semana concreta de una programación como ejecutada.
+ * Crea un registro en mantenimientos_realizados para esa semana y NO cambia el estado de toda la programación.
+ */
+export async function actionMarcarSemanaComoRealizada(
+  programacionId: number,
+  weekKey: string
+) {
+  if (!SEMANAS_KEYS.includes(weekKey)) {
+    throw new Error("Semana no válida");
+  }
+
+  const programacion = await getMantenimientoProgramado(programacionId);
+  if (!programacion) {
+    throw new Error("Programación no encontrada");
+  }
+
+  if (!isWeekProgrammed(programacion as unknown as Record<string, unknown>, weekKey)) {
+    throw new Error("Esa semana no está programada para este mantenimiento");
+  }
+
+  const session = await getServerSession(authOptions);
+  const responsable = getResponsableFromSession(session);
+  const fecha = getDateFromWeekKey(weekKey, programacion.año);
+  const descripcion = `Mantenimiento programado - ${getWeekLabel(weekKey)}`;
+
+  await createMantenimientoRealizado({
+    elemento_id: programacion.elemento_id,
+    programacion_id: programacionId,
+    fecha_mantenimiento: fecha,
+    tipo: "PREVENTIVO",
+    descripcion,
+    responsable: responsable || "Sistema",
+    averias_encontradas: null,
+    repuestos_utilizados: null,
+    costo: null,
+    creado_por: (session?.user as { username?: string })?.username ?? null,
+  });
+
+  await logAction({
+    action: "CREATE",
+    entity: "mantenimiento_realizado",
+    entityId: programacionId,
+    details: `Semana ${getWeekLabel(weekKey)} marcada como ejecutada para elemento ${programacion.elemento_id}`,
+  });
+
+  revalidatePath("/mantenimientos");
+  revalidatePath("/cronograma");
+  revalidatePath("/kpis/mantenimientos");
 }
 
