@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { elementoCreateSchema, elementoUpdateSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
-import { createElemento, deleteElemento, updateElemento, getElemento, listElementosWithRelations } from "./services";
+import { createElemento, deleteElemento, updateElemento, getElemento, listElementosWithRelations, listElementosByUbicacion } from "./services";
 import { createHojaVida } from "../hojas_vida/services";
 import { prisma } from "../../lib/prisma";
 import type { ElementoWithRelations } from "./types";
@@ -78,6 +78,11 @@ export async function actionCreateElemento(formData: FormData) {
 
   revalidatePath("/elementos");
   revalidatePath("/hojas-vida");
+  revalidatePath("/ubicaciones");
+}
+
+export async function actionGetElementosByUbicacion(ubicacionId: number) {
+  return listElementosByUbicacion(ubicacionId);
 }
 
 export async function actionUpdateElemento(formData: FormData) {
@@ -126,6 +131,7 @@ export async function actionUpdateElemento(formData: FormData) {
     activo: parsed.data.activo,
   });
   revalidatePath("/elementos");
+  revalidatePath("/ubicaciones");
 }
 
 export async function actionDeleteElemento(id: number) {
@@ -138,6 +144,7 @@ export async function actionDeleteElemento(id: number) {
     await deleteImageFromR2(current.imagen_url);
   }
   revalidatePath("/elementos");
+  revalidatePath("/ubicaciones");
 }
 
 export async function actionListElementos(): Promise<ElementoWithRelations[]> {

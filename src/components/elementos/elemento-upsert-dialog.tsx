@@ -40,8 +40,18 @@ type ElementoFormData = z.infer<typeof schema>;
 
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
-type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
-type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type UbicacionOption = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  sede_id: number;
+};
+type SedeOption = {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  municipio: string | null;
+};
 
 type Props = {
   serverAction: (formData: FormData) => Promise<void>;
@@ -53,6 +63,8 @@ type Props = {
   defaultValues?: Partial<ElementoFormData>;
   hiddenFields?: Record<string, string | number>;
   onClose?: () => void;
+  /** Texto del botón cuando create=true. Por defecto "Crear" */
+  triggerText?: string;
 };
 
 export function ElementoUpsertDialog({
@@ -65,10 +77,13 @@ export function ElementoUpsertDialog({
   defaultValues,
   hiddenFields,
   onClose,
+  triggerText,
 }: Props) {
   // El modal siempre empieza cerrado, se abre al hacer clic en el botón
   const [open, setOpen] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>(defaultValues?.imagen_url || "");
+  const [imageUrl, setImageUrl] = useState<string>(
+    defaultValues?.imagen_url || ""
+  );
   const [imageTouched, setImageTouched] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -79,9 +94,15 @@ export function ElementoUpsertDialog({
   const streamRef = useRef<MediaStream | null>(null);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
-  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
-  const [cameraCapturedFile, setCameraCapturedFile] = useState<File | null>(null);
-  const [cameraCapturedPreviewUrl, setCameraCapturedPreviewUrl] = useState<string | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(
+    null
+  );
+  const [cameraCapturedFile, setCameraCapturedFile] = useState<File | null>(
+    null
+  );
+  const [cameraCapturedPreviewUrl, setCameraCapturedPreviewUrl] = useState<
+    string | null
+  >(null);
 
   const {
     register,
@@ -147,9 +168,13 @@ export function ElementoUpsertDialog({
       const fd = new FormData();
       fd.append("file", file);
 
-      const res = await fetch("/api/uploads/images", { method: "POST", body: fd });
+      const res = await fetch("/api/uploads/images", {
+        method: "POST",
+        body: fd,
+      });
       const json = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !json.url) throw new Error(json.error || "Error subiendo imagen");
+      if (!res.ok || !json.url)
+        throw new Error(json.error || "Error subiendo imagen");
       return json.url;
     } finally {
       setUploadingImage(false);
@@ -178,7 +203,8 @@ export function ElementoUpsertDialog({
         await video.play().catch(() => {});
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "No se pudo acceder a la cámara";
+      const msg =
+        e instanceof Error ? e.message : "No se pudo acceder a la cámara";
       setCameraError(msg);
     }
   };
@@ -202,7 +228,8 @@ export function ElementoUpsertDialog({
     if (!cameraOpen) {
       stopCamera();
       // Cleanup preview capturada si el usuario cierra el diálogo
-      if (cameraCapturedPreviewUrl) URL.revokeObjectURL(cameraCapturedPreviewUrl);
+      if (cameraCapturedPreviewUrl)
+        URL.revokeObjectURL(cameraCapturedPreviewUrl);
       setCameraCapturedPreviewUrl(null);
       setCameraCapturedFile(null);
       return;
@@ -238,10 +265,14 @@ export function ElementoUpsertDialog({
 
     ctx.drawImage(video, 0, 0, w, h);
 
-    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.9)
+    );
     if (!blob) return;
 
-    const file = new File([blob], `elemento_${Date.now()}.jpg`, { type: "image/jpeg" });
+    const file = new File([blob], `elemento_${Date.now()}.jpg`, {
+      type: "image/jpeg",
+    });
 
     if (cameraCapturedPreviewUrl) URL.revokeObjectURL(cameraCapturedPreviewUrl);
     setCameraCapturedFile(file);
@@ -290,7 +321,8 @@ export function ElementoUpsertDialog({
             setImageUrl(finalUrl);
             toast.success("Imagen subida a Cloudflare R2");
           } catch (e) {
-            const msg = e instanceof Error ? e.message : "Error subiendo imagen";
+            const msg =
+              e instanceof Error ? e.message : "Error subiendo imagen";
             toast.error(msg);
             throw e;
           } finally {
@@ -334,26 +366,33 @@ export function ElementoUpsertDialog({
     }
   };
 
-  const btnText = create ? "Crear" : "Editar";
+  const btnText = triggerText ?? (create ? "Crear" : "Editar");
   const title = create ? "Crear elemento" : "Editar elemento";
   const submitText = create ? "Crear" : "Guardar cambios";
 
   return (
     <>
       {create && <Button onClick={() => setOpen(true)}>{btnText}</Button>}
-      {!create && <Button variant="outline" size="sm" onClick={() => setOpen(true)}>{btnText}</Button>}
-      <Dialog open={open} onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen) setCameraOpen(false);
-        if (!isOpen) {
-          // Cleanup de preview pendiente al cerrar el modal
-          if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
-          setPendingPreviewUrl(null);
-          setPendingImageFile(null);
-          setImagePickerOpen(false);
-        }
-        if (!isOpen && onClose) onClose();
-      }}>
+      {!create && (
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+          {btnText}
+        </Button>
+      )}
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen) setCameraOpen(false);
+          if (!isOpen) {
+            // Cleanup de preview pendiente al cerrar el modal
+            if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+            setPendingPreviewUrl(null);
+            setPendingImageFile(null);
+            setImagePickerOpen(false);
+          }
+          if (!isOpen && onClose) onClose();
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -389,7 +428,11 @@ export function ElementoUpsertDialog({
                     </div>
                   ) : hasExistingImage ? (
                     <div className="rounded-md overflow-hidden border bg-background">
-                      <img src={imageUrl} alt="Imagen del elemento" className="w-full h-auto" />
+                      <img
+                        src={imageUrl}
+                        alt="Imagen del elemento"
+                        className="w-full h-auto"
+                      />
                     </div>
                   ) : (
                     <div className="rounded-md border bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">
@@ -440,11 +483,13 @@ export function ElementoUpsertDialog({
                 disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    sedes.length === 0 
-                      ? "No hay sedes disponibles" 
-                      : "Selecciona sede"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      sedes.length === 0
+                        ? "No hay sedes disponibles"
+                        : "Selecciona sede"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {sedes.length === 0 ? (
@@ -464,9 +509,7 @@ export function ElementoUpsertDialog({
                 </SelectContent>
               </Select>
               {errors.sede_id && (
-                <p className="text-red-500 text-sm">
-                  {errors.sede_id.message}
-                </p>
+                <p className="text-red-500 text-sm">{errors.sede_id.message}</p>
               )}
             </div>
 
@@ -475,31 +518,31 @@ export function ElementoUpsertDialog({
               <Label htmlFor="ubicacion_id">Ubicación</Label>
               <Select
                 value={watch("ubicacion_id") || undefined}
-                onValueChange={(value) =>
-                  setValue("ubicacion_id", value || "")
-                }
+                onValueChange={(value) => setValue("ubicacion_id", value || "")}
                 disabled={!selectedSedeId || filteredUbicaciones.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedSedeId 
-                      ? "Primero selecciona una sede" 
-                      : filteredUbicaciones.length === 0 
-                        ? "No hay ubicaciones disponibles" 
+                  <SelectValue
+                    placeholder={
+                      !selectedSedeId
+                        ? "Primero selecciona una sede"
+                        : filteredUbicaciones.length === 0
+                        ? "No hay ubicaciones disponibles"
                         : "Selecciona ubicación"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredUbicaciones.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       <p className="font-medium">
-                        {!selectedSedeId 
-                          ? "Selecciona una sede primero" 
+                        {!selectedSedeId
+                          ? "Selecciona una sede primero"
                           : "No hay ubicaciones disponibles"}
                       </p>
                       <p className="text-xs mt-1">
-                        {!selectedSedeId 
-                          ? "Debes seleccionar una sede para ver sus ubicaciones" 
+                        {!selectedSedeId
+                          ? "Debes seleccionar una sede para ver sus ubicaciones"
                           : "Crea ubicaciones para esta sede en la configuración"}
                       </p>
                     </div>
@@ -531,16 +574,20 @@ export function ElementoUpsertDialog({
                 disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    categorias.length === 0 
-                      ? "No hay categorías disponibles" 
-                      : "Selecciona categoría"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      categorias.length === 0
+                        ? "No hay categorías disponibles"
+                        : "Selecciona categoría"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {categorias.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="font-medium">
+                        No hay categorías disponibles
+                      </p>
                       <p className="text-xs mt-1">
                         Crea categorías en la configuración del sistema
                       </p>
@@ -569,28 +616,32 @@ export function ElementoUpsertDialog({
                 onValueChange={(value) =>
                   setValue("subcategoria_id", value || "")
                 }
-                disabled={!selectedCategoriaId || filteredSubcategorias.length === 0}
+                disabled={
+                  !selectedCategoriaId || filteredSubcategorias.length === 0
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedCategoriaId 
-                      ? "Primero selecciona una categoría" 
-                      : filteredSubcategorias.length === 0 
-                        ? "No hay subcategorías disponibles" 
+                  <SelectValue
+                    placeholder={
+                      !selectedCategoriaId
+                        ? "Primero selecciona una categoría"
+                        : filteredSubcategorias.length === 0
+                        ? "No hay subcategorías disponibles"
                         : "Selecciona subcategoría"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredSubcategorias.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       <p className="font-medium">
-                        {!selectedCategoriaId 
-                          ? "Selecciona una categoría primero" 
+                        {!selectedCategoriaId
+                          ? "Selecciona una categoría primero"
                           : "No hay subcategorías disponibles"}
                       </p>
                       <p className="text-xs mt-1">
-                        {!selectedCategoriaId 
-                          ? "Debes seleccionar una categoría para ver sus subcategorías" 
+                        {!selectedCategoriaId
+                          ? "Debes seleccionar una categoría para ver sus subcategorías"
                           : "Crea subcategorías para esta categoría en la configuración"}
                       </p>
                     </div>
@@ -742,10 +793,19 @@ export function ElementoUpsertDialog({
                 No se pudo abrir la cámara: {cameraError}
               </p>
               <div className="flex gap-2">
-                <Button type="button" size="sm" onClick={() => cameraInputRef.current?.click()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => cameraInputRef.current?.click()}
+                >
                   Intentar con cámara del sistema
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setCameraOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCameraOpen(false)}
+                >
                   Cerrar
                 </Button>
               </div>
@@ -763,10 +823,19 @@ export function ElementoUpsertDialog({
                       />
                     </div>
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => void retryCamera()}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void retryCamera()}
+                      >
                         Repetir
                       </Button>
-                      <Button type="button" size="sm" onClick={acceptCameraPhoto}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={acceptCameraPhoto}
+                      >
                         Usar esta foto
                       </Button>
                     </div>
@@ -774,13 +843,27 @@ export function ElementoUpsertDialog({
                 ) : (
                   <div className="space-y-3">
                     <div className="rounded-md overflow-hidden border bg-black">
-                      <video ref={videoRef} className="w-full h-auto" playsInline muted />
+                      <video
+                        ref={videoRef}
+                        className="w-full h-auto"
+                        playsInline
+                        muted
+                      />
                     </div>
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => setCameraOpen(false)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCameraOpen(false)}
+                      >
                         Cancelar
                       </Button>
-                      <Button type="button" size="sm" onClick={() => void captureFromCamera()}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => void captureFromCamera()}
+                      >
                         Tomar
                       </Button>
                     </div>

@@ -1,28 +1,42 @@
 import { listUbicaciones } from "../../../modules/ubicaciones/services";
 import { listSedesActivas } from "../../../modules/sedes/services";
+import { listCategorias } from "../../../modules/categorias/services";
+import { listSubcategorias } from "../../../modules/subcategorias/services";
 import {
   actionCreateUbicacion,
   actionUpdateUbicacion,
   actionDeleteUbicacion,
 } from "../../../modules/ubicaciones/actions";
+import {
+  actionCreateElemento,
+  actionUpdateElemento,
+  actionDeleteElemento,
+} from "../../../modules/elementos/actions";
 import { UbicacionesList } from "../../../components/ubicaciones/ubicaciones-list";
 import { UbicacionesSkeleton } from "../../../components/skeletons";
 import { Suspense } from "react";
 
 // Componente que maneja la lógica de datos
 async function UbicacionesContent() {
-  const [ubicaciones, sedes] = await Promise.all([
+  const [ubicaciones, sedes, categorias, subcategorias] = await Promise.all([
     listUbicaciones(),
     listSedesActivas(),
+    listCategorias(),
+    listSubcategorias(),
   ]);
 
   return (
     <UbicacionesList
       ubicaciones={ubicaciones}
       sedes={sedes}
+      categorias={categorias}
+      subcategorias={subcategorias}
       onCreateUbicacion={actionCreateUbicacion}
       onUpdateUbicacion={actionUpdateUbicacion}
       onDeleteUbicacion={actionDeleteUbicacion}
+      onCreateElemento={actionCreateElemento}
+      onUpdateElemento={actionUpdateElemento}
+      onDeleteElemento={actionDeleteElemento}
     />
   );
 }
@@ -34,5 +48,3 @@ export default function UbicacionesPage() {
     </Suspense>
   );
 }
-
-

@@ -112,6 +112,41 @@ export async function listElementosPaginated(
   return fetchElementosPaginated(page, pageSize, search);
 }
 
+/** Lista elementos de una ubicación específica */
+export function listElementosByUbicacion(ubicacionId: number): Promise<ElementoListItem[]> {
+  return prisma.elementos.findMany({
+    where: { ubicacion_id: ubicacionId },
+    select: {
+      id: true,
+      serie: true,
+      marca: true,
+      modelo: true,
+      cantidad: true,
+      imagen_url: true,
+      categoria_id: true,
+      subcategoria_id: true,
+      ubicacion_id: true,
+      categoria: {
+        select: { id: true, nombre: true }
+      },
+      subcategoria: {
+        select: { id: true, nombre: true }
+      },
+      ubicacion_rel: {
+        select: {
+          id: true,
+          codigo: true,
+          nombre: true,
+          sede: {
+            select: { id: true, nombre: true, ciudad: true, municipio: true }
+          }
+        }
+      }
+    } as any,
+    orderBy: { serie: "asc" },
+  } as any) as unknown as Promise<ElementoListItem[]>;
+}
+
 // Versión simple para compatibilidad (limitada a 100 elementos)
 async function fetchElementosForList(): Promise<ElementoListItem[]> {
   return prisma.elementos.findMany({
