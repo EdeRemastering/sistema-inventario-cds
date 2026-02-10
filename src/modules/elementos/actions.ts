@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { elementoCreateSchema, elementoUpdateSchema } from "./validations";
 import { formDataToObject } from "../../utils/form";
 import { createElemento, deleteElemento, updateElemento, getElemento, listElementosWithRelations } from "./services";
+import { createHojaVida } from "../hojas_vida/services";
 import { prisma } from "../../lib/prisma";
 import type { ElementoWithRelations } from "./types";
 import { deleteImageFromR2 } from "../../lib/image-storage";
@@ -33,7 +34,7 @@ export async function actionCreateElemento(formData: FormData) {
     }
   }
 
-  await createElemento({
+  const elemento = await createElemento({
     ...parsed.data,
     marca: parsed.data.marca === "" ? null : parsed.data.marca || null,
     modelo: parsed.data.modelo === "" ? null : parsed.data.modelo || null,
@@ -47,7 +48,27 @@ export async function actionCreateElemento(formData: FormData) {
     subcategoria_id: parsed.data.subcategoria_id === "" ? null : parsed.data.subcategoria_id || null,
     activo: parsed.data.activo ?? true,
   });
+
+  // Crear automáticamente una hoja de vida por elemento (1:1)
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  await createHojaVida({
+    elemento_id: elemento.id,
+    fecha_dilegenciamiento: hoy,
+    tipo_elemento: "EQUIPO",
+    area_ubicacion: null,
+    responsable: null,
+    especificaciones_tecnicas: null,
+    descripcion: null,
+    requerimientos_funcionamiento: null,
+    requerimientos_seguridad: null,
+    rutina_mantenimiento: null,
+    fecha_actualizacion: null,
+    activo: true,
+  });
+
   revalidatePath("/elementos");
+  revalidatePath("/hojas-vida");
 }
 
 export async function actionUpdateElemento(formData: FormData) {

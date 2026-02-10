@@ -4,8 +4,8 @@ export async function seedHistoricoMovimientos(prisma: PrismaClient) {
   console.log("🌱 Sembrando histórico de movimientos...");
   
   // Obtener algunos elementos y ubicaciones
-  const elementos = await prisma.elementos.findMany({ take: 5 });
-  const ubicaciones = await prisma.ubicaciones.findMany({ take: 3 });
+  const elementos = await prisma.elementos.findMany({ take: 2 });
+  const ubicaciones = await prisma.ubicaciones.findMany({ take: 2 });
   
   if (elementos.length === 0 || ubicaciones.length === 0) {
     console.log("⚠️  No hay elementos o ubicaciones disponibles para crear histórico");

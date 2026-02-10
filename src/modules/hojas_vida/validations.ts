@@ -10,11 +10,15 @@ const dateStringToDate = z.string().transform((val) => {
   return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 });
 
-const optionalDateStringToDate = z.string().optional().transform((val) => {
-  if (!val) return undefined;
-  const [year, month, day] = val.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-});
+const optionalDateStringToDate = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .transform((val) => {
+    if (!val || val === "") return undefined;
+    const [year, month, day] = val.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  });
 
 export const hojaVidaCreateSchema = z.object({
   elemento_id: z.coerce.number().int().positive(),
@@ -30,7 +34,7 @@ export const hojaVidaCreateSchema = z.object({
     .enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"])
     .optional()
     .or(z.literal("")),
-  fecha_actualizacion: optionalDateStringToDate,
+  fecha_actualizacion: optionalDateStringToDate.optional(),
   activo: z.coerce.boolean().default(true),
 });
 

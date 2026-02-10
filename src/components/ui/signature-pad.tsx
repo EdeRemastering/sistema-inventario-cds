@@ -6,6 +6,8 @@ import { Button } from "./button";
 import { Label } from "./label";
 import { Trash2 } from "lucide-react";
 
+const CANVAS_HEIGHT = 140;
+
 type SignaturePadProps = {
   onSignatureChange?: (signature: string | null) => void;
   defaultValue?: string | null;
@@ -22,10 +24,15 @@ export function SignaturePadComponent({
   className,
 }: SignaturePadProps) {
   const signatureRef = useRef<SignaturePad>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isEmpty, setIsEmpty] = useState(true);
   const [signatureData, setSignatureData] = useState<string | null>(
     defaultValue || null
   );
+  const [canvasSize, setCanvasSize] = useState({
+    width: 0,
+    height: CANVAS_HEIGHT,
+  });
 
   useEffect(() => {
     if (defaultValue && signatureRef.current) {
@@ -33,6 +40,19 @@ export function SignaturePadComponent({
       setIsEmpty(false);
     }
   }, [defaultValue]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const updateSize = () => {
+      const w = Math.max(0, el.clientWidth);
+      setCanvasSize((prev) => (prev.width !== w ? { ...prev, width: w } : prev));
+    };
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleBegin = () => {
     setIsEmpty(false);
@@ -56,32 +76,43 @@ export function SignaturePadComponent({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-2 min-w-0 ${className ?? ""}`}>
       <Label htmlFor="signature" className="text-sm font-medium">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
 
-      <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
-        <SignaturePad
-          ref={signatureRef}
-          canvasProps={{
-            width: 400,
-            height: 150,
-            className: "border rounded-lg bg-white shadow-sm",
-          }}
-          onBegin={handleBegin}
-          onEnd={handleEnd}
-          backgroundColor="white"
-          penColor="black"
-        />
-        {isEmpty && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <p className="text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded border">
+      {/* Contenedor con borde discontinuo y padding uniforme en los cuatro lados */}
+      <div className="relative min-w-0 w-full max-w-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-900/50 sm:p-4">
+        {/* Wrapper interior sin padding: el canvas se mide aquí para no invadir el padding */}
+        <div
+          ref={containerRef}
+          className="relative min-h-[140px] min-w-0 w-full overflow-hidden rounded-md bg-white dark:bg-gray-800"
+        >
+          {canvasSize.width > 0 && (
+            <SignaturePad
+              ref={signatureRef}
+              canvasProps={{
+                width: canvasSize.width,
+                height: canvasSize.height,
+                className:
+                  "touch-none block h-full w-full max-w-full rounded-md bg-white dark:bg-gray-800",
+                style: { display: "block", maxWidth: "100%" },
+              }}
+              onBegin={handleBegin}
+              onEnd={handleEnd}
+              backgroundColor="white"
+              penColor="black"
+            />
+          )}
+        {isEmpty && canvasSize.width > 0 && (
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <p className="rounded border bg-gray-50 px-2 py-1 text-sm text-gray-400 dark:bg-gray-900 dark:text-gray-500">
               Firma aquí
             </p>
           </div>
         )}
+        </div>
       </div>
 
       <div className="flex gap-2 justify-between items-center">

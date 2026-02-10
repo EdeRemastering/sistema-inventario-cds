@@ -4,8 +4,8 @@ export async function seedMantenimientosRealizados(prisma: PrismaClient) {
   console.log("🌱 Sembrando mantenimientos realizados...");
   
   // Obtener algunos elementos y mantenimientos programados
-  const elementos = await prisma.elementos.findMany({ take: 3 });
-  const programaciones = await prisma.mantenimientos_programados.findMany({ take: 3 });
+  const elementos = await prisma.elementos.findMany({ take: 2 });
+  const programaciones = await prisma.mantenimientos_programados.findMany({ take: 2 });
   
   if (elementos.length === 0) {
     console.log("⚠️  No hay elementos disponibles para crear mantenimientos realizados");

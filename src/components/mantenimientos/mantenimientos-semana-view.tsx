@@ -139,18 +139,18 @@ export function MantenimientosSemanaView({
     const getEstadoBadge = () => {
       switch (mantenimiento.estado) {
         case "PENDIENTE":
-          return <Badge className="bg-yellow-500 text-black">Pendiente</Badge>;
+          return <Badge className="bg-yellow-500 text-black dark:bg-yellow-600 dark:text-yellow-950 dark:border dark:border-yellow-400/50">Pendiente</Badge>;
         case "REALIZADO":
-          return <Badge className="bg-cyan-500 text-white">Ejecutado</Badge>;
+          return <Badge className="bg-cyan-500 text-white dark:bg-cyan-600 dark:border dark:border-cyan-400/50">Ejecutado</Badge>;
         case "APLAZADO":
-          return <Badge className="bg-red-500 text-white">Aplazado</Badge>;
+          return <Badge className="bg-red-500 text-white dark:bg-red-600 dark:border dark:border-red-400/50">Aplazado</Badge>;
         default:
           return <Badge variant="secondary">{mantenimiento.estado}</Badge>;
       }
     };
 
     return (
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-md transition-shadow border-border dark:border-muted-foreground/30 dark:bg-card/95">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -187,7 +187,7 @@ export function MantenimientosSemanaView({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-cyan-600 border-cyan-300 hover:bg-cyan-50"
+                  className="text-cyan-600 border-cyan-300 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-600 dark:hover:bg-cyan-950/50"
                   disabled={isLoading}
                   onClick={() => handleCambiarEstado(mantenimiento.id, "REALIZADO")}
                 >
@@ -197,7 +197,7 @@ export function MantenimientosSemanaView({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-red-600 border-red-300 hover:bg-red-50"
+                  className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-950/50"
                   disabled={isLoading}
                   onClick={() => handleCambiarEstado(mantenimiento.id, "APLAZADO")}
                 >
@@ -249,11 +249,11 @@ export function MantenimientosSemanaView({
       </div>
 
       {/* Resumen rápido */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-yellow-500">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="border-l-4 border-l-yellow-500 dark:border-yellow-500/80 dark:bg-card/95 dark:border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
               <div>
                 <div className="text-2xl font-bold">{pendientes.length}</div>
                 <div className="text-sm text-muted-foreground">Pendientes</div>
@@ -261,10 +261,10 @@ export function MantenimientosSemanaView({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-cyan-500">
+        <Card className="border-l-4 border-l-cyan-500 dark:border-cyan-500/80 dark:bg-card/95 dark:border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-cyan-500" />
+              <Check className="h-5 w-5 text-cyan-500 dark:text-cyan-400" />
               <div>
                 <div className="text-2xl font-bold">{realizados.length}</div>
                 <div className="text-sm text-muted-foreground">Ejecutados</div>
@@ -272,10 +272,10 @@ export function MantenimientosSemanaView({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-red-500">
+        <Card className="border-l-4 border-l-red-500 dark:border-red-500/80 dark:bg-card/95 dark:border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-red-500" />
+              <Clock className="h-5 w-5 text-red-500 dark:text-red-400" />
               <div>
                 <div className="text-2xl font-bold">{aplazados.length}</div>
                 <div className="text-sm text-muted-foreground">Aplazados</div>
@@ -301,7 +301,7 @@ export function MantenimientosSemanaView({
           {/* Pendientes primero */}
           {pendientes.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-medium text-yellow-600 flex items-center gap-2">
+              <h3 className="font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Pendientes ({pendientes.length})
               </h3>
@@ -316,7 +316,7 @@ export function MantenimientosSemanaView({
           {/* Ejecutados */}
           {realizados.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-medium text-cyan-600 flex items-center gap-2">
+              <h3 className="font-medium text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
                 <Check className="h-4 w-4" />
                 Ejecutados ({realizados.length})
               </h3>
@@ -331,7 +331,7 @@ export function MantenimientosSemanaView({
           {/* Aplazados */}
           {aplazados.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-medium text-red-600 flex items-center gap-2">
+              <h3 className="font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Aplazados ({aplazados.length})
               </h3>

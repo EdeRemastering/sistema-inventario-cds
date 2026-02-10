@@ -38,8 +38,14 @@ async function MantenimientosContent() {
 
   // Contar pendientes para mostrar en el tab
   const pendientesCount = programados.filter(
-    (m) => m.estado === "PENDIENTE",
+    (m) => m.estado === "PENDIENTE"
   ).length;
+
+  // Serializar realizados para Client Components: Prisma Decimal no es serializable
+  const realizadosPlain = realizados.map((m) => ({
+    ...m,
+    costo: m.costo != null ? Number(m.costo) : null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -56,7 +62,10 @@ async function MantenimientosContent() {
       </div>
 
       <Tabs defaultValue="semana" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid" data-tour="mantenimientos-tabs">
+        <TabsList
+          className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid"
+          data-tour="mantenimientos-tabs"
+        >
           <TabsTrigger value="semana" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Esta Semana</span>
@@ -109,7 +118,7 @@ async function MantenimientosContent() {
 
         <TabsContent value="realizados" className="mt-6">
           <MantenimientosRealizadosList
-            mantenimientos={realizados}
+            mantenimientos={realizadosPlain}
             elementos={options.elementos}
             sedes={options.sedes}
             ubicaciones={options.ubicaciones}

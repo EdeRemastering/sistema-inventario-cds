@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+/** Solo 2 tickets de ejemplo para presentación. */
 export const ticketsSeed = [
   {
     id: 1,
@@ -11,10 +12,10 @@ export const ticketsSeed = [
     marca_modelo: "Dell Latitude 5520",
     cantidad: 1,
     dependencia_entrega: "Departamento de TI",
-    firma_funcionario_entrega: null, // Se llenará con firma real si es necesario
+    firma_funcionario_entrega: null,
     dependencia_recibe: "Gerencia General",
-    firma_funcionario_recibe: null, // Se llenará con firma real si es necesario
-    motivo: "Préstamo para trabajo remoto del gerente",
+    firma_funcionario_recibe: null,
+    motivo: "Préstamo para trabajo remoto",
     orden_numero: "ORD-2024-001",
     usuario_guardado: "admin",
   },
@@ -35,62 +36,10 @@ export const ticketsSeed = [
     orden_numero: "ORD-2024-002",
     usuario_guardado: "admin",
   },
-  {
-    id: 3,
-    numero_ticket: "TICKET-2024-000003",
-    fecha_salida: new Date("2024-02-01T09:00:00"),
-    fecha_estimada_devolucion: new Date("2024-02-28"),
-    elemento: "Impresora HP",
-    serie: "IMP003",
-    marca_modelo: "HP LaserJet Pro",
-    cantidad: 1,
-    dependencia_entrega: "Departamento de TI",
-    firma_funcionario_entrega: null,
-    dependencia_recibe: "Recursos Humanos",
-    firma_funcionario_recibe: null,
-    motivo: "Préstamo temporal para proyecto de contrataciones",
-    orden_numero: "ORD-2024-003",
-    usuario_guardado: "admin",
-  },
-  {
-    id: 4,
-    numero_ticket: "TICKET-2024-000004",
-    fecha_salida: new Date("2024-02-10T16:45:00"),
-    fecha_estimada_devolucion: new Date("2024-03-10"),
-    elemento: "Tablet iPad",
-    serie: "TAB004",
-    marca_modelo: "iPad Air 5ta Gen",
-    cantidad: 1,
-    dependencia_entrega: "Almacén",
-    firma_funcionario_entrega: null,
-    dependencia_recibe: "Marketing",
-    firma_funcionario_recibe: null,
-    motivo: "Presentaciones móviles para eventos corporativos",
-    orden_numero: "ORD-2024-004",
-    usuario_guardado: "admin",
-  },
-  {
-    id: 5,
-    numero_ticket: "TICKET-2024-000005",
-    fecha_salida: new Date("2024-02-15T11:20:00"),
-    fecha_estimada_devolucion: new Date("2024-02-20"),
-    elemento: "Proyector Epson",
-    serie: "PRO005",
-    marca_modelo: "Epson PowerLite 1781W",
-    cantidad: 1,
-    dependencia_entrega: "Departamento de TI",
-    firma_funcionario_entrega: null,
-    dependencia_recibe: "Sala de Juntas",
-    firma_funcionario_recibe: null,
-    motivo: "Presentación ejecutiva semanal",
-    orden_numero: "ORD-2024-005",
-    usuario_guardado: "admin",
-  },
 ];
 
 export async function seedTickets(prisma: PrismaClient) {
-  console.log("🌱 Seeding tickets...");
-
+  console.log("🌱 Sembrando tickets...");
   for (const ticket of ticketsSeed) {
     await prisma.tickets_guardados.upsert({
       where: { id: ticket.id },
@@ -98,8 +47,5 @@ export async function seedTickets(prisma: PrismaClient) {
       create: ticket,
     });
   }
-
-  console.log(`✅ Seeded ${ticketsSeed.length} tickets`);
+  console.log(`✅ ${ticketsSeed.length} tickets sembrados`);
 }
-
-

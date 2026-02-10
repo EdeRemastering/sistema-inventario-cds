@@ -64,7 +64,7 @@ export function CategoriasList({
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {filteredData.map((categoria, idx) => (
                 <div
                   key={categoria.id}
@@ -77,7 +77,11 @@ export function CategoriasList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <div data-tour={idx === 0 ? "categorias-edit-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "categorias-edit-first" : undefined
+                      }
+                    >
                       <CategoriaUpsertDialog
                         create={false}
                         serverAction={onUpdateCategoria}
@@ -89,9 +93,15 @@ export function CategoriasList({
                         hiddenFields={{ id: categoria.id }}
                       />
                     </div>
-                    <div data-tour={idx === 0 ? "categorias-delete-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "categorias-delete-first" : undefined
+                      }
+                    >
                       <DeleteButton
-                        tourId={idx === 0 ? "categorias-delete-first" : undefined}
+                        tourId={
+                          idx === 0 ? "categorias-delete-first" : undefined
+                        }
                         onConfirm={async () => {
                           await onDeleteCategoria(categoria.id);
                         }}

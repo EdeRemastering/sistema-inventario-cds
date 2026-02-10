@@ -5,6 +5,13 @@ export function listObservaciones(): Promise<Observacion[]> {
   return prisma.observaciones.findMany({ orderBy: { id: "desc" } }) as Promise<Observacion[]>;
 }
 
+export function listObservacionesByElemento(elemento_id: number): Promise<Observacion[]> {
+  return prisma.observaciones.findMany({
+    where: { elemento_id },
+    orderBy: { fecha_observacion: "desc" },
+  }) as Promise<Observacion[]>;
+}
+
 export function createObservacion(data: CreateObservacionInput): Promise<Observacion> {
   return prisma.observaciones.create({ data }) as Promise<Observacion>;
 }

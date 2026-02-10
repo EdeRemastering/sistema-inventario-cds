@@ -16,6 +16,7 @@ import {
   updateCambioElemento,
   deleteCambioElemento,
 } from "./services";
+import { prisma } from "../../lib/prisma";
 import { logAction } from "../../lib/audit-logger";
 import type { CreateHojaVidaInput } from "./types";
 import type { Prisma } from "@prisma/client";
@@ -143,5 +144,48 @@ export async function actionDeleteCambioElemento(id: number) {
     details: `Cambio eliminado: ${id}`,
   });
   revalidatePath("/hojas-vida");
+}
+
+/** Crea una hoja de vida para cada elemento que aún no tenga (migración / sincronización). */
+export async function actionCrearHojasVidaFaltantes(): Promise<{ creadas: number; errores: string[] }> {
+  const elementosSinHoja = await prisma.elementos.findMany({
+    where: {
+      hojas_vida: { none: {} },
+    },
+    select: { id: true },
+  });
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const errores: string[] = [];
+  let creadas = 0;
+
+  for (const el of elementosSinHoja) {
+    try {
+      await createHojaVida({
+        elemento_id: el.id,
+        fecha_dilegenciamiento: hoy,
+        tipo_elemento: "EQUIPO",
+        area_ubicacion: null,
+        responsable: null,
+        especificaciones_tecnicas: null,
+        descripcion: null,
+        requerimientos_funcionamiento: null,
+        requerimientos_seguridad: null,
+        rutina_mantenimiento: null,
+        fecha_actualizacion: null,
+        activo: true,
+      });
+      creadas++;
+    } catch (e) {
+      errores.push(`Elemento ${el.id}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  if (creadas > 0) {
+    revalidatePath("/hojas-vida");
+    revalidatePath("/elementos");
+  }
+  return { creadas, errores };
 }
 

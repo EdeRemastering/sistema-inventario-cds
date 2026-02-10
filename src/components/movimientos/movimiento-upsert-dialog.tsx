@@ -36,10 +36,10 @@ const schema = z
       message: "Fecha de movimiento requerida",
     }),
     hora_movimiento: z.string().optional(),
-    dependencia_entrega: z.string().min(1, "Requerido"),
+    dependencia_entrega: z.string().optional().or(z.literal("")),
     firma_funcionario_entrega: z.string().optional(),
     cargo_funcionario_entrega: z.string().optional(),
-    dependencia_recibe: z.string().min(1, "Requerido"),
+    dependencia_recibe: z.string().optional().or(z.literal("")),
     firma_funcionario_recibe: z.string().optional(),
     cargo_funcionario_recibe: z.string().optional(),
     motivo: z.string().optional(),
@@ -246,13 +246,13 @@ export function MovimientoUpsertDialog({
         "fecha_movimiento",
         fechaMovimientoCompleta.toISOString()
       );
-      formData.append("dependencia_entrega", data.dependencia_entrega);
+      formData.append("dependencia_entrega", data.dependencia_entrega ?? "");
       if (data.cargo_funcionario_entrega)
         formData.append(
           "cargo_funcionario_entrega",
           data.cargo_funcionario_entrega
         );
-      formData.append("dependencia_recibe", data.dependencia_recibe);
+      formData.append("dependencia_recibe", data.dependencia_recibe ?? "");
       if (data.cargo_funcionario_recibe)
         formData.append(
           "cargo_funcionario_recibe",
@@ -422,7 +422,7 @@ export function MovimientoUpsertDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
                 <Label htmlFor="dependencia_entrega">
-                  Dependencia de Entrega
+                  Dependencia de Entrega (opcional)
                 </Label>
                 <Input
                   id="dependencia_entrega"

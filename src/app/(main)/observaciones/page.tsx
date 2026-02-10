@@ -1,35 +1,10 @@
-import { listObservaciones } from "../../../modules/observaciones/services";
-import { listElementos } from "../../../modules/elementos/services";
-import {
-  actionCreateObservacion,
-  actionDeleteObservacion,
-  actionUpdateObservacion,
-} from "../../../modules/observaciones/actions";
-import { ObservacionesList } from "../../../components/observaciones/observaciones-list";
-import { ObservacionesSkeleton } from "../../../components/skeletons/observaciones";
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-async function ObservacionesContent() {
-  const [observaciones, elementos] = await Promise.all([
-    listObservaciones(),
-    listElementos(),
-  ]);
-
-  return (
-    <ObservacionesList
-      observaciones={observaciones}
-      elementos={elementos}
-      onCreateObservacion={actionCreateObservacion}
-      onUpdateObservacion={actionUpdateObservacion}
-      onDeleteObservacion={actionDeleteObservacion}
-    />
-  );
-}
-
+/**
+ * Las observaciones se gestionan dentro del módulo Hojas de Vida (por elemento).
+ * Al abrir la hoja de vida de un elemento, en la pestaña "Observaciones" se pueden
+ * crear, editar y eliminar observaciones.
+ */
 export default function ObservacionesPage() {
-  return (
-    <Suspense fallback={<ObservacionesSkeleton />}>
-      <ObservacionesContent />
-    </Suspense>
-  );
+  redirect("/hojas-vida");
 }

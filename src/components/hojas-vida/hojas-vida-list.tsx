@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "../ui/button";
 import {
   Table,
@@ -13,9 +14,21 @@ import {
 import { HojaVidaUpsertDialog } from "./hoja-vida-upsert-dialog";
 import { DeleteButton } from "../delete-button";
 import type { HojaVida } from "../../modules/hojas_vida/types";
+import { toast } from "sonner";
+import { FileText } from "lucide-react";
 
-type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
-type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type SedeOption = {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  municipio: string | null;
+};
+type UbicacionOption = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  sede_id: number;
+};
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
 type ElementoOption = {
@@ -44,14 +57,13 @@ import { es } from "date-fns/locale";
 // Función para parsear fecha del servidor de forma segura (evita problemas de timezone)
 const parseServerDate = (dateValue: Date | string | null | undefined): Date => {
   if (!dateValue) return new Date();
-  
-  const dateStr = typeof dateValue === 'string' 
-    ? dateValue 
-    : dateValue.toISOString();
-  
+
+  const dateStr =
+    typeof dateValue === "string" ? dateValue : dateValue.toISOString();
+
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) return new Date();
-  
+
   const [, year, month, day] = match;
   // Crear fecha directamente sin hora para mostrar correctamente
   return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -67,6 +79,10 @@ type Props = {
   onCreateHojaVida: (formData: FormData) => Promise<void>;
   onUpdateHojaVida: (formData: FormData) => Promise<void>;
   onDeleteHojaVida: (id: number) => Promise<void>;
+  onCrearHojasVidaFaltantes?: () => Promise<{
+    creadas: number;
+    errores: string[];
+  }>;
 };
 
 export function HojasVidaList({
@@ -79,16 +95,46 @@ export function HojasVidaList({
   onCreateHojaVida,
   onUpdateHojaVida,
   onDeleteHojaVida,
+  onCrearHojasVidaFaltantes,
 }: Props) {
   const [editingHojaVida, setEditingHojaVida] = useState<HojaVida | null>(null);
+  const [creandoFaltantes, setCreandoFaltantes] = useState(false);
+
+  const handleCrearFaltantes = async () => {
+    if (!onCrearHojasVidaFaltantes) return;
+    setCreandoFaltantes(true);
+    try {
+      const { creadas, errores } = await onCrearHojasVidaFaltantes();
+      if (creadas > 0) toast.success(`Se crearon ${creadas} hoja(s) de vida.`);
+      if (errores.length > 0) toast.error(errores.slice(0, 2).join(" "));
+      if (creadas === 0 && errores.length === 0)
+        toast.info("Todos los elementos ya tienen hoja de vida.");
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Error al crear hojas de vida"
+      );
+    } finally {
+      setCreandoFaltantes(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h1 className="text-2xl font-bold" data-tour="page-title">
           Hojas de Vida
         </h1>
-        <div data-tour="hojasvida-create">
+        <div className="flex gap-2" data-tour="hojasvida-create">
+          {onCrearHojasVidaFaltantes && (
+            <Button
+              variant="secondary"
+              onClick={handleCrearFaltantes}
+              disabled={creandoFaltantes}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Crear hojas de vida faltantes
+            </Button>
+          )}
           <HojaVidaUpsertDialog
             serverAction={onCreateHojaVida}
             create={true}
@@ -116,7 +162,10 @@ export function HojasVidaList({
           <TableBody>
             {hojasVida.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
                   No hay hojas de vida registradas
                 </TableCell>
               </TableRow>
@@ -125,16 +174,24 @@ export function HojasVidaList({
                 <TableRow key={hoja.id}>
                   <TableCell>
                     {hoja.elemento
-                      ? `${hoja.elemento.serie} - ${hoja.elemento.marca || ""} ${hoja.elemento.modelo || ""}`.trim()
+                      ? `${hoja.elemento.serie} - ${
+                          hoja.elemento.marca || ""
+                        } ${hoja.elemento.modelo || ""}`.trim()
                       : `Elemento ID: ${hoja.elemento_id}`}
                   </TableCell>
                   <TableCell>
                     <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                      {hoja.tipo_elemento === "EQUIPO" ? "Equipo" : "Recurso Didáctico"}
+                      {hoja.tipo_elemento === "EQUIPO"
+                        ? "Equipo"
+                        : "Recurso Didáctico"}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {format(parseServerDate(hoja.fecha_dilegenciamiento), "dd/MM/yyyy", { locale: es })}
+                    {format(
+                      parseServerDate(hoja.fecha_dilegenciamiento),
+                      "dd/MM/yyyy",
+                      { locale: es }
+                    )}
                   </TableCell>
                   <TableCell>{hoja.responsable || "N/A"}</TableCell>
                   <TableCell>
@@ -149,17 +206,39 @@ export function HojasVidaList({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        data-tour={
+                          idx === 0
+                            ? "hojasvida-ver-historial-first"
+                            : undefined
+                        }
+                      >
+                        <Link href={`/hojas-vida/elemento/${hoja.elemento_id}`}>
+                          Ver historial
+                        </Link>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingHojaVida(hoja)}
-                        data-tour={idx === 0 ? "hojasvida-edit-first" : undefined}
+                        data-tour={
+                          idx === 0 ? "hojasvida-edit-first" : undefined
+                        }
                       >
                         Editar
                       </Button>
-                      <span data-tour={idx === 0 ? "hojasvida-delete-first" : undefined}>
-                        <DeleteButton onConfirm={() => onDeleteHojaVida(hoja.id)} />
+                      <span
+                        data-tour={
+                          idx === 0 ? "hojasvida-delete-first" : undefined
+                        }
+                      >
+                        <DeleteButton
+                          onConfirm={() => onDeleteHojaVida(hoja.id)}
+                        />
                       </span>
                     </div>
                   </TableCell>
@@ -187,4 +266,3 @@ export function HojasVidaList({
     </div>
   );
 }
-

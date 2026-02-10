@@ -177,12 +177,9 @@ export async function getMantenimientosKpis(input?: {
         where: { ...realizadosBaseWhere, fecha_mantenimiento: { gte: from, lt: toExclusive } },
         _sum: { costo: true },
       }),
-      prisma.mantenimientos_realizados.groupBy({
-        by: ["responsable"],
+      prisma.mantenimientos_realizados.findMany({
         where: { ...realizadosBaseWhere, fecha_mantenimiento: { gte: from, lt: toExclusive } },
-        _count: { id: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 5,
+        select: { responsable: true },
       }),
       prisma.mantenimientos_realizados.findMany({
         where: { ...realizadosBaseWhere, fecha_mantenimiento: { gte: startTrend, lt: endTrendExclusive } },
@@ -208,10 +205,15 @@ export async function getMantenimientosKpis(input?: {
 
     const costoPeriodo = Number(costoAggPeriodo._sum.costo ?? 0);
 
-    const topResponsablesPeriodo = topResponsablesRaw.map((r) => ({
-      responsable: r.responsable,
-      total: r._count.id,
-    }));
+    const responsableCounts = new Map<string, number>();
+    for (const r of topResponsablesRaw) {
+      const name = r.responsable ?? "Sin asignar";
+      responsableCounts.set(name, (responsableCounts.get(name) ?? 0) + 1);
+    }
+    const topResponsablesPeriodo = Array.from(responsableCounts.entries())
+      .map(([responsable, total]) => ({ responsable, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
 
     // Tendencia mensual dentro del periodo (JS aggregation)
     const buckets = new Map<string, number>();

@@ -30,7 +30,9 @@ export function UbicacionesList({
   onUpdateUbicacion,
   onDeleteUbicacion,
 }: Props) {
-  const [editingUbicacion, setEditingUbicacion] = useState<Ubicacion | null>(null);
+  const [editingUbicacion, setEditingUbicacion] = useState<Ubicacion | null>(
+    null
+  );
 
   return (
     <div className="space-y-4">
@@ -61,17 +63,24 @@ export function UbicacionesList({
           <TableBody>
             {ubicaciones.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="text-center text-muted-foreground"
+                >
                   No hay ubicaciones registradas
                 </TableCell>
               </TableRow>
             ) : (
               ubicaciones.map((ubicacion, idx) => (
                 <TableRow key={ubicacion.id}>
-                  <TableCell className="font-medium">{ubicacion.codigo}</TableCell>
+                  <TableCell className="font-medium">
+                    {ubicacion.codigo}
+                  </TableCell>
                   <TableCell>{ubicacion.nombre}</TableCell>
                   <TableCell>
-                    {ubicacion.sede ? `${ubicacion.sede.nombre} - ${ubicacion.sede.ciudad}` : "N/A"}
+                    {ubicacion.sede
+                      ? `${ubicacion.sede.nombre} - ${ubicacion.sede.ciudad}`
+                      : "N/A"}
                   </TableCell>
                   <TableCell>
                     <span
@@ -90,13 +99,21 @@ export function UbicacionesList({
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingUbicacion(ubicacion)}
-                        data-tour={idx === 0 ? "ubicaciones-edit-first" : undefined}
+                        data-tour={
+                          idx === 0 ? "ubicaciones-edit-first" : undefined
+                        }
                       >
                         Editar
                       </Button>
-                      <span data-tour={idx === 0 ? "ubicaciones-delete-first" : undefined}>
+                      <span
+                        data-tour={
+                          idx === 0 ? "ubicaciones-delete-first" : undefined
+                        }
+                      >
                         <DeleteButton
-                          tourId={idx === 0 ? "ubicaciones-delete-first" : undefined}
+                          tourId={
+                            idx === 0 ? "ubicaciones-delete-first" : undefined
+                          }
                           onConfirm={() => onDeleteUbicacion(ubicacion.id)}
                         />
                       </span>
@@ -122,4 +139,3 @@ export function UbicacionesList({
     </div>
   );
 }
-

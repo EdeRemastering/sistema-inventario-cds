@@ -71,7 +71,7 @@ export function ObservacionesList({
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {filteredData.map((observacion, idx) => (
                 <div
                   key={observacion.id}
@@ -86,14 +86,20 @@ export function ObservacionesList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <div data-tour={idx === 0 ? "observaciones-edit-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "observaciones-edit-first" : undefined
+                      }
+                    >
                       <ObservacionUpsertDialog
                         create={false}
                         serverAction={onUpdateObservacion}
                         elementos={elementos}
                         defaultValues={{
                           elemento_id: String(observacion.elemento_id),
-                          fecha_observacion: new Date(observacion.fecha_observacion)
+                          fecha_observacion: new Date(
+                            observacion.fecha_observacion
+                          )
                             .toISOString()
                             .slice(0, 10),
                           descripcion: observacion.descripcion,
@@ -101,9 +107,15 @@ export function ObservacionesList({
                         hiddenFields={{ id: observacion.id }}
                       />
                     </div>
-                    <div data-tour={idx === 0 ? "observaciones-delete-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "observaciones-delete-first" : undefined
+                      }
+                    >
                       <DeleteButton
-                        tourId={idx === 0 ? "observaciones-delete-first" : undefined}
+                        tourId={
+                          idx === 0 ? "observaciones-delete-first" : undefined
+                        }
                         onConfirm={async () => {
                           await onDeleteObservacion(observacion.id);
                         }}

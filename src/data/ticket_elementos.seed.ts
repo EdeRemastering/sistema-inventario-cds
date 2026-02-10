@@ -4,8 +4,8 @@ export async function seedTicketElementos(prisma: PrismaClient) {
   console.log("🌱 Sembrando elementos de tickets...");
   
   // Obtener algunos tickets y elementos
-  const tickets = await prisma.tickets_guardados.findMany({ take: 5 });
-  const elementos = await prisma.elementos.findMany({ take: 10 });
+  const tickets = await prisma.tickets_guardados.findMany({ take: 2 });
+  const elementos = await prisma.elementos.findMany({ take: 3 });
   
   if (tickets.length === 0 || elementos.length === 0) {
     console.log("⚠️  No hay tickets o elementos disponibles para crear relaciones");

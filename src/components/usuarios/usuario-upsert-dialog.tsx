@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -30,20 +30,22 @@ const createSchema = z.object({
     .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   nombre: z.string().min(1, "El nombre es requerido"),
-  apellido: z.string().min(1, "El apellido es requerido"),
-  firma: z.string().min(1, "La firma es requerida"),
+  apellido: z.string().optional().or(z.literal("")),
+  firma: z.string().optional().or(z.literal("")),
   rol: z.enum(["administrador", "usuario"]),
   activo: z.boolean().optional(),
 });
 
 const updateSchema = z.object({
   password: z
-    .string()
-    .min(6, "La contraseña debe tener al menos 6 caracteres")
+    .union([
+      z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+      z.literal(""),
+    ])
     .optional(),
-  nombre: z.string().min(1, "El nombre es requerido"),
-  apellido: z.string().min(1, "El apellido es requerido"),
-  firma: z.string().optional(),
+  nombre: z.string().min(1, "El nombre es requerido").optional(),
+  apellido: z.string().optional().or(z.literal("")),
+  firma: z.string().optional().or(z.literal("")),
   rol: z.enum(["administrador", "usuario"]),
   activo: z.boolean().optional(),
 });
@@ -88,7 +90,9 @@ export function UsuarioUpsertDialog({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<UsuarioFormData>({
-    resolver: zodResolver(create ? createSchema : updateSchema),
+    resolver: zodResolver(
+      create ? createSchema : updateSchema
+    ) as Resolver<UsuarioFormData>,
     defaultValues: {
       rol: "usuario",
       activo: true,
@@ -148,19 +152,28 @@ export function UsuarioUpsertDialog({
         {computedButton}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent data-tour="usuario-form">
+        <DialogContent
+          data-tour="usuario-form"
+          className="max-h-[90dvh] sm:max-h-[90vh]"
+        >
           <DialogHeader>
             <DialogTitle>{computedTitle}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="grid min-w-0 w-full max-w-full gap-3"
+          >
             <input type="hidden" {...register("firma")} />
             {create && (
-              <div className="grid gap-1" data-tour="usuario-form-username">
+              <div
+                className="grid min-w-0 gap-1"
+                data-tour="usuario-form-username"
+              >
                 <Label htmlFor="username">Nombre de usuario</Label>
                 <Input
                   id="username"
                   type="text"
-                  placeholder="Ej: juan.perez"
+                  placeholder="Ej: eder.mestra"
                   {...register("username")}
                 />
                 {errors.username && (
@@ -170,7 +183,10 @@ export function UsuarioUpsertDialog({
                 )}
               </div>
             )}
-            <div className="grid gap-1" data-tour="usuario-form-password">
+            <div
+              className="grid min-w-0 gap-1"
+              data-tour="usuario-form-password"
+            >
               <Label htmlFor="password">
                 {create ? "Contraseña" : "Nueva contraseña (opcional)"}
               </Label>
@@ -186,34 +202,39 @@ export function UsuarioUpsertDialog({
                 </p>
               )}
             </div>
-            <div className="grid gap-1" data-tour="usuario-form-nombre">
+            <div className="grid min-w-0 gap-1" data-tour="usuario-form-nombre">
               <Label htmlFor="nombre">Nombre</Label>
               <Input
                 id="nombre"
                 type="text"
-                placeholder="Juan"
+                placeholder="Eder"
                 {...register("nombre")}
               />
               {errors.nombre && (
                 <p className="text-red-500 text-sm">{errors.nombre.message}</p>
               )}
             </div>
-            <div className="grid gap-1" data-tour="usuario-form-apellido">
+            <div
+              className="grid min-w-0 gap-1"
+              data-tour="usuario-form-apellido"
+            >
               <Label htmlFor="apellido">Apellido</Label>
               <Input
                 id="apellido"
                 type="text"
-                placeholder="Pérez"
+                placeholder="Mestra"
                 {...register("apellido")}
               />
               {errors.apellido && (
-                <p className="text-red-500 text-sm">{errors.apellido.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.apellido.message}
+                </p>
               )}
             </div>
 
-            <div className="grid gap-2" data-tour="usuario-form-firma">
+            <div className="grid min-w-0 gap-2" data-tour="usuario-form-firma">
               <Label>Firma del usuario</Label>
-              <div className="rounded-md border p-2">
+              <div className="min-w-0 w-full max-w-full overflow-hidden rounded-md border p-2 sm:max-w-md sm:mx-auto">
                 <SignaturePadComponent
                   onSignatureChange={(dataUrl) => {
                     setFirma(dataUrl);
@@ -221,13 +242,11 @@ export function UsuarioUpsertDialog({
                   }}
                 />
               </div>
-              {(create && !firma) || errors.firma ? (
-                <p className="text-red-500 text-sm">
-                  {errors.firma?.message ?? "La firma es requerida"}
-                </p>
+              {errors.firma ? (
+                <p className="text-red-500 text-sm">{errors.firma.message}</p>
               ) : null}
             </div>
-            <div className="grid gap-1" data-tour="usuario-form-rol">
+            <div className="grid min-w-0 gap-1" data-tour="usuario-form-rol">
               <Label htmlFor="rol">Rol</Label>
               <Select
                 value={watch("rol")}
@@ -267,7 +286,11 @@ export function UsuarioUpsertDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting} data-tour="usuario-form-submit">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-tour="usuario-form-submit"
+              >
                 {computedSubmit}
               </Button>
             </DialogFooter>

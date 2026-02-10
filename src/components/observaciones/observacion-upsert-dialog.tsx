@@ -26,7 +26,7 @@ import {
 const schema = z.object({
   elemento_id: z.string().min(1, "Selecciona elemento"),
   fecha_observacion: z.string().min(1, "Fecha requerida"),
-  descripcion: z.string().min(1, "Descripción requerida"),
+  descripcion: z.string().optional().or(z.literal("")),
 });
 
 type ObservacionFormData = z.infer<typeof schema>;
@@ -76,7 +76,7 @@ export function ObservacionUpsertDialog({
       // Agregar campos del formulario
       formData.append("elemento_id", data.elemento_id);
       formData.append("fecha_observacion", data.fecha_observacion);
-      formData.append("descripcion", data.descripcion);
+      formData.append("descripcion", data.descripcion ?? "");
 
       // Agregar campos ocultos
       if (hiddenFields) {
@@ -112,7 +112,9 @@ export function ObservacionUpsertDialog({
     <>
       <Button
         onClick={() => setOpen(true)}
-        data-tour={create ? "observaciones-create-button" : "observaciones-edit-button"}
+        data-tour={
+          create ? "observaciones-create-button" : "observaciones-edit-button"
+        }
       >
         {btnText}
       </Button>
@@ -163,7 +165,10 @@ export function ObservacionUpsertDialog({
             </div>
 
             {/* Descripción */}
-            <div className="grid gap-1" data-tour="observacion-form-descripcion">
+            <div
+              className="grid gap-1"
+              data-tour="observacion-form-descripcion"
+            >
               <Label htmlFor="descripcion">Descripción</Label>
               <textarea
                 id="descripcion"

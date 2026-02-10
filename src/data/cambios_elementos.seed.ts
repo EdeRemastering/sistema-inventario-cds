@@ -4,7 +4,7 @@ export async function seedCambiosElementos(prisma: PrismaClient) {
   console.log("🌱 Sembrando cambios de elementos...");
   
   // Obtener algunas hojas de vida
-  const hojasVida = await prisma.hojas_vida.findMany({ take: 3 });
+  const hojasVida = await prisma.hojas_vida.findMany({ take: 2 });
   
   if (hojasVida.length === 0) {
     console.log("⚠️  No hay hojas de vida disponibles para crear cambios");

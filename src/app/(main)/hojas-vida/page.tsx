@@ -4,6 +4,7 @@ import {
   actionCreateHojaVida,
   actionUpdateHojaVida,
   actionDeleteHojaVida,
+  actionCrearHojasVidaFaltantes,
 } from "../../../modules/hojas_vida/actions";
 import { HojasVidaList } from "../../../components/hojas-vida/hojas-vida-list";
 import { HojasVidaSkeleton } from "../../../components/skeletons";
@@ -30,6 +31,7 @@ async function HojasVidaContent() {
       onCreateHojaVida={actionCreateHojaVida}
       onUpdateHojaVida={actionUpdateHojaVida}
       onDeleteHojaVida={actionDeleteHojaVida}
+      onCrearHojasVidaFaltantes={actionCrearHojasVidaFaltantes}
     />
   );
 }

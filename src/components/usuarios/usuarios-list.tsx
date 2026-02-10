@@ -64,7 +64,7 @@ export function UsuariosList({
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {filteredData.map((usuario, idx) => (
                 <div
                   key={usuario.id}
@@ -75,7 +75,9 @@ export function UsuariosList({
                       {usuario.nombre}
                       {usuario.apellido ? ` ${usuario.apellido}` : ""}
                     </span>
-                    <span className="text-muted-foreground text-sm break-words">@{usuario.username}</span>
+                    <span className="text-muted-foreground text-sm break-words">
+                      @{usuario.username}
+                    </span>
                     <span className="text-xs rounded bg-secondary px-2 py-0.5 whitespace-nowrap">
                       {usuario.rol}
                     </span>
@@ -86,7 +88,9 @@ export function UsuariosList({
                     )}
                   </div>
                   <div className="flex gap-2 sm:ml-auto">
-                    <div data-tour={idx === 0 ? "usuarios-edit-first" : undefined}>
+                    <div
+                      data-tour={idx === 0 ? "usuarios-edit-first" : undefined}
+                    >
                       <UsuarioUpsertDialog
                         create={false}
                         serverAction={onUpdateUsuario}
@@ -100,7 +104,11 @@ export function UsuariosList({
                         hiddenFields={{ id: usuario.id }}
                       />
                     </div>
-                    <div data-tour={idx === 0 ? "usuarios-delete-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "usuarios-delete-first" : undefined
+                      }
+                    >
                       <DeleteButton
                         tourId={idx === 0 ? "usuarios-delete-first" : undefined}
                         onConfirm={async () => {

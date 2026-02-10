@@ -1,142 +1,54 @@
 import type { PrismaClient } from "@prisma/client";
 
-// Función helper para convertir string de tiempo a Date
 function timeStringToDate(timeString: string): Date {
-  const [hours, minutes, seconds] = timeString.split(':').map(Number);
+  const [hours, minutes, seconds] = timeString.split(":").map(Number);
   const date = new Date();
   date.setHours(hours, minutes, seconds, 0);
   return date;
 }
 
+/** Un solo movimiento de ejemplo (presentación). */
 export const movimientosSeed = [
-  { 
-    id: 1, 
-    elemento_id: 1, 
-    cantidad: 1, 
-    orden_numero: "19202509", 
-    fecha_movimiento: new Date("2025-09-19T14:35:28"), 
-    dependencia_entrega: "Centro de Sistemas Bodega", 
-    firma_funcionario_entrega: "/signatures/firma_funcionario_entrega_1758310528_1381.png", 
-    cargo_funcionario_entrega: "Amacenista", 
-    dependencia_recibe: "Ambiente 3", 
-    firma_funcionario_recibe: "/signatures/firma_funcionario_recibe_1758310528_8679.png", 
-    cargo_funcionario_recibe: "Docente", 
-    motivo: "Prestamo", 
-    fecha_estimada_devolucion: new Date("2025-09-19"), 
-    fecha_real_devolucion: new Date("2025-09-19T21:36:25"), 
-    observaciones_entrega: "en buen estado", 
-    observaciones_devolucion: "en buen estado", 
-    tipo: "DEVOLUCION" as const, 
-    codigo_equipo: "AA01-ME-01-01", 
-    serial_equipo: "N/A", 
-    hora_entrega: timeStringToDate("14:34:00"), 
-    hora_devolucion: timeStringToDate("21:36:00"), 
-    numero_ticket: "TICKET-20250919143528-2133", 
-    firma_entrega: "/signatures/firma_entrega_1758310528_1381.png", 
-    firma_recibe: "/signatures/firma_recibe_1758310528_8679.png", 
-    firma_devuelve: "/signatures/firma_devuelve_1758310585_3535.png", 
-    firma_recibe_devolucion: "/signatures/firma_recibe_devolucion_1758310585_7245.png", 
-    devuelto_por: "Ruben Zapata", 
-    recibido_por: "Abel valderrama" 
-  },
-  { 
-    id: 2, 
-    elemento_id: 1, 
-    cantidad: 1, 
-    orden_numero: "19202509", 
-    fecha_movimiento: new Date("2025-09-19T15:10:45"), 
-    dependencia_entrega: "Centro de Sistemas", 
-    firma_funcionario_entrega: "/signatures/firma_funcionario_entrega_1758312645_3431.png", 
-    cargo_funcionario_entrega: "Amacenista", 
-    dependencia_recibe: "Ambiente 3", 
-    firma_funcionario_recibe: "/signatures/firma_funcionario_recibe_1758312645_5148.png", 
-    cargo_funcionario_recibe: "Docente", 
-    motivo: "Prestamo", 
-    fecha_estimada_devolucion: new Date("2025-09-19"), 
-    fecha_real_devolucion: new Date("2025-09-19T22:11:23"), 
-    observaciones_entrega: "en buen estado", 
-    observaciones_devolucion: "en buen estado", 
-    tipo: "DEVOLUCION" as const, 
-    codigo_equipo: "AA01-ME-01-01", 
-    serial_equipo: "N/A", 
-    hora_entrega: timeStringToDate("15:10:00"), 
-    hora_devolucion: timeStringToDate("22:11:00"), 
-    numero_ticket: "TICKET-20250919151045-6066", 
-    firma_entrega: "/signatures/firma_entrega_1758312645_3431.png", 
-    firma_recibe: "/signatures/firma_recibe_1758312645_5148.png", 
-    firma_devuelve: "/signatures/firma_devuelve_1758312683_8717.png", 
-    firma_recibe_devolucion: "/signatures/firma_recibe_devolucion_1758312683_7170.png", 
-    devuelto_por: "Ruben Zapata", 
-    recibido_por: "Abel Valderrama" 
-  },
-  { 
-    id: 3, 
-    elemento_id: 1, 
-    cantidad: 1, 
-    orden_numero: "19202509", 
-    fecha_movimiento: new Date("2025-09-19T15:15:24"), 
-    dependencia_entrega: "Centro de Sistemas", 
-    firma_funcionario_entrega: "/signatures/firma_funcionario_entrega_1758312924_9943.png", 
-    cargo_funcionario_entrega: "Amacenista", 
-    dependencia_recibe: "Ambiente 3", 
-    firma_funcionario_recibe: "/signatures/firma_funcionario_recibe_1758312924_4997.png", 
-    cargo_funcionario_recibe: "Docente", 
-    motivo: "Prestamo", 
-    fecha_estimada_devolucion: new Date("2025-09-19"), 
-    fecha_real_devolucion: new Date("2025-09-19T22:16:26"), 
-    observaciones_entrega: "en buen estado", 
-    observaciones_devolucion: "en buen estado", 
-    tipo: "DEVOLUCION" as const, 
-    codigo_equipo: "AA01-ME-01-01", 
-    serial_equipo: "N/A", 
-    hora_entrega: timeStringToDate("15:14:00"), 
-    hora_devolucion: timeStringToDate("22:16:00"), 
-    numero_ticket: "TICKET-20250919151524-5155", 
-    firma_entrega: "/signatures/firma_entrega_1758312924_9943.png", 
-    firma_recibe: "/signatures/firma_recibe_1758312924_4997.png", 
-    firma_devuelve: "/signatures/firma_devuelve_1758312986_4604.png", 
-    firma_recibe_devolucion: "/signatures/firma_recibe_devolucion_1758312986_7296.png", 
-    devuelto_por: "Ruben Zapata", 
-    recibido_por: "Abel valderrama" 
-  },
-  { 
-    id: 4, 
-    elemento_id: 2, 
-    cantidad: 1, 
-    orden_numero: "19202509", 
-    fecha_movimiento: new Date("2025-09-19T15:21:22"), 
-    dependencia_entrega: "Centro de Sistemas", 
-    firma_funcionario_entrega: "/signatures/firma_funcionario_entrega_1758313282_7763.png", 
-    cargo_funcionario_entrega: "Amacenista", 
-    dependencia_recibe: "Ambiente 3", 
-    firma_funcionario_recibe: "/signatures/firma_funcionario_recibe_1758313282_3337.png", 
-    cargo_funcionario_recibe: "Docente", 
-    motivo: "Prestamo", 
-    fecha_estimada_devolucion: new Date("2025-09-19"), 
-    fecha_real_devolucion: new Date("2025-09-19T22:21:57"), 
-    observaciones_entrega: "en buen estado", 
-    observaciones_devolucion: "en buen estado", 
-    tipo: "DEVOLUCION" as const, 
-    codigo_equipo: "AA01-ME-01-01", 
-    serial_equipo: "001254", 
-    hora_entrega: timeStringToDate("15:20:00"), 
-    hora_devolucion: timeStringToDate("22:21:00"), 
-    numero_ticket: "TICKET-20250919152122-1942", 
-    firma_entrega: "/signatures/firma_entrega_1758313282_7763.png", 
-    firma_recibe: "/signatures/firma_recibe_1758313282_3337.png", 
-    firma_devuelve: "/signatures/firma_devuelve_1758313317_3403.png", 
-    firma_recibe_devolucion: "/signatures/firma_recibe_devolucion_1758313317_4801.png", 
-    devuelto_por: "Ruben Zapata", 
-    recibido_por: "Abel valderrama" 
+  {
+    id: 1,
+    elemento_id: 1,
+    cantidad: 1,
+    orden_numero: "19202509",
+    fecha_movimiento: new Date("2025-09-19T14:35:28"),
+    dependencia_entrega: "Centro de Sistemas Bodega",
+    firma_funcionario_entrega: "/signatures/firma_funcionario_entrega_1758310528_1381.png",
+    cargo_funcionario_entrega: "Almacenista",
+    dependencia_recibe: "Ambiente 3",
+    firma_funcionario_recibe: "/signatures/firma_funcionario_recibe_1758310528_8679.png",
+    cargo_funcionario_recibe: "Docente",
+    motivo: "Préstamo",
+    fecha_estimada_devolucion: new Date("2025-09-19"),
+    fecha_real_devolucion: new Date("2025-09-19T21:36:25"),
+    observaciones_entrega: "En buen estado",
+    observaciones_devolucion: "En buen estado",
+    tipo: "DEVOLUCION" as const,
+    codigo_equipo: "AA01-ME-01-01",
+    serial_equipo: "N/A",
+    hora_entrega: timeStringToDate("14:34:00"),
+    hora_devolucion: timeStringToDate("21:36:00"),
+    numero_ticket: "TICKET-20250919143528-2133",
+    firma_entrega: "/signatures/firma_entrega_1758310528_1381.png",
+    firma_recibe: "/signatures/firma_recibe_1758310528_8679.png",
+    firma_devuelve: "/signatures/firma_devuelve_1758310585_3535.png",
+    firma_recibe_devolucion: "/signatures/firma_recibe_devolucion_1758310585_7245.png",
+    devuelto_por: "Ruben Zapata",
+    recibido_por: "Abel Valderrama",
   },
 ];
 
 export async function seedMovimientos(prisma: PrismaClient) {
+  const firstElement = await prisma.elementos.findFirst({ select: { id: true } });
+  const elementoId = firstElement?.id ?? 1;
   for (const m of movimientosSeed) {
     await prisma.movimientos.upsert({
       where: { id: m.id },
       update: {
-        elemento_id: m.elemento_id,
+        elemento_id: elementoId,
         cantidad: m.cantidad,
         orden_numero: m.orden_numero,
         fecha_movimiento: m.fecha_movimiento,
@@ -167,7 +79,7 @@ export async function seedMovimientos(prisma: PrismaClient) {
       },
       create: {
         id: m.id,
-        elemento_id: m.elemento_id,
+        elemento_id: elementoId,
         cantidad: m.cantidad,
         orden_numero: m.orden_numero,
         fecha_movimiento: m.fecha_movimiento,
@@ -199,5 +111,3 @@ export async function seedMovimientos(prisma: PrismaClient) {
     });
   }
 }
-
-

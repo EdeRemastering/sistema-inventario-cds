@@ -71,7 +71,7 @@ export function SubcategoriasList({
               }
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {filteredData.map((subcategoria, idx) => (
                 <div
                   key={subcategoria.id}
@@ -84,7 +84,11 @@ export function SubcategoriasList({
                     </div>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <div data-tour={idx === 0 ? "subcategorias-edit-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "subcategorias-edit-first" : undefined
+                      }
+                    >
                       <SubcategoriaUpsertDialog
                         create={false}
                         serverAction={onUpdateSubcategoria}
@@ -97,9 +101,15 @@ export function SubcategoriasList({
                         hiddenFields={{ id: subcategoria.id }}
                       />
                     </div>
-                    <div data-tour={idx === 0 ? "subcategorias-delete-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "subcategorias-delete-first" : undefined
+                      }
+                    >
                       <DeleteButton
-                        tourId={idx === 0 ? "subcategorias-delete-first" : undefined}
+                        tourId={
+                          idx === 0 ? "subcategorias-delete-first" : undefined
+                        }
                         onConfirm={async () => {
                           await onDeleteSubcategoria(subcategoria.id);
                         }}

@@ -12,22 +12,24 @@ export async function actionCreateUsuario(formData: FormData) {
   if (!parsed.success) throw new Error("Datos inválidos");
 
   const firma = formData.get("firma") as string | null;
-  if (!firma || !isValidSignature(firma)) {
-    throw new Error("Firma inválida o vacía");
-  }
+  const apellido =
+    parsed.data.apellido && String(parsed.data.apellido).trim() !== ""
+      ? String(parsed.data.apellido).trim()
+      : null;
 
-  // Crear usuario primero (necesitamos ID para nombrar archivo de firma)
   const usuario = await createUsuario({
     username: parsed.data.username,
     password: parsed.data.password,
     nombre: parsed.data.nombre,
-    apellido: parsed.data.apellido,
+    apellido,
     rol: parsed.data.rol,
     activo: parsed.data.activo,
   });
 
-  const firmaUrl = await saveSignature(firma, "usuario", usuario.id, "perfil");
-  await updateUsuario({ id: usuario.id, firma_url: firmaUrl });
+  if (firma && isValidSignature(firma)) {
+    const firmaUrl = await saveSignature(firma, "usuario", usuario.id, "perfil");
+    await updateUsuario({ id: usuario.id, firma_url: firmaUrl });
+  }
 
   revalidatePath("/usuarios");
 }

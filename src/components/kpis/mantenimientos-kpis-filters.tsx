@@ -1,12 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { CategoriaOption, SedeOption, SubcategoriaOption, UbicacionOption } from "@/lib/form-options";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type {
+  CategoriaOption,
+  SedeOption,
+  SubcategoriaOption,
+  UbicacionOption,
+} from "@/lib/form-options";
 
 function toYmd(d: Date): string {
   const year = d.getFullYear();
@@ -51,7 +62,9 @@ export function MantenimientosKpisFilters({
     to: initialTo,
   });
   const [year, setYear] = useState<string>(String(initialYear));
-  const [sedeId, setSedeId] = useState<string>(initialSedeId ? String(initialSedeId) : "");
+  const [sedeId, setSedeId] = useState<string>(
+    initialSedeId ? String(initialSedeId) : ""
+  );
   const [ubicacionId, setUbicacionId] = useState<string>(
     initialUbicacionId ? String(initialUbicacionId) : ""
   );
@@ -61,6 +74,8 @@ export function MantenimientosKpisFilters({
   const [subcategoriaId, setSubcategoriaId] = useState<string>(
     initialSubcategoriaId ? String(initialSubcategoriaId) : ""
   );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const canApply = Boolean(range.from && range.to);
 
@@ -92,6 +107,22 @@ export function MantenimientosKpisFilters({
     else sp.delete("subcategoria");
   };
 
+  if (!mounted) {
+    return (
+      <div className="flex flex-col gap-3" data-tour="kpis-filters">
+        <div className="grid w-full gap-3 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 w-16 rounded bg-muted animate-pulse" />
+              <div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+            </div>
+          ))}
+        </div>
+        <div className="h-9 w-24 rounded-md bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3" data-tour="kpis-filters">
       <div className="grid w-full gap-3 lg:grid-cols-4">
@@ -99,11 +130,15 @@ export function MantenimientosKpisFilters({
           <div className="text-xs text-muted-foreground mb-1">Periodo</div>
           <DateRangePicker
             value={range}
-            onValueChange={(r) => setRange(r ?? { from: undefined, to: undefined })}
+            onValueChange={(r) =>
+              setRange(r ?? { from: undefined, to: undefined })
+            }
           />
         </div>
         <div>
-          <div className="text-xs text-muted-foreground mb-1">Año (para gráfica mes a mes)</div>
+          <div className="text-xs text-muted-foreground mb-1">
+            Año (para gráfica mes a mes)
+          </div>
           <Select value={year} onValueChange={setYear}>
             <SelectTrigger>
               <SelectValue placeholder="Selecciona año" />
@@ -243,9 +278,9 @@ export function MantenimientosKpisFilters({
       </div>
 
       <div className="text-xs text-muted-foreground">
-        Tip: puedes combinar filtros (por ejemplo Sede + Categoría) para ver un análisis específico.
+        Tip: puedes combinar filtros (por ejemplo Sede + Categoría) para ver un
+        análisis específico.
       </div>
     </div>
   );
 }
-

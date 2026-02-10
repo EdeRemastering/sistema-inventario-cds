@@ -157,8 +157,8 @@ export function AppTourProvider() {
         if (btn) {
           btn.click();
           beforeClickDoneRef.current.add(step.id);
-          // Dar tiempo a que el modal renderice
-          await new Promise((r) => setTimeout(r, 80));
+          // Dar tiempo a que el modal renderice y quede por encima del overlay del tour
+          await new Promise((r) => setTimeout(r, 200));
         }
       }
 

@@ -9,7 +9,6 @@ import {
   Boxes,
   FolderTree,
   Package2,
-  FileText,
   Ticket,
   ListChecks,
   Users,
@@ -47,12 +46,37 @@ type NavItem = {
 };
 
 const items: NavItem[] = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, tourId: "nav-inicio" },
+  {
+    href: "/dashboard",
+    label: "Inicio",
+    icon: LayoutDashboard,
+    tourId: "nav-inicio",
+  },
   { href: "/usuarios", label: "Usuarios", icon: Users, tourId: "nav-usuarios" },
-  { href: "/ubicaciones", label: "Ubicaciones", icon: MapPin, tourId: "nav-ubicaciones" },
-  { href: "/categorias", label: "Categorías", icon: FolderTree, tourId: "nav-categorias" },
-  { href: "/subcategorias", label: "Subcategorías", icon: Boxes, tourId: "nav-subcategorias" },
-  { href: "/elementos", label: "Elementos", icon: Package2, tourId: "nav-elementos" },  
+  {
+    href: "/ubicaciones",
+    label: "Ubicaciones",
+    icon: MapPin,
+    tourId: "nav-ubicaciones",
+  },
+  {
+    href: "/categorias",
+    label: "Categorías",
+    icon: FolderTree,
+    tourId: "nav-categorias",
+  },
+  {
+    href: "/subcategorias",
+    label: "Subcategorías",
+    icon: Boxes,
+    tourId: "nav-subcategorias",
+  },
+  {
+    href: "/elementos",
+    label: "Elementos",
+    icon: Package2,
+    tourId: "nav-elementos",
+  },
   {
     href: "/mantenimientos",
     label: "Mantenimientos",
@@ -60,19 +84,39 @@ const items: NavItem[] = [
     badge: "mantenimientos",
     tourId: "nav-mantenimientos",
   },
-  { href: "/hojas-vida", label: "Hojas de Vida", icon: FileCheck, tourId: "nav-hojas-vida" },
-  { href: "/observaciones", label: "Observaciones", icon: FileText, tourId: "nav-observaciones" },
+  {
+    href: "/hojas-vida",
+    label: "Hojas de Vida",
+    icon: FileCheck,
+    tourId: "nav-hojas-vida",
+  },
   { href: "/tickets", label: "Tickets", icon: Ticket, tourId: "nav-tickets" },
-  { href: "/kpis/mantenimientos", label: "KPIs", icon: LineChart, tourId: "nav-kpis" },
-  { href: "/reportes", label: "Reportes", icon: BarChart3, tourId: "nav-reportes" },
+  {
+    href: "/kpis/mantenimientos",
+    label: "KPIs",
+    icon: LineChart,
+    tourId: "nav-kpis",
+  },
+  {
+    href: "/reportes",
+    label: "Reportes",
+    icon: BarChart3,
+    tourId: "nav-reportes",
+  },
   { href: "/logs", label: "Logs", icon: ListChecks, tourId: "nav-logs" },
-  { href: "/tutorial", label: "Tutorial", icon: CircleHelp, tourId: "nav-tutorial" },
+  {
+    href: "/tutorial",
+    label: "Tutorial",
+    icon: CircleHelp,
+    tourId: "nav-tutorial",
+  },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [mantenimientosPendientes, setMantenimientosPendientes] = useState<number>(0);
+  const [mantenimientosPendientes, setMantenimientosPendientes] =
+    useState<number>(0);
 
   // Cargar conteo de mantenimientos pendientes
   useEffect(() => {
@@ -86,7 +130,7 @@ export function DashboardSidebar() {
     };
 
     loadPendientes();
-    
+
     // Actualizar cada 5 minutos
     const interval = setInterval(loadPendientes, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -113,8 +157,9 @@ export function DashboardSidebar() {
             <SidebarMenu data-tour="sidebar-menu">
               {items.map(({ href, label, icon: Icon, badge, tourId }) => {
                 const active = pathname === href;
-                const showBadge = badge === "mantenimientos" && mantenimientosPendientes > 0;
-                
+                const showBadge =
+                  badge === "mantenimientos" && mantenimientosPendientes > 0;
+
                 return (
                   <SidebarMenuItem key={href}>
                     <SidebarMenuButton
@@ -135,7 +180,9 @@ export function DashboardSidebar() {
                         {showBadge && (
                           // Solo círculo con número (alerta)
                           <span className="ml-auto relative flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-sidebar shrink-0">
-                            {mantenimientosPendientes > 99 ? "99+" : mantenimientosPendientes}
+                            {mantenimientosPendientes > 99
+                              ? "99+"
+                              : mantenimientosPendientes}
                           </span>
                         )}
                       </Link>

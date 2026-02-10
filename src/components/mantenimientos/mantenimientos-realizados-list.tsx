@@ -16,8 +16,18 @@ import type { MantenimientoRealizado } from "../../modules/mantenimientos/types"
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
-type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type SedeOption = {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  municipio: string | null;
+};
+type UbicacionOption = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  sede_id: number;
+};
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
 type ElementoOption = {
@@ -64,25 +74,28 @@ export function MantenimientosRealizadosList({
   onUpdateMantenimiento,
   onDeleteMantenimiento,
 }: Props) {
-  const [editingMantenimiento, setEditingMantenimiento] = useState<MantenimientoRealizado | null>(null);
+  const [editingMantenimiento, setEditingMantenimiento] =
+    useState<MantenimientoRealizado | null>(null);
 
   const getTipoColor = (tipo: string) => {
     switch (tipo) {
       case "PREVENTIVO":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 dark:border dark:border-blue-700/50";
       case "CORRECTIVO":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 dark:border dark:border-orange-700/50";
       case "PREDICTIVO":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 dark:border dark:border-purple-700/50";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:border dark:border-gray-600/50";
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Mantenimientos Realizados</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold">
+          Mantenimientos Realizados
+        </h1>
         <div data-tour="mantenimientos-realizados-create">
           <MantenimientoRealizadoUpsertDialog
             serverAction={onCreateMantenimiento}
@@ -96,7 +109,7 @@ export function MantenimientosRealizadosList({
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border border-border bg-card dark:border-muted-foreground/30 dark:bg-card/95">
         <Table>
           <TableHeader>
             <TableRow>
@@ -111,7 +124,10 @@ export function MantenimientosRealizadosList({
           <TableBody>
             {mantenimientos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
                   No hay mantenimientos realizados
                 </TableCell>
               </TableRow>
@@ -120,15 +136,23 @@ export function MantenimientosRealizadosList({
                 <TableRow key={mantenimiento.id}>
                   <TableCell>
                     {mantenimiento.elemento
-                      ? `${mantenimiento.elemento.serie} - ${mantenimiento.elemento.marca || ""} ${mantenimiento.elemento.modelo || ""}`.trim()
+                      ? `${mantenimiento.elemento.serie} - ${
+                          mantenimiento.elemento.marca || ""
+                        } ${mantenimiento.elemento.modelo || ""}`.trim()
                       : `Elemento ID: ${mantenimiento.elemento_id}`}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(mantenimiento.fecha_mantenimiento), "dd/MM/yyyy", { locale: es })}
+                    {format(
+                      new Date(mantenimiento.fecha_mantenimiento),
+                      "dd/MM/yyyy",
+                      { locale: es }
+                    )}
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-1 rounded text-xs ${getTipoColor(mantenimiento.tipo)}`}
+                      className={`px-2 py-1 rounded text-xs ${getTipoColor(
+                        mantenimiento.tipo
+                      )}`}
                     >
                       {mantenimiento.tipo}
                     </span>
@@ -148,12 +172,26 @@ export function MantenimientosRealizadosList({
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingMantenimiento(mantenimiento)}
-                        data-tour={idx === 0 ? "mantenimientos-realizados-edit-first" : undefined}
+                        data-tour={
+                          idx === 0
+                            ? "mantenimientos-realizados-edit-first"
+                            : undefined
+                        }
                       >
                         Editar
                       </Button>
-                      <span data-tour={idx === 0 ? "mantenimientos-realizados-delete-first" : undefined}>
-                        <DeleteButton onConfirm={() => onDeleteMantenimiento(mantenimiento.id)} />
+                      <span
+                        data-tour={
+                          idx === 0
+                            ? "mantenimientos-realizados-delete-first"
+                            : undefined
+                        }
+                      >
+                        <DeleteButton
+                          onConfirm={() =>
+                            onDeleteMantenimiento(mantenimiento.id)
+                          }
+                        />
                       </span>
                     </div>
                   </TableCell>
@@ -181,4 +219,3 @@ export function MantenimientosRealizadosList({
     </div>
   );
 }
-

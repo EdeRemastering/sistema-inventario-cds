@@ -521,6 +521,7 @@ model hojas_vida {
   elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
   cambios cambios_elementos[]
 
+  @@unique([elemento_id], map: "unique_hojas_vida_elemento")
   @@index([elemento_id])
   @@index([activo])
   @@map("hojas_vida")

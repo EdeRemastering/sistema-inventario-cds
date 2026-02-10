@@ -4,7 +4,7 @@ export async function seedHojasVida(prisma: PrismaClient) {
   console.log("🌱 Sembrando hojas de vida...");
   
   // Obtener algunos elementos
-  const elementos = await prisma.elementos.findMany({ take: 5 });
+  const elementos = await prisma.elementos.findMany({ take: 2 });
   
   if (elementos.length === 0) {
     console.log("⚠️  No hay elementos disponibles para crear hojas de vida");

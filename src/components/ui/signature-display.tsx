@@ -1,10 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { Eye } from "lucide-react";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
+
+/** Si la URL viene mal formada (ej. .env con R2_PUBLIC_URL + GROQ_API_KEY en la misma línea), extrae la ruta y reconstruye. */
+function normalizeSignatureUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes('"') || trimmed.includes("GROQ_API_KEY")) {
+    const pathMatch = trimmed.match(/\/signatures\/[^\s"\\]+/);
+    if (pathMatch) {
+      const base =
+        typeof process !== "undefined" && process.env.NEXT_PUBLIC_R2_PUBLIC_URL
+          ? process.env.NEXT_PUBLIC_R2_PUBLIC_URL.trim()
+              .replace(/\s[\s\S]*$/, "")
+              .replace(/"[\s\S]*$/, "")
+          : trimmed.match(/^(https?:\/\/[^"\\\s]+)/)?.[1];
+      if (base) return `${base.replace(/\/$/, "")}${pathMatch[0]}`;
+    }
+    return "";
+  }
+  return trimmed;
+}
 
 type SignatureDisplayProps = {
   signatureUrl?: string | null;
@@ -13,11 +33,15 @@ type SignatureDisplayProps = {
 };
 
 export function SignatureDisplay({
-  signatureUrl,
+  signatureUrl: rawUrl,
   label = "Firma",
   className = "",
 }: SignatureDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const signatureUrl = useMemo(
+    () => (rawUrl ? normalizeSignatureUrl(rawUrl) : ""),
+    [rawUrl]
+  );
 
   if (!signatureUrl) {
     return (
@@ -28,8 +52,10 @@ export function SignatureDisplay({
   }
 
   // Verificar si es un data URL (base64) o una URL de archivo
-  const isDataUrl = signatureUrl.startsWith('data:image/');
-  const isR2Url = signatureUrl.includes('r2.cloudflarestorage.com') || signatureUrl.includes('r2.dev');
+  const isDataUrl = signatureUrl.startsWith("data:image/");
+  const isR2Url =
+    signatureUrl.includes("r2.cloudflarestorage.com") ||
+    signatureUrl.includes("r2.dev");
 
   return (
     <>
@@ -62,8 +88,14 @@ export function SignatureDisplay({
                 className="max-w-full h-auto border rounded-lg shadow-sm"
                 style={{ maxHeight: "300px", maxWidth: "400px" }}
                 onError={(e) => {
-                  console.error('Error cargando imagen:', signatureUrl);
-                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FcnJvciBjYXJnYW5kbyBpbWFnZW48L3RleHQ+PC9zdmc+';
+                  if (
+                    !signatureUrl.includes("GROQ_API_KEY") &&
+                    !signatureUrl.includes('"')
+                  ) {
+                    console.error("Error cargando imagen de firma");
+                  }
+                  e.currentTarget.src =
+                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FcnJvciBjYXJnYW5kbyBpbWFnZW48L3RleHQ+PC9zdmc+";
                 }}
               />
             ) : (
@@ -75,7 +107,14 @@ export function SignatureDisplay({
                 height={200}
                 className="max-w-full h-auto border rounded-lg shadow-sm"
                 style={{ maxHeight: "300px" }}
-                onError={() => console.error('Error cargando imagen:', signatureUrl)}
+                onError={() => {
+                  if (
+                    !signatureUrl.includes("GROQ_API_KEY") &&
+                    !signatureUrl.includes('"')
+                  ) {
+                    console.error("Error cargando imagen de firma");
+                  }
+                }}
               />
             )}
           </div>

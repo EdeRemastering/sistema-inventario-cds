@@ -2,7 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Package2, ChevronLeft, ChevronRight, Search, Loader2 } from "lucide-react";
+import Link from "next/link";
+import {
+  Package2,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardFooter } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -49,7 +56,9 @@ export function ElementosList({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("search") || ""
+  );
   const [detailElementoId, setDetailElementoId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -94,7 +103,10 @@ export function ElementosList({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <form onSubmit={handleSearch} className="flex gap-2 max-w-md flex-1">
+            <form
+              onSubmit={handleSearch}
+              className="flex gap-2 max-w-md flex-1"
+            >
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -105,7 +117,11 @@ export function ElementosList({
                 />
               </div>
               <Button type="submit" disabled={isPending}>
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Buscar"
+                )}
               </Button>
               {currentSearch && (
                 <Button type="button" variant="outline" onClick={clearSearch}>
@@ -125,7 +141,9 @@ export function ElementosList({
             </div>
           </div>
         </CardHeader>
-        <CardContent className={isPending ? "opacity-50 pointer-events-none" : ""}>
+        <CardContent
+          className={isPending ? "opacity-50 pointer-events-none" : ""}
+        >
           {showEmptyState ? (
             <EmptyState
               icon={<Package2 className="h-8 w-8 text-muted-foreground" />}
@@ -150,10 +168,16 @@ export function ElementosList({
                   <div className="text-sm flex-1 min-w-0">
                     <div className="font-medium truncate">{elemento.serie}</div>
                     <div className="text-muted-foreground text-xs">
-                      {elemento.marca} {elemento.modelo} • Cantidad: {elemento.cantidad}
+                      {elemento.marca} {elemento.modelo} • Cantidad:{" "}
+                      {elemento.cantidad}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/hojas-vida/elemento/${elemento.id}`}>
+                        Ver hoja de vida
+                      </Link>
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -164,7 +188,9 @@ export function ElementosList({
                     >
                       Detalle
                     </Button>
-                    <div data-tour={idx === 0 ? "elementos-edit-first" : undefined}>
+                    <div
+                      data-tour={idx === 0 ? "elementos-edit-first" : undefined}
+                    >
                       <ElementoUpsertDialog
                         create={false}
                         serverAction={onUpdateElemento}
@@ -192,9 +218,15 @@ export function ElementosList({
                         hiddenFields={{ id: elemento.id }}
                       />
                     </div>
-                    <div data-tour={idx === 0 ? "elementos-delete-first" : undefined}>
+                    <div
+                      data-tour={
+                        idx === 0 ? "elementos-delete-first" : undefined
+                      }
+                    >
                       <DeleteButton
-                        tourId={idx === 0 ? "elementos-delete-first" : undefined}
+                        tourId={
+                          idx === 0 ? "elementos-delete-first" : undefined
+                        }
                         onConfirm={async () => {
                           await onDeleteElemento(elemento.id);
                         }}
@@ -208,12 +240,17 @@ export function ElementosList({
             </div>
           )}
         </CardContent>
-        
+
         {/* Paginación */}
         {pagination.totalPages > 1 && (
           <CardFooter className="flex items-center justify-between border-t pt-4">
             <div className="text-sm text-muted-foreground">
-              Mostrando {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total}
+              Mostrando {(pagination.page - 1) * pagination.pageSize + 1} -{" "}
+              {Math.min(
+                pagination.page * pagination.pageSize,
+                pagination.total
+              )}{" "}
+              de {pagination.total}
             </div>
             <div className="flex items-center gap-2">
               <Button

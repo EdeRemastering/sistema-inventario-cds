@@ -297,6 +297,26 @@ export function listMantenimientosRealizados(): Promise<MantenimientoRealizado[]
   }) as Promise<MantenimientoRealizado[]>;
 }
 
+export function listMantenimientosRealizadosByElemento(
+  elemento_id: number
+): Promise<MantenimientoRealizado[]> {
+  return prisma.mantenimientos_realizados.findMany({
+    where: { elemento_id },
+    include: {
+      elemento: {
+        select: {
+          id: true,
+          serie: true,
+          marca: true,
+          modelo: true,
+        },
+      },
+      programacion: true,
+    },
+    orderBy: { fecha_mantenimiento: "desc" },
+  }) as Promise<MantenimientoRealizado[]>;
+}
+
 export function getMantenimientoRealizado(id: number): Promise<MantenimientoRealizado | null> {
   return prisma.mantenimientos_realizados.findUnique({
     where: { id },

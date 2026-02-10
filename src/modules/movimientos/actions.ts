@@ -38,6 +38,8 @@ export async function actionCreateMovimiento(formData: FormData) {
     firma_funcionario_entrega: null, // Se actualizará después
     firma_funcionario_recibe: null, // Se actualizará después
     ...parsed.data,
+    dependencia_entrega: parsed.data.dependencia_entrega ?? "",
+    dependencia_recibe: parsed.data.dependencia_recibe ?? "",
     ubicacion_anterior_id: parsed.data.ubicacion_anterior_id === "" || parsed.data.ubicacion_anterior_id === undefined 
       ? null 
       : (typeof parsed.data.ubicacion_anterior_id === "number" ? parsed.data.ubicacion_anterior_id : Number(parsed.data.ubicacion_anterior_id) || null),
