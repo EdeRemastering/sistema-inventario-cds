@@ -28,15 +28,25 @@ import { Plus } from "lucide-react";
 import type { UbicacionOption } from "../../lib/form-options";
 import type { ProgramacionAmbiente } from "../../modules/programacion_ambientes/types";
 
-const schema = z.object({
-  ubicacion_id: z.string().min(1, "Ubicación requerida"),
-  fecha: z.string().min(1, "Fecha requerida"),
-  hora_inicio: z.string().min(1, "Hora inicio requerida"),
-  hora_fin: z.string().min(1, "Hora fin requerida"),
-  docente_id_q10: z.string().optional(),
-  descripcion: z.string().optional(),
-  ocupado: z.boolean(),
-});
+const horaRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+const schema = z
+  .object({
+    ubicacion_id: z.string().min(1, "Ubicación requerida"),
+    fecha: z.string().min(1, "Fecha requerida"),
+    hora_inicio: z.string().regex(horaRegex, "Formato HH:mm (ej. 08:00)"),
+    hora_fin: z.string().regex(horaRegex, "Formato HH:mm (ej. 09:00)"),
+    docente_id_q10: z.string().optional(),
+    descripcion: z.string().optional(),
+    ocupado: z.boolean(),
+  })
+  .refine(
+    (d) => {
+      const [h1, m1] = d.hora_inicio.split(":").map(Number);
+      const [h2, m2] = d.hora_fin.split(":").map(Number);
+      return h2 * 60 + m2 > h1 * 60 + m1;
+    },
+    { message: "La hora de fin debe ser mayor que la hora de inicio", path: ["hora_fin"] }
+  );
 
 type FormValues = z.infer<typeof schema>;
 
