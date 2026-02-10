@@ -463,6 +463,7 @@ model mantenimientos_programados {
   diciembre_semana2  Boolean                @default(false)
   diciembre_semana3  Boolean                @default(false)
   diciembre_semana4  Boolean                @default(false)
+  tipos_semana      Json?                  @default("{}")
   estado            EstadoMantenimiento    @default(PENDIENTE)
   observaciones     String?                @db.Text
   creado_en         DateTime               @default(now()) @db.Timestamp(0)

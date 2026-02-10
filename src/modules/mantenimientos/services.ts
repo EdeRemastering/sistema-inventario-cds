@@ -19,54 +19,7 @@ function mapCreateProgramadoInputToPrisma(
     elemento_id: data.elemento_id,
     frecuencia: data.frecuencia,
     año: data.año,
-    enero_semana1: data.enero_semana1 ?? false,
-    enero_semana2: data.enero_semana2 ?? false,
-    enero_semana3: data.enero_semana3 ?? false,
-    enero_semana4: data.enero_semana4 ?? false,
-    febrero_semana1: data.febrero_semana1 ?? false,
-    febrero_semana2: data.febrero_semana2 ?? false,
-    febrero_semana3: data.febrero_semana3 ?? false,
-    febrero_semana4: data.febrero_semana4 ?? false,
-    marzo_semana1: data.marzo_semana1 ?? false,
-    marzo_semana2: data.marzo_semana2 ?? false,
-    marzo_semana3: data.marzo_semana3 ?? false,
-    marzo_semana4: data.marzo_semana4 ?? false,
-    abril_semana1: data.abril_semana1 ?? false,
-    abril_semana2: data.abril_semana2 ?? false,
-    abril_semana3: data.abril_semana3 ?? false,
-    abril_semana4: data.abril_semana4 ?? false,
-    mayo_semana1: data.mayo_semana1 ?? false,
-    mayo_semana2: data.mayo_semana2 ?? false,
-    mayo_semana3: data.mayo_semana3 ?? false,
-    mayo_semana4: data.mayo_semana4 ?? false,
-    junio_semana1: data.junio_semana1 ?? false,
-    junio_semana2: data.junio_semana2 ?? false,
-    junio_semana3: data.junio_semana3 ?? false,
-    junio_semana4: data.junio_semana4 ?? false,
-    julio_semana1: data.julio_semana1 ?? false,
-    julio_semana2: data.julio_semana2 ?? false,
-    julio_semana3: data.julio_semana3 ?? false,
-    julio_semana4: data.julio_semana4 ?? false,
-    agosto_semana1: data.agosto_semana1 ?? false,
-    agosto_semana2: data.agosto_semana2 ?? false,
-    agosto_semana3: data.agosto_semana3 ?? false,
-    agosto_semana4: data.agosto_semana4 ?? false,
-    septiembre_semana1: data.septiembre_semana1 ?? false,
-    septiembre_semana2: data.septiembre_semana2 ?? false,
-    septiembre_semana3: data.septiembre_semana3 ?? false,
-    septiembre_semana4: data.septiembre_semana4 ?? false,
-    octubre_semana1: data.octubre_semana1 ?? false,
-    octubre_semana2: data.octubre_semana2 ?? false,
-    octubre_semana3: data.octubre_semana3 ?? false,
-    octubre_semana4: data.octubre_semana4 ?? false,
-    noviembre_semana1: data.noviembre_semana1 ?? false,
-    noviembre_semana2: data.noviembre_semana2 ?? false,
-    noviembre_semana3: data.noviembre_semana3 ?? false,
-    noviembre_semana4: data.noviembre_semana4 ?? false,
-    diciembre_semana1: data.diciembre_semana1 ?? false,
-    diciembre_semana2: data.diciembre_semana2 ?? false,
-    diciembre_semana3: data.diciembre_semana3 ?? false,
-    diciembre_semana4: data.diciembre_semana4 ?? false,
+    tipos_semana: data.tipos_semana ?? Prisma.DbNull,
     estado: data.estado ?? "PENDIENTE",
     observaciones: data.observaciones ?? null,
   };
@@ -83,54 +36,7 @@ function mapUpdateProgramadoInputToPrisma(
   if (data.elemento_id !== undefined) payload.elemento_id = data.elemento_id;
   if (data.frecuencia !== undefined) payload.frecuencia = data.frecuencia;
   if (data.año !== undefined) payload.año = data.año;
-  if (data.enero_semana1 !== undefined) payload.enero_semana1 = data.enero_semana1;
-  if (data.enero_semana2 !== undefined) payload.enero_semana2 = data.enero_semana2;
-  if (data.enero_semana3 !== undefined) payload.enero_semana3 = data.enero_semana3;
-  if (data.enero_semana4 !== undefined) payload.enero_semana4 = data.enero_semana4;
-  if (data.febrero_semana1 !== undefined) payload.febrero_semana1 = data.febrero_semana1;
-  if (data.febrero_semana2 !== undefined) payload.febrero_semana2 = data.febrero_semana2;
-  if (data.febrero_semana3 !== undefined) payload.febrero_semana3 = data.febrero_semana3;
-  if (data.febrero_semana4 !== undefined) payload.febrero_semana4 = data.febrero_semana4;
-  if (data.marzo_semana1 !== undefined) payload.marzo_semana1 = data.marzo_semana1;
-  if (data.marzo_semana2 !== undefined) payload.marzo_semana2 = data.marzo_semana2;
-  if (data.marzo_semana3 !== undefined) payload.marzo_semana3 = data.marzo_semana3;
-  if (data.marzo_semana4 !== undefined) payload.marzo_semana4 = data.marzo_semana4;
-  if (data.abril_semana1 !== undefined) payload.abril_semana1 = data.abril_semana1;
-  if (data.abril_semana2 !== undefined) payload.abril_semana2 = data.abril_semana2;
-  if (data.abril_semana3 !== undefined) payload.abril_semana3 = data.abril_semana3;
-  if (data.abril_semana4 !== undefined) payload.abril_semana4 = data.abril_semana4;
-  if (data.mayo_semana1 !== undefined) payload.mayo_semana1 = data.mayo_semana1;
-  if (data.mayo_semana2 !== undefined) payload.mayo_semana2 = data.mayo_semana2;
-  if (data.mayo_semana3 !== undefined) payload.mayo_semana3 = data.mayo_semana3;
-  if (data.mayo_semana4 !== undefined) payload.mayo_semana4 = data.mayo_semana4;
-  if (data.junio_semana1 !== undefined) payload.junio_semana1 = data.junio_semana1;
-  if (data.junio_semana2 !== undefined) payload.junio_semana2 = data.junio_semana2;
-  if (data.junio_semana3 !== undefined) payload.junio_semana3 = data.junio_semana3;
-  if (data.junio_semana4 !== undefined) payload.junio_semana4 = data.junio_semana4;
-  if (data.julio_semana1 !== undefined) payload.julio_semana1 = data.julio_semana1;
-  if (data.julio_semana2 !== undefined) payload.julio_semana2 = data.julio_semana2;
-  if (data.julio_semana3 !== undefined) payload.julio_semana3 = data.julio_semana3;
-  if (data.julio_semana4 !== undefined) payload.julio_semana4 = data.julio_semana4;
-  if (data.agosto_semana1 !== undefined) payload.agosto_semana1 = data.agosto_semana1;
-  if (data.agosto_semana2 !== undefined) payload.agosto_semana2 = data.agosto_semana2;
-  if (data.agosto_semana3 !== undefined) payload.agosto_semana3 = data.agosto_semana3;
-  if (data.agosto_semana4 !== undefined) payload.agosto_semana4 = data.agosto_semana4;
-  if (data.septiembre_semana1 !== undefined) payload.septiembre_semana1 = data.septiembre_semana1;
-  if (data.septiembre_semana2 !== undefined) payload.septiembre_semana2 = data.septiembre_semana2;
-  if (data.septiembre_semana3 !== undefined) payload.septiembre_semana3 = data.septiembre_semana3;
-  if (data.septiembre_semana4 !== undefined) payload.septiembre_semana4 = data.septiembre_semana4;
-  if (data.octubre_semana1 !== undefined) payload.octubre_semana1 = data.octubre_semana1;
-  if (data.octubre_semana2 !== undefined) payload.octubre_semana2 = data.octubre_semana2;
-  if (data.octubre_semana3 !== undefined) payload.octubre_semana3 = data.octubre_semana3;
-  if (data.octubre_semana4 !== undefined) payload.octubre_semana4 = data.octubre_semana4;
-  if (data.noviembre_semana1 !== undefined) payload.noviembre_semana1 = data.noviembre_semana1;
-  if (data.noviembre_semana2 !== undefined) payload.noviembre_semana2 = data.noviembre_semana2;
-  if (data.noviembre_semana3 !== undefined) payload.noviembre_semana3 = data.noviembre_semana3;
-  if (data.noviembre_semana4 !== undefined) payload.noviembre_semana4 = data.noviembre_semana4;
-  if (data.diciembre_semana1 !== undefined) payload.diciembre_semana1 = data.diciembre_semana1;
-  if (data.diciembre_semana2 !== undefined) payload.diciembre_semana2 = data.diciembre_semana2;
-  if (data.diciembre_semana3 !== undefined) payload.diciembre_semana3 = data.diciembre_semana3;
-  if (data.diciembre_semana4 !== undefined) payload.diciembre_semana4 = data.diciembre_semana4;
+  if (data.tipos_semana !== undefined) payload.tipos_semana = data.tipos_semana ?? Prisma.DbNull;
   if (data.estado !== undefined) payload.estado = data.estado;
   if (data.observaciones !== undefined) payload.observaciones = data.observaciones ?? null;
 

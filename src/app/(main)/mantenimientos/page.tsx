@@ -13,6 +13,7 @@ import {
   actionDeleteMantenimientoRealizado,
   actionCambiarEstadoMantenimiento,
   actionMarcarSemanaComoRealizada,
+  actionSetCronogramaElementoYear,
 } from "../../../modules/mantenimientos/actions";
 import { MantenimientosProgramadosList } from "../../../components/mantenimientos/mantenimientos-programados-list";
 import { MantenimientosRealizadosList } from "../../../components/mantenimientos/mantenimientos-realizados-list";
@@ -29,8 +30,10 @@ import { Wrench, CalendarDays, Calendar, ClipboardCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+type TabValue = "semana" | "programados" | "realizados" | "cronograma";
+
 // Componente que maneja la lógica de datos
-async function MantenimientosContent() {
+async function MantenimientosContent({ initialTab }: { initialTab?: string }) {
   // Cargar datos y opciones filtradas en paralelo
   const [programados, realizados, options] = await Promise.all([
     listMantenimientosProgramados(),
@@ -49,6 +52,16 @@ async function MantenimientosContent() {
     costo: m.costo != null ? Number(m.costo) : null,
   }));
 
+  const validTabs: TabValue[] = [
+    "semana",
+    "programados",
+    "realizados",
+    "cronograma",
+  ];
+  const defaultTab: TabValue = validTabs.includes(initialTab as TabValue)
+    ? (initialTab as TabValue)
+    : "semana";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -63,7 +76,7 @@ async function MantenimientosContent() {
         )}
       </div>
 
-      <Tabs defaultValue="semana" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList
           className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid"
           data-tour="mantenimientos-tabs"
@@ -132,7 +145,9 @@ async function MantenimientosContent() {
             subcategorias={options.subcategorias}
             onCreateMantenimiento={actionCreateMantenimientoRealizado}
             onUpdateMantenimiento={actionUpdateMantenimientoRealizado}
-            onBulkUpdateByElemento={actionBulkUpdateMantenimientosRealizadosByElemento}
+            onBulkUpdateByElemento={
+              actionBulkUpdateMantenimientosRealizadosByElemento
+            }
             onDeleteMantenimiento={actionDeleteMantenimientoRealizado}
           />
         </TabsContent>
@@ -144,6 +159,7 @@ async function MantenimientosContent() {
             elementos={options.elementos}
             mantenimientos={programados}
             realizados={realizadosPlain}
+            onSetCronograma={actionSetCronogramaElementoYear}
             onCreateMantenimiento={actionCreateMantenimientoProgramado}
             onUpdateMantenimiento={actionUpdateMantenimientoProgramado}
             onDeleteMantenimiento={actionDeleteMantenimientoProgramado}
@@ -156,7 +172,15 @@ async function MantenimientosContent() {
   );
 }
 
-export default function MantenimientosPage() {
+export default async function MantenimientosPage({
+  searchParams,
+}: {
+  // En Next recientes, `searchParams` puede venir como Promise.
+  searchParams?: { tab?: string } | Promise<{ tab?: string }>;
+}) {
+  const sp = await Promise.resolve(searchParams);
+  const initialTab = sp?.tab;
+
   return (
     <Suspense
       fallback={
@@ -172,7 +196,7 @@ export default function MantenimientosPage() {
         </div>
       }
     >
-      <MantenimientosContent />
+      <MantenimientosContent initialTab={initialTab} />
     </Suspense>
   );
 }

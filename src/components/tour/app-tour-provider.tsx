@@ -152,8 +152,13 @@ export function AppTourProvider() {
       autoAdvanceCleanupRef.current = null;
 
       // Si el step requiere click previo (abrir modal), hacerlo una sola vez por step.id
-      if (step.beforeClickSelector && !beforeClickDoneRef.current.has(step.id)) {
-        const btn = document.querySelector(step.beforeClickSelector) as HTMLElement | null;
+      if (
+        step.beforeClickSelector &&
+        !beforeClickDoneRef.current.has(step.id)
+      ) {
+        const btn = document.querySelector(
+          step.beforeClickSelector
+        ) as HTMLElement | null;
         if (btn) {
           btn.click();
           beforeClickDoneRef.current.add(step.id);
@@ -165,11 +170,7 @@ export function AppTourProvider() {
       // Esperar a que el DOM esté listo y el elemento exista
       const found = await waitForElement(step.selector);
       const targetSelector =
-        step.selector === "body"
-          ? "body"
-          : found
-            ? step.selector
-            : "body";
+        step.selector === "body" ? "body" : found ? step.selector : "body";
 
       // Destruir tour anterior
       try {
@@ -182,7 +183,10 @@ export function AppTourProvider() {
       const driver = await ensureDriver();
       const howtoTotal = state.howto?.steps?.length ?? 1;
       const howtoIdx = (state.howto?.index ?? 0) + 1;
-      const idxLabel = mode === "howto" ? `${howtoIdx}/${howtoTotal}` : `${state.index + 1}/${totalSteps}`;
+      const idxLabel =
+        mode === "howto"
+          ? `${howtoIdx}/${howtoTotal}`
+          : `${state.index + 1}/${totalSteps}`;
 
       // Siguiente con estado fresco (sirve para auto-advance por click y botón "Siguiente").
       const advanceNext = async () => {
@@ -250,13 +254,18 @@ export function AppTourProvider() {
               align: step.align ?? "start",
               nextBtnText: (() => {
                 if (mode === "howto") {
-                  const last = (state.howto?.index ?? 0) >= (state.howto?.steps?.length ?? 1) - 1;
+                  const last =
+                    (state.howto?.index ?? 0) >=
+                    (state.howto?.steps?.length ?? 1) - 1;
                   return last ? "Finalizar" : "Siguiente";
                 }
-                return state.index >= totalSteps - 1 ? "Finalizar" : "Siguiente";
+                return state.index >= totalSteps - 1
+                  ? "Finalizar"
+                  : "Siguiente";
               })(),
               prevBtnText: (() => {
-                if (mode === "howto") return (state.howto?.index ?? 0) <= 0 ? " " : "Anterior";
+                if (mode === "howto")
+                  return (state.howto?.index ?? 0) <= 0 ? " " : "Anterior";
                 return state.index <= 0 ? " " : "Anterior";
               })(),
               onNextClick: async () => {
@@ -373,7 +382,10 @@ export function AppTourProvider() {
     async (stepId?: string) => {
       const idx =
         stepId && APP_TOUR_STEPS.some((s) => s.id === stepId)
-          ? Math.max(0, APP_TOUR_STEPS.findIndex((s) => s.id === stepId))
+          ? Math.max(
+              0,
+              APP_TOUR_STEPS.findIndex((s) => s.id === stepId)
+            )
           : 0;
 
       writeState({ active: true, index: idx, mode: "full" });
@@ -414,19 +426,42 @@ export function AppTourProvider() {
       else startAt(detail?.stepId);
     };
     window.addEventListener(START_EVENT, handler as EventListener);
-    return () => window.removeEventListener(START_EVENT, handler as EventListener);
+    return () =>
+      window.removeEventListener(START_EVENT, handler as EventListener);
   }, [startAt, startHowTo]);
 
-  // Re-mostrar al cambiar de ruta si el tour está activo
+  // Re-mostrar al cambiar de ruta si el tour está activo,
+  // pero si el usuario navega manualmente a otra ruta distinta a la del paso,
+  // lo interpretamos como que canceló el tour y lo apagamos.
   useEffect(() => {
     const s = readState();
     if (!s.active) return;
+
+    const mode = s.mode ?? "full";
+    const step =
+      mode === "howto"
+        ? s.howto?.steps?.[s.howto.index ?? 0]
+        : APP_TOUR_STEPS[s.index];
+
+    if (!step) {
+      hardStop();
+      return;
+    }
+
+    // Si la ruta actual NO coincide con la esperada del paso,
+    // y llegamos aquí por una navegación manual (sidebar, links, etc.),
+    // apagamos el tour para no forzar redirecciones constantes.
+    if (step.route && step.route !== pathname) {
+      hardStop();
+      return;
+    }
+
     // pequeño delay para permitir pintar la UI de la página
     const t = window.setTimeout(() => {
       showCurrentStep();
     }, 50);
     return () => window.clearTimeout(t);
-  }, [pathname, showCurrentStep]);
+  }, [pathname, showCurrentStep, hardStop]);
 
   // No renderiza UI; solo controla el tour.
   return null;
@@ -434,23 +469,30 @@ export function AppTourProvider() {
 
 export function dispatchStartAppTour() {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<StartTourDetail>(START_EVENT, { detail: {} }));
+  window.dispatchEvent(
+    new CustomEvent<StartTourDetail>(START_EVENT, { detail: {} })
+  );
 }
 
 export function dispatchStartAppTourAt(stepId: string) {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<StartTourDetail>(START_EVENT, { detail: { stepId } }));
+  window.dispatchEvent(
+    new CustomEvent<StartTourDetail>(START_EVENT, { detail: { stepId } })
+  );
 }
 
 export function dispatchStartAppHowTo(step: AppTourStep) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
-    new CustomEvent<StartTourDetail>(START_EVENT, { detail: { howto: { title: step.title, steps: [step] } } })
+    new CustomEvent<StartTourDetail>(START_EVENT, {
+      detail: { howto: { title: step.title, steps: [step] } },
+    })
   );
 }
 
 export function dispatchStartAppHowToFlow(flow: HowToFlow) {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<StartTourDetail>(START_EVENT, { detail: { howto: flow } }));
+  window.dispatchEvent(
+    new CustomEvent<StartTourDetail>(START_EVENT, { detail: { howto: flow } })
+  );
 }
-

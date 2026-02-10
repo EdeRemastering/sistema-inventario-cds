@@ -52,6 +52,7 @@ export const mantenimientoProgramadoCreateSchema = z.object({
   diciembre_semana2: z.coerce.boolean().default(false),
   diciembre_semana3: z.coerce.boolean().default(false),
   diciembre_semana4: z.coerce.boolean().default(false),
+  tipos_semana: z.string().optional(), // JSON string: {"enero_semana1": "PREVENTIVO", ...}
   estado: z.enum(["PENDIENTE", "REALIZADO", "APLAZADO", "CANCELADO"]).default("PENDIENTE"),
   observaciones: z.string().optional(),
 });

@@ -27,8 +27,18 @@ import {
 import { ElementoSearchSelect } from "../ui/elemento-search-select";
 import type { MantenimientoRealizado } from "../../modules/mantenimientos/types";
 
-type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
-type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
+type SedeOption = {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  municipio: string | null;
+};
+type UbicacionOption = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  sede_id: number;
+};
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
 type ElementoOption = {
@@ -56,7 +66,9 @@ type ElementoOption = {
  * En creación, el "responsable" debe ser el usuario autenticado.
  * Nota: aunque lo autocompletamos aquí, el servidor también lo fuerza por seguridad.
  */
-function getResponsableFromSession(session: ReturnType<typeof useSession>["data"]): string {
+function getResponsableFromSession(
+  session: ReturnType<typeof useSession>["data"]
+): string {
   const nombre = session?.user?.nombre ?? "";
   const apellido = session?.user?.apellido ?? "";
   const full = `${nombre} ${apellido}`.trim();
@@ -137,7 +149,9 @@ export function MantenimientoRealizadoUpsertDialog({
       elemento_id: defaultValues?.elemento_id?.toString() || "",
       programacion_id: defaultValues?.programacion_id?.toString() || "",
       fecha_mantenimiento: defaultValues?.fecha_mantenimiento
-        ? new Date(defaultValues.fecha_mantenimiento).toISOString().split("T")[0]
+        ? new Date(defaultValues.fecha_mantenimiento)
+            .toISOString()
+            .split("T")[0]
         : new Date().toISOString().split("T")[0],
       tipo: defaultValues?.tipo || "PREVENTIVO",
       descripcion: defaultValues?.descripcion || "",
@@ -164,21 +178,38 @@ export function MantenimientoRealizadoUpsertDialog({
   // Filtrar elementos por todas las selecciones
   const selectedUbicacionId = watch("ubicacion_id");
   const selectedSubcategoriaId = watch("subcategoria_id");
-  
+
   const filteredElementos = elementos.filter((elemento) => {
-    const matchUbicacion = !selectedUbicacionId || elemento.ubicacion_id === parseInt(selectedUbicacionId);
-    const matchCategoria = !selectedCategoriaId || elemento.categoria_id === parseInt(selectedCategoriaId);
-    const matchSubcategoria = !selectedSubcategoriaId || elemento.subcategoria_id === parseInt(selectedSubcategoriaId);
+    const matchUbicacion =
+      !selectedUbicacionId ||
+      elemento.ubicacion_id === parseInt(selectedUbicacionId);
+    const matchCategoria =
+      !selectedCategoriaId ||
+      elemento.categoria_id === parseInt(selectedCategoriaId);
+    const matchSubcategoria =
+      !selectedSubcategoriaId ||
+      elemento.subcategoria_id === parseInt(selectedSubcategoriaId);
     return matchUbicacion && matchCategoria && matchSubcategoria;
   });
 
   useEffect(() => {
     if (defaultValues) {
+      // Buscar el elemento para pre-llenar sede, ubicación, categoría
+      const elemento = elementos.find(
+        (e) => e.id === defaultValues.elemento_id
+      );
+
       reset({
+        sede_id: elemento?.ubicacion_rel?.sede?.id?.toString() || "",
+        ubicacion_id: elemento?.ubicacion_id?.toString() || "",
+        categoria_id: elemento?.categoria_id?.toString() || "",
+        subcategoria_id: elemento?.subcategoria_id?.toString() || "",
         elemento_id: defaultValues.elemento_id?.toString() || "",
         programacion_id: defaultValues.programacion_id?.toString() || "",
         fecha_mantenimiento: defaultValues.fecha_mantenimiento
-          ? new Date(defaultValues.fecha_mantenimiento).toISOString().split("T")[0]
+          ? new Date(defaultValues.fecha_mantenimiento)
+              .toISOString()
+              .split("T")[0]
           : new Date().toISOString().split("T")[0],
         tipo: defaultValues.tipo || "PREVENTIVO",
         descripcion: defaultValues.descripcion || "",
@@ -189,7 +220,7 @@ export function MantenimientoRealizadoUpsertDialog({
         creado_por: defaultValues.creado_por || "",
       });
     }
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, elementos]);
 
   // Si este componente se renderiza para edición (defaultValues presentes),
   // lo abrimos automáticamente.
@@ -204,7 +235,10 @@ export function MantenimientoRealizadoUpsertDialog({
     if (!responsableSesion) return;
     const current = watch("responsable");
     if (!current) {
-      setValue("responsable", responsableSesion, { shouldValidate: true, shouldDirty: true });
+      setValue("responsable", responsableSesion, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   }, [create, responsableSesion, setValue, watch]);
 
@@ -213,12 +247,15 @@ export function MantenimientoRealizadoUpsertDialog({
       const formData = new FormData();
 
       formData.append("elemento_id", data.elemento_id);
-      if (data.programacion_id) formData.append("programacion_id", data.programacion_id);
+      if (data.programacion_id)
+        formData.append("programacion_id", data.programacion_id);
       formData.append("fecha_mantenimiento", data.fecha_mantenimiento);
       formData.append("tipo", data.tipo);
       formData.append("descripcion", data.descripcion);
-      if (data.averias_encontradas) formData.append("averias_encontradas", data.averias_encontradas);
-      if (data.repuestos_utilizados) formData.append("repuestos_utilizados", data.repuestos_utilizados);
+      if (data.averias_encontradas)
+        formData.append("averias_encontradas", data.averias_encontradas);
+      if (data.repuestos_utilizados)
+        formData.append("repuestos_utilizados", data.repuestos_utilizados);
       // En creación, normalmente viene autocompletado por sesión.
       // Aun así enviamos string (nunca undefined) para mantener el contrato del server action.
       formData.append("responsable", data.responsable ?? "");
@@ -234,7 +271,9 @@ export function MantenimientoRealizadoUpsertDialog({
       const promise = serverAction(formData);
 
       await toast.promise(promise, {
-        loading: create ? "Creando mantenimiento..." : "Actualizando mantenimiento...",
+        loading: create
+          ? "Creando mantenimiento..."
+          : "Actualizando mantenimiento...",
         success: create
           ? "Mantenimiento realizado creado exitosamente"
           : "Mantenimiento realizado actualizado exitosamente",
@@ -250,18 +289,21 @@ export function MantenimientoRealizadoUpsertDialog({
   };
 
   const btnText = create ? "Crear" : "Editar";
-  const title = create ? "Crear Mantenimiento Realizado" : "Editar Mantenimiento Realizado";
+  const title = create
+    ? "Crear Mantenimiento Realizado"
+    : "Editar Mantenimiento Realizado";
   const submitText = create ? "Crear" : "Guardar cambios";
 
   return (
     <>
-      {create && (
-        <Button onClick={() => setOpen(true)}>{btnText}</Button>
-      )}
-      <Dialog open={open} onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen && onClose) onClose();
-      }}>
+      {create && <Button onClick={() => setOpen(true)}>{btnText}</Button>}
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen && onClose) onClose();
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -271,7 +313,7 @@ export function MantenimientoRealizadoUpsertDialog({
             <div className="grid gap-1">
               <Label htmlFor="sede_id">Sede</Label>
               <Select
-                value={watch("sede_id")}
+                value={watch("sede_id") || undefined}
                 onValueChange={(value) => {
                   setValue("sede_id", value);
                   setValue("ubicacion_id", "");
@@ -282,11 +324,13 @@ export function MantenimientoRealizadoUpsertDialog({
                 disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    sedes.length === 0 
-                      ? "No hay sedes disponibles" 
-                      : "Selecciona sede"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      sedes.length === 0
+                        ? "No hay sedes disponibles"
+                        : "Selecciona sede"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {sedes.length === 0 ? (
@@ -324,25 +368,27 @@ export function MantenimientoRealizadoUpsertDialog({
                 disabled={!selectedSedeId || filteredUbicaciones.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedSedeId 
-                      ? "Primero selecciona una sede" 
-                      : filteredUbicaciones.length === 0 
-                        ? "No hay ubicaciones disponibles" 
+                  <SelectValue
+                    placeholder={
+                      !selectedSedeId
+                        ? "Primero selecciona una sede"
+                        : filteredUbicaciones.length === 0
+                        ? "No hay ubicaciones disponibles"
                         : "Selecciona ubicación"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredUbicaciones.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       <p className="font-medium">
-                        {!selectedSedeId 
-                          ? "Selecciona una sede primero" 
+                        {!selectedSedeId
+                          ? "Selecciona una sede primero"
                           : "No hay ubicaciones disponibles"}
                       </p>
                       <p className="text-xs mt-1">
-                        {!selectedSedeId 
-                          ? "Debes seleccionar una sede para ver sus ubicaciones" 
+                        {!selectedSedeId
+                          ? "Debes seleccionar una sede para ver sus ubicaciones"
                           : "Crea ubicaciones para esta sede en la configuración"}
                       </p>
                     </div>
@@ -356,7 +402,9 @@ export function MantenimientoRealizadoUpsertDialog({
                 </SelectContent>
               </Select>
               {errors.ubicacion_id && (
-                <p className="text-red-500 text-sm">{errors.ubicacion_id.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.ubicacion_id.message}
+                </p>
               )}
             </div>
 
@@ -364,7 +412,7 @@ export function MantenimientoRealizadoUpsertDialog({
             <div className="grid gap-1">
               <Label htmlFor="categoria_id">Categoría</Label>
               <Select
-                value={watch("categoria_id")}
+                value={watch("categoria_id") || undefined}
                 onValueChange={(value) => {
                   setValue("categoria_id", value);
                   setValue("subcategoria_id", "");
@@ -373,16 +421,20 @@ export function MantenimientoRealizadoUpsertDialog({
                 disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    categorias.length === 0 
-                      ? "No hay categorías disponibles" 
-                      : "Selecciona categoría"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      categorias.length === 0
+                        ? "No hay categorías disponibles"
+                        : "Selecciona categoría"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {categorias.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="font-medium">
+                        No hay categorías disponibles
+                      </p>
                       <p className="text-xs mt-1">
                         Crea categorías en la configuración del sistema
                       </p>
@@ -397,7 +449,9 @@ export function MantenimientoRealizadoUpsertDialog({
                 </SelectContent>
               </Select>
               {errors.categoria_id && (
-                <p className="text-red-500 text-sm">{errors.categoria_id.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.categoria_id.message}
+                </p>
               )}
             </div>
 
@@ -410,28 +464,32 @@ export function MantenimientoRealizadoUpsertDialog({
                   setValue("subcategoria_id", value || "");
                   setValue("elemento_id", "");
                 }}
-                disabled={!selectedCategoriaId || filteredSubcategorias.length === 0}
+                disabled={
+                  !selectedCategoriaId || filteredSubcategorias.length === 0
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedCategoriaId 
-                      ? "Primero selecciona una categoría" 
-                      : filteredSubcategorias.length === 0 
-                        ? "No hay subcategorías (opcional)" 
+                  <SelectValue
+                    placeholder={
+                      !selectedCategoriaId
+                        ? "Primero selecciona una categoría"
+                        : filteredSubcategorias.length === 0
+                        ? "No hay subcategorías (opcional)"
                         : "Selecciona subcategoría (opcional)"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredSubcategorias.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       <p className="font-medium">
-                        {!selectedCategoriaId 
-                          ? "Selecciona una categoría primero" 
+                        {!selectedCategoriaId
+                          ? "Selecciona una categoría primero"
                           : "No hay subcategorías disponibles"}
                       </p>
                       <p className="text-xs mt-1">
-                        {!selectedCategoriaId 
-                          ? "Debes seleccionar una categoría para ver sus subcategorías" 
+                        {!selectedCategoriaId
+                          ? "Debes seleccionar una categoría para ver sus subcategorías"
                           : "Este campo es opcional, puedes continuar sin seleccionar"}
                       </p>
                     </div>
@@ -457,49 +515,65 @@ export function MantenimientoRealizadoUpsertDialog({
               error={errors.elemento_id?.message}
             />
 
-            {/* Fecha y Tipo */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1">
-                <Label htmlFor="fecha_mantenimiento">Fecha de Mantenimiento</Label>
-                <Input
-                  id="fecha_mantenimiento"
-                  type="date"
-                  {...register("fecha_mantenimiento")}
-                />
-                {errors.fecha_mantenimiento && (
-                  <p className="text-red-500 text-sm">{errors.fecha_mantenimiento.message}</p>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="tipo">Tipo de mantenimiento</Label>
-                <Select
-                  value={watch("tipo")}
-                  onValueChange={(value) =>
-                    setValue("tipo", value as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO")
-                  }
-                >
-                  <SelectTrigger id="tipo">
-                    <SelectValue placeholder="Selecciona el tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PREVENTIVO">
-                      Preventivo — planificado para evitar fallas
-                    </SelectItem>
-                    <SelectItem value="CORRECTIVO">
-                      Correctivo — reparación tras una falla o daño
-                    </SelectItem>
-                    <SelectItem value="PREDICTIVO">
-                      Predictivo — según condición o inspección
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Fecha de Mantenimiento */}
+            <div className="grid gap-1">
+              <Label htmlFor="fecha_mantenimiento">
+                Fecha de Mantenimiento
+              </Label>
+              <Input
+                id="fecha_mantenimiento"
+                type="date"
+                {...register("fecha_mantenimiento")}
+                readOnly={!create}
+                className={!create ? "bg-muted cursor-not-allowed" : ""}
+              />
+              {!create && (
                 <p className="text-xs text-muted-foreground">
-                  Puedes cambiar el tipo al editar si el mantenimiento pasó de preventivo a correctivo (ej. si el equipo se dañó).
+                  La fecha no se puede modificar una vez registrado el
+                  mantenimiento.
                 </p>
-                {errors.tipo && (
-                  <p className="text-red-500 text-sm">{errors.tipo.message}</p>
-                )}
-              </div>
+              )}
+              {errors.fecha_mantenimiento && (
+                <p className="text-red-500 text-sm">
+                  {errors.fecha_mantenimiento.message}
+                </p>
+              )}
+            </div>
+
+            {/* Tipo de mantenimiento */}
+            <div className="grid gap-1">
+              <Label htmlFor="tipo">Tipo de mantenimiento</Label>
+              <Select
+                value={watch("tipo")}
+                onValueChange={(value) =>
+                  setValue(
+                    "tipo",
+                    value as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"
+                  )
+                }
+              >
+                <SelectTrigger id="tipo">
+                  <SelectValue placeholder="Selecciona el tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PREVENTIVO">
+                    Preventivo — planificado para evitar fallas
+                  </SelectItem>
+                  <SelectItem value="CORRECTIVO">
+                    Correctivo — reparación tras una falla o daño
+                  </SelectItem>
+                  <SelectItem value="PREDICTIVO">
+                    Predictivo — según condición o inspección
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Puedes cambiar el tipo al editar si el mantenimiento pasó de
+                preventivo a correctivo (ej. si el equipo se dañó).
+              </p>
+              {errors.tipo && (
+                <p className="text-red-500 text-sm">{errors.tipo.message}</p>
+              )}
             </div>
 
             {/* Descripción */}
@@ -512,7 +586,9 @@ export function MantenimientoRealizadoUpsertDialog({
                 rows={3}
               />
               {errors.descripcion && (
-                <p className="text-red-500 text-sm">{errors.descripcion.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.descripcion.message}
+                </p>
               )}
             </div>
 
@@ -550,7 +626,9 @@ export function MantenimientoRealizadoUpsertDialog({
                   readOnly={create && Boolean(responsableSesion)}
                 />
                 {errors.responsable && (
-                  <p className="text-red-500 text-sm">{errors.responsable.message}</p>
+                  <p className="text-red-500 text-sm">
+                    {errors.responsable.message}
+                  </p>
                 )}
               </div>
               <div className="grid gap-1">
@@ -587,4 +665,3 @@ export function MantenimientoRealizadoUpsertDialog({
     </>
   );
 }
-

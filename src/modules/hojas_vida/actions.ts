@@ -144,13 +144,15 @@ export async function actionUpdateCambioElemento(formData: FormData) {
   const parsed = cambioElementoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
+  const { costo: costoRaw, ...rest } = parsed.data;
+
   const costo =
-    parsed.data.costo === "" || parsed.data.costo === undefined
+    costoRaw === "" || costoRaw === undefined
       ? undefined
-      : Number(parsed.data.costo);
+      : Number(costoRaw);
 
   const updateData = {
-    ...parsed.data,
+    ...rest,
     usuario: parsed.data.usuario || null,
     ...(costo !== undefined && { costo: costo ?? null }),
   };

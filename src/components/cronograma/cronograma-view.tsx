@@ -32,8 +32,11 @@ import {
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
-import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
-import { getWeekKeyFromDate, SEMANAS_KEYS } from "@/lib/mantenimientos-semanas";
+import type {
+  MantenimientoProgramado,
+  SemanaProgramada,
+} from "../../modules/mantenimientos/types";
+import { getWeekKeyFromDate } from "@/lib/mantenimientos-semanas";
 import { MarcarSemanaRealizadaDialog } from "../mantenimientos/marcar-semana-realizada-dialog";
 
 type SedeOption = {
@@ -73,6 +76,7 @@ type ElementoOption = {
 
 type RealizadoParaCronograma = {
   id: number;
+  elemento_id: number;
   programacion_id: number | null;
   fecha_mantenimiento: Date | string;
 };
@@ -84,6 +88,7 @@ type Props = {
   mantenimientos: MantenimientoProgramado[];
   realizados?: RealizadoParaCronograma[];
   categorias?: { id: number; nombre: string }[];
+  onSetCronograma?: (formData: FormData) => Promise<void>;
   onCreateMantenimiento: (formData: FormData) => Promise<void>;
   onUpdateMantenimiento: (formData: FormData) => Promise<void>;
   onDeleteMantenimiento: (id: number) => Promise<void>;
@@ -127,6 +132,7 @@ export function CronogramaView({
   elementos,
   mantenimientos,
   realizados = [],
+  onSetCronograma,
   onCreateMantenimiento,
   onUpdateMantenimiento,
   onDeleteMantenimiento,
@@ -147,6 +153,12 @@ export function CronogramaView({
 
   // Estado para el formulario
   const [formSemanas, setFormSemanas] = useState<Record<string, boolean>>({});
+  const [formTiposSemana, setFormTiposSemana] = useState<
+    Record<string, "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO">
+  >({});
+  const [tipoPintura, setTipoPintura] = useState<
+    "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"
+  >("PREVENTIVO");
   const [formFrecuencia, setFormFrecuencia] = useState<string>("TRIMESTRAL");
   const [formObservaciones, setFormObservaciones] = useState<string>("");
 
@@ -169,16 +181,64 @@ export function CronogramaView({
     return mantenimientos.filter((m) => m.año === selectedYear);
   }, [mantenimientos, selectedYear]);
 
-  // Crear mapa de mantenimientos por elemento
+  /**
+   * Crear mapa de mantenimientos por elemento, MERGEANDO todas las programaciones
+   * del mismo elemento/año.
+   *
+   * Si hay 5-6 programaciones para el mismo equipo, aquí se combinan todas las
+   * semanas en un solo objeto sintético, para que el cronograma muestre TODAS
+   * las celdas programadas de ese equipo.
+   */
   const mantenimientosMap = useMemo(() => {
-    const map = new Map<number, MantenimientoProgramado>();
-    mantenimientosDelAno.forEach((m) => {
-      map.set(m.elemento_id, m);
+    const byElemento = new Map<number, MantenimientoProgramado[]>();
+    for (const m of mantenimientosDelAno) {
+      const list = byElemento.get(m.elemento_id) ?? [];
+      list.push(m);
+      byElemento.set(m.elemento_id, list);
+    }
+
+    // Todas las weekKeys a partir de MESES
+    const weekKeys: string[] = [];
+    MESES.forEach((mes) => {
+      [1, 2, 3, 4].forEach((semana) => {
+        weekKeys.push(`${mes.key}_semana${semana}`);
+      });
     });
+
+    const map = new Map<number, MantenimientoProgramado>();
+
+    for (const [elementoId, registros] of byElemento) {
+      if (registros.length === 0) continue;
+
+      // Empezar con el primer registro como base
+      const base = { ...registros[0] } as MantenimientoProgramado;
+
+      // OR de todas las semanas marcadas en cualquiera de los registros
+      for (const wk of weekKeys) {
+        const key = wk as keyof MantenimientoProgramado;
+        const isTrueInAny = registros.some(
+          (r) => (r[key] as unknown as boolean) === true
+        );
+        (base as any)[key] = isTrueInAny;
+      }
+
+      // Merge de tipos_semana: las programaciones posteriores pueden sobreescribir el tipo
+      let mergedTipos: Record<string, SemanaProgramada> = {};
+      for (const r of registros) {
+        const ts =
+          (r.tipos_semana as Record<string, SemanaProgramada> | null) ?? {};
+        mergedTipos = { ...mergedTipos, ...ts };
+      }
+      base.tipos_semana =
+        Object.keys(mergedTipos).length > 0 ? mergedTipos : null;
+
+      map.set(elementoId, base);
+    }
+
     return map;
   }, [mantenimientosDelAno]);
 
-  // Mapa: programacion_id → Set de weekKeys realizadas (ej: "enero_semana1")
+  // Mapa: elemento_id → Set de weekKeys realizadas (ej: "enero_semana1") para el año seleccionado
   const realizadosWeekMap = useMemo(() => {
     const map = new Map<number, Set<string>>();
     for (const r of realizados) {
@@ -187,14 +247,16 @@ export function CronogramaView({
         typeof r.fecha_mantenimiento === "string"
           ? new Date(r.fecha_mantenimiento)
           : r.fecha_mantenimiento;
+      if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) continue;
+      if (fecha.getFullYear() !== selectedYear) continue;
       const weekKey = getWeekKeyFromDate(fecha);
-      if (!map.has(r.programacion_id)) {
-        map.set(r.programacion_id, new Set());
+      if (!map.has(r.elemento_id)) {
+        map.set(r.elemento_id, new Set());
       }
-      map.get(r.programacion_id)!.add(weekKey);
+      map.get(r.elemento_id)!.add(weekKey);
     }
     return map;
-  }, [realizados]);
+  }, [realizados, selectedYear]);
 
   // Obtener ubicación seleccionada
   const ubicacionSeleccionada = useMemo(() => {
@@ -217,6 +279,29 @@ export function CronogramaView({
         });
       });
       setFormSemanas(semanas);
+      // Cargar tipos por semana del mantenimiento existente
+      const tiposExistentesRaw =
+        (mantenimiento.tipos_semana as Record<
+          string,
+          SemanaProgramada
+        > | null) ?? null;
+      const tiposSoloTipo: Record<
+        string,
+        "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"
+      > = {};
+      if (tiposExistentesRaw) {
+        for (const [key, value] of Object.entries(tiposExistentesRaw)) {
+          if (
+            value &&
+            typeof value === "object" &&
+            "tipo" in value &&
+            value.tipo
+          ) {
+            tiposSoloTipo[key] = value.tipo;
+          }
+        }
+      }
+      setFormTiposSemana(tiposSoloTipo);
       setFormFrecuencia(mantenimiento.frecuencia);
       setFormObservaciones(mantenimiento.observaciones || "");
     } else {
@@ -227,6 +312,7 @@ export function CronogramaView({
         });
       });
       setFormSemanas(semanas);
+      setFormTiposSemana({});
       setFormFrecuencia("TRIMESTRAL");
       setFormObservaciones("");
     }
@@ -236,7 +322,29 @@ export function CronogramaView({
 
   const toggleSemana = (mesKey: string, semana: number) => {
     const key = `${mesKey}_semana${semana}`;
-    setFormSemanas((prev) => ({ ...prev, [key]: !prev[key] }));
+    const isCurrentlyMarked = formSemanas[key];
+
+    if (isCurrentlyMarked) {
+      // Si ya está marcada con el mismo tipo, desmarcar
+      // Si está marcada con otro tipo, cambiar al tipo actual
+      const currentTipo = formTiposSemana[key] || "PREVENTIVO";
+      if (currentTipo === tipoPintura) {
+        // Desmarcar
+        setFormSemanas((prev) => ({ ...prev, [key]: false }));
+        setFormTiposSemana((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      } else {
+        // Cambiar tipo
+        setFormTiposSemana((prev) => ({ ...prev, [key]: tipoPintura }));
+      }
+    } else {
+      // Marcar con el tipo activo
+      setFormSemanas((prev) => ({ ...prev, [key]: true }));
+      setFormTiposSemana((prev) => ({ ...prev, [key]: tipoPintura }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -249,13 +357,20 @@ export function CronogramaView({
       formData.append("frecuencia", formFrecuencia);
       formData.append("estado", selectedMantenimiento?.estado || "PENDIENTE");
       formData.append("observaciones", formObservaciones);
+      formData.append("tipos_semana", JSON.stringify(formTiposSemana));
 
       Object.entries(formSemanas).forEach(([key, value]) => {
         formData.append(key, value.toString());
       });
 
       try {
-        if (selectedMantenimiento) {
+        if (onSetCronograma) {
+          await toast.promise(onSetCronograma(formData), {
+            loading: "Guardando cronograma...",
+            success: "Cronograma actualizado",
+            error: "Error al guardar cronograma",
+          });
+        } else if (selectedMantenimiento) {
           formData.append("id", selectedMantenimiento.id.toString());
           await toast.promise(onUpdateMantenimiento(formData), {
             loading: "Actualizando cronograma...",
@@ -293,36 +408,66 @@ export function CronogramaView({
     });
   };
 
-  // Obtener color de celda según estado (global o por semana individual)
-  const getCellColor = (
+  /**
+   * Colores separados por estado (80%) y tipo (20%).
+   * - Estado: ejecutado/aplazado/cancelado/pendiente
+   * - Tipo: preventivo/correctivo/predictivo
+   */
+  const getCellVisual = (
     mantenimiento: MantenimientoProgramado | undefined,
     mesKey: string,
     semana: number
-  ): string => {
-    if (!mantenimiento) return "";
+  ): { estadoClass: string; tipoClass: string } => {
+    if (!mantenimiento) return { estadoClass: "", tipoClass: "" };
 
-    const weekKey = `${mesKey}_semana${semana}` as keyof MantenimientoProgramado;
+    const weekKeyStr = `${mesKey}_semana${semana}`;
+    const weekKey = weekKeyStr as keyof MantenimientoProgramado;
     const isMarked = mantenimiento[weekKey] as boolean;
 
-    if (!isMarked) return "";
+    if (!isMarked) return { estadoClass: "", tipoClass: "" };
 
-    // Primero verificar si esta semana específica fue marcada como realizada
-    const semanasRealizadas = realizadosWeekMap.get(mantenimiento.id);
-    if (semanasRealizadas?.has(`${mesKey}_semana${semana}`)) {
-      return "bg-cyan-400"; // Ejecutada individualmente
+    // Estado principal de la celda (80%)
+    let estadoClass = "";
+    const semanasRealizadas = realizadosWeekMap.get(mantenimiento.elemento_id);
+    const isEjecutado = semanasRealizadas?.has(weekKeyStr);
+
+    if (isEjecutado) {
+      estadoClass = "bg-cyan-400"; // Ejecutado
+    } else {
+      switch (mantenimiento.estado) {
+        case "APLAZADO":
+          estadoClass = "bg-red-400";
+          break;
+        case "CANCELADO":
+          estadoClass = "bg-gray-400";
+          break;
+        default:
+          // Pendiente / Programado
+          estadoClass = "bg-yellow-300";
+          break;
+      }
     }
 
-    // Si no fue realizada individualmente, usar el estado global
-    switch (mantenimiento.estado) {
-      case "REALIZADO":
-        return "bg-cyan-400";
-      case "APLAZADO":
-        return "bg-red-500";
-      case "CANCELADO":
-        return "bg-gray-400";
+    // Banda pequeña para el tipo (20%)
+    const tiposSemana =
+      (mantenimiento.tipos_semana as Record<string, SemanaProgramada> | null) ??
+      {};
+    const tipo = tiposSemana[weekKeyStr]?.tipo ?? "PREVENTIVO";
+
+    let tipoClass = "";
+    switch (tipo) {
+      case "CORRECTIVO":
+        tipoClass = "bg-orange-600";
+        break;
+      case "PREDICTIVO":
+        tipoClass = "bg-purple-600";
+        break;
       default:
-        return "bg-yellow-400"; // PENDIENTE = Programado
+        tipoClass = "bg-blue-600"; // PREVENTIVO
+        break;
     }
+
+    return { estadoClass, tipoClass };
   };
 
   return (
@@ -416,18 +561,42 @@ export function CronogramaView({
             </div>
 
             {/* Leyenda */}
-            <div className="ml-auto flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-400 border border-yellow-500"></div>
-                <span>Programados</span>
+            <div className="ml-auto flex flex-col gap-1.5 text-xs sm:text-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-semibold">Estado (80% de la celda):</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-cyan-400 border border-cyan-500 rounded-sm" />
+                  <span>Ejecutado</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-red-400 border border-red-500 rounded-sm" />
+                  <span>Aplazado</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-gray-400 border border-gray-500 rounded-sm" />
+                  <span>Cancelado</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-yellow-300 border border-yellow-400 rounded-sm" />
+                  <span>Pendiente / Programado</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-cyan-400 border border-cyan-500"></div>
-                <span>Ejecutados</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 border border-red-600"></div>
-                <span>Aplazados</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-semibold">
+                  Tipo (franja superior 20%):
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-2 bg-blue-600 border border-blue-700 rounded-sm" />
+                  <span>Preventivo</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-2 bg-orange-600 border border-orange-700 rounded-sm" />
+                  <span>Correctivo</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-2 bg-purple-600 border border-purple-700 rounded-sm" />
+                  <span>Predictivo</span>
+                </div>
               </div>
             </div>
           </div>
@@ -568,19 +737,29 @@ export function CronogramaView({
                         {/* Celdas de semanas */}
                         {MESES.map((mes) =>
                           [1, 2, 3, 4].map((semana) => {
-                            const cellColor = getCellColor(
+                            const { estadoClass, tipoClass } = getCellVisual(
                               mantenimiento,
                               mes.key,
                               semana
                             );
+                            const hasEstado = Boolean(estadoClass);
                             return (
                               <td
                                 key={`${mes.key}-${semana}`}
                                 className={`border border-border dark:border-border/50 p-0 w-5 h-6 ${
-                                  cellColor || "bg-background"
+                                  hasEstado ? estadoClass : "bg-background"
                                 }`}
                               >
-                                &nbsp;
+                                {hasEstado && (
+                                  <div className="flex flex-col h-full w-full">
+                                    {/* Banda de tipo (20% superior) */}
+                                    <div
+                                      className={`h-[20%] w-full ${tipoClass}`}
+                                    />
+                                    {/* Resto celda (80%) ya tiene color de estado en el td */}
+                                    <div className="flex-1" />
+                                  </div>
+                                )}
                               </td>
                             );
                           })
@@ -632,21 +811,82 @@ export function CronogramaView({
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Frecuencia */}
-            <div className="flex items-center gap-4">
-              <Label className="min-w-[80px]">Frecuencia:</Label>
-              <Select value={formFrecuencia} onValueChange={setFormFrecuencia}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FRECUENCIAS.map((f) => (
-                    <SelectItem key={f.value} value={f.value}>
-                      {f.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Frecuencia y Tipo de pintura */}
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Frecuencia</Label>
+                <Select
+                  value={formFrecuencia}
+                  onValueChange={setFormFrecuencia}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FRECUENCIAS.map((f) => (
+                      <SelectItem key={f.value} value={f.value}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo al marcar semanas</Label>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      tipoPintura === "PREVENTIVO" ? "default" : "outline"
+                    }
+                    className={
+                      tipoPintura === "PREVENTIVO"
+                        ? "bg-blue-500 hover:bg-blue-600 text-white"
+                        : ""
+                    }
+                    onClick={() => setTipoPintura("PREVENTIVO")}
+                  >
+                    Preventivo
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      tipoPintura === "CORRECTIVO" ? "default" : "outline"
+                    }
+                    className={
+                      tipoPintura === "CORRECTIVO"
+                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                        : ""
+                    }
+                    onClick={() => setTipoPintura("CORRECTIVO")}
+                  >
+                    Correctivo
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      tipoPintura === "PREDICTIVO" ? "default" : "outline"
+                    }
+                    className={
+                      tipoPintura === "PREDICTIVO"
+                        ? "bg-purple-500 hover:bg-purple-600 text-white"
+                        : ""
+                    }
+                    onClick={() => setTipoPintura("PREDICTIVO")}
+                  >
+                    Predictivo
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground pb-1">
+                Selecciona el tipo y luego haz clic en las semanas. Clic de
+                nuevo para cambiar tipo o desmarcar.
+              </p>
             </div>
 
             {/* Grid de meses y semanas estilo Excel */}
@@ -683,15 +923,30 @@ export function CronogramaView({
                       {[1, 2, 3, 4].map((semana) => {
                         const key = `${mes.key}_semana${semana}`;
                         const isChecked = formSemanas[key] || false;
+                        const tipoSemana = formTiposSemana[key] || "PREVENTIVO";
+
+                        // Color según tipo
+                        let cellBg = "hover:bg-gray-100 dark:hover:bg-gray-800";
+                        if (isChecked) {
+                          switch (tipoSemana) {
+                            case "CORRECTIVO":
+                              cellBg =
+                                "bg-orange-400 dark:bg-orange-500 text-white";
+                              break;
+                            case "PREDICTIVO":
+                              cellBg =
+                                "bg-purple-400 dark:bg-purple-500 text-white";
+                              break;
+                            default:
+                              cellBg =
+                                "bg-blue-400 dark:bg-blue-500 text-white";
+                          }
+                        }
 
                         return (
                           <td
                             key={semana}
-                            className={`border border-border p-2 text-center cursor-pointer transition-colors ${
-                              isChecked
-                                ? "bg-yellow-400 dark:bg-yellow-500 text-black"
-                                : "hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
-                            }`}
+                            className={`border border-border p-2 text-center cursor-pointer transition-colors ${cellBg}`}
                             onClick={() => toggleSemana(mes.key, semana)}
                           >
                             {isChecked && <Check className="h-5 w-5 mx-auto" />}

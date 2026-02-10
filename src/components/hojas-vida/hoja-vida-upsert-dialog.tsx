@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,18 +36,19 @@ const formatLocalDate = (date: Date): string => {
 };
 
 // Función para parsear fecha del servidor de forma segura (evita problemas de timezone)
-const parseServerDate = (dateValue: Date | string | null | undefined): Date | undefined => {
+const parseServerDate = (
+  dateValue: Date | string | null | undefined
+): Date | undefined => {
   if (!dateValue) return undefined;
-  
+
   // Si es string ISO o Date, extraer solo la parte de fecha
-  const dateStr = typeof dateValue === 'string' 
-    ? dateValue 
-    : dateValue.toISOString();
-  
+  const dateStr =
+    typeof dateValue === "string" ? dateValue : dateValue.toISOString();
+
   // Extraer YYYY-MM-DD de la fecha
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) return undefined;
-  
+
   const [, year, month, day] = match;
   // Crear fecha directamente con los componentes (año, mes-1, día)
   // Esto evita cualquier interpretación de timezone
@@ -66,7 +68,10 @@ const schema = z.object({
   descripcion: z.string().optional(),
   requerimientos_funcionamiento: z.string().optional(),
   requerimientos_seguridad: z.string().optional(),
-  rutina_mantenimiento: z.enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"]).optional().or(z.literal("")),
+  rutina_mantenimiento: z
+    .enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"])
+    .optional()
+    .or(z.literal("")),
   fecha_actualizacion: z.string().optional(),
   activo: z.boolean(),
 });
@@ -75,8 +80,18 @@ type HojaVidaFormData = z.infer<typeof schema>;
 
 type CategoriaOption = { id: number; nombre: string };
 type SubcategoriaOption = { id: number; nombre: string; categoria_id: number };
-type UbicacionOption = { id: number; codigo: string; nombre: string; sede_id: number };
-type SedeOption = { id: number; nombre: string; ciudad: string; municipio: string | null };
+type UbicacionOption = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  sede_id: number;
+};
+type SedeOption = {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  municipio: string | null;
+};
 type ElementoOption = {
   id: number;
   serie: string;
@@ -123,6 +138,14 @@ export function HojaVidaUpsertDialog({
   hiddenFields,
   onClose,
 }: Props) {
+  // Obtener usuario en sesión para pre-llenar responsable
+  const { data: session } = useSession();
+  const nombreUsuario = (() => {
+    const nombre = (session?.user as { nombre?: string })?.nombre ?? "";
+    const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
+    return `${nombre} ${apellido}`.trim() || session?.user?.name || "";
+  })();
+
   // Para crear: empieza cerrado (el botón lo abre)
   // Para editar: empieza abierto cuando hay defaultValues
   const [open, setOpen] = useState(false);
@@ -155,31 +178,40 @@ export function HojaVidaUpsertDialog({
       subcategoria_id: elementoSeleccionado?.subcategoria_id?.toString() || "",
       elemento_id: defaultValues?.elemento_id?.toString() || "",
       fecha_dilegenciamiento: defaultValues?.fecha_dilegenciamiento
-        ? formatLocalDate(parseServerDate(defaultValues.fecha_dilegenciamiento) || new Date())
+        ? formatLocalDate(
+            parseServerDate(defaultValues.fecha_dilegenciamiento) || new Date()
+          )
         : formatLocalDate(new Date()),
       tipo_elemento: defaultValues?.tipo_elemento || "EQUIPO",
       area_ubicacion: defaultValues?.area_ubicacion || "",
-      responsable: defaultValues?.responsable || "",
+      responsable: defaultValues?.responsable || nombreUsuario || "",
       descripcion: defaultValues?.descripcion || "",
-      requerimientos_funcionamiento: defaultValues?.requerimientos_funcionamiento || "",
+      requerimientos_funcionamiento:
+        defaultValues?.requerimientos_funcionamiento || "",
       requerimientos_seguridad: defaultValues?.requerimientos_seguridad || "",
       rutina_mantenimiento: defaultValues?.rutina_mantenimiento || "",
       fecha_actualizacion: defaultValues?.fecha_actualizacion
-        ? formatLocalDate(parseServerDate(defaultValues.fecha_actualizacion) || new Date())
+        ? formatLocalDate(
+            parseServerDate(defaultValues.fecha_actualizacion) || new Date()
+          )
         : "",
       activo: defaultValues?.activo ?? true,
     },
   });
 
   // Estados para las fechas (usar parseServerDate para evitar problemas de timezone)
-  const [fechaDiligenciamiento, setFechaDiligenciamiento] = useState<Date | undefined>(
-    defaultValues?.fecha_dilegenciamiento 
-      ? parseServerDate(defaultValues.fecha_dilegenciamiento) 
+  const [fechaDiligenciamiento, setFechaDiligenciamiento] = useState<
+    Date | undefined
+  >(
+    defaultValues?.fecha_dilegenciamiento
+      ? parseServerDate(defaultValues.fecha_dilegenciamiento)
       : new Date()
   );
-  const [fechaActualizacion, setFechaActualizacion] = useState<Date | undefined>(
-    defaultValues?.fecha_actualizacion 
-      ? parseServerDate(defaultValues.fecha_actualizacion) 
+  const [fechaActualizacion, setFechaActualizacion] = useState<
+    Date | undefined
+  >(
+    defaultValues?.fecha_actualizacion
+      ? parseServerDate(defaultValues.fecha_actualizacion)
       : undefined
   );
 
@@ -198,27 +230,35 @@ export function HojaVidaUpsertDialog({
   // Filtrar elementos por todas las selecciones
   const selectedUbicacionId = watch("ubicacion_id");
   const selectedSubcategoriaId = watch("subcategoria_id");
-  
+
   const filteredElementos = elementos.filter((elemento) => {
-    const matchUbicacion = !selectedUbicacionId || elemento.ubicacion_id === parseInt(selectedUbicacionId);
-    const matchCategoria = !selectedCategoriaId || elemento.categoria_id === parseInt(selectedCategoriaId);
-    const matchSubcategoria = !selectedSubcategoriaId || elemento.subcategoria_id === parseInt(selectedSubcategoriaId);
+    const matchUbicacion =
+      !selectedUbicacionId ||
+      elemento.ubicacion_id === parseInt(selectedUbicacionId);
+    const matchCategoria =
+      !selectedCategoriaId ||
+      elemento.categoria_id === parseInt(selectedCategoriaId);
+    const matchSubcategoria =
+      !selectedSubcategoriaId ||
+      elemento.subcategoria_id === parseInt(selectedSubcategoriaId);
     return matchUbicacion && matchCategoria && matchSubcategoria;
   });
 
   useEffect(() => {
     if (defaultValues) {
-      const elemento = elementos.find((e) => e.id === defaultValues.elemento_id);
-      
+      const elemento = elementos.find(
+        (e) => e.id === defaultValues.elemento_id
+      );
+
       // Actualizar estados de fecha (usar parseServerDate para evitar problemas de timezone)
       setFechaDiligenciamiento(
-        defaultValues.fecha_dilegenciamiento 
-          ? parseServerDate(defaultValues.fecha_dilegenciamiento) 
+        defaultValues.fecha_dilegenciamiento
+          ? parseServerDate(defaultValues.fecha_dilegenciamiento)
           : new Date()
       );
       setFechaActualizacion(
-        defaultValues.fecha_actualizacion 
-          ? parseServerDate(defaultValues.fecha_actualizacion) 
+        defaultValues.fecha_actualizacion
+          ? parseServerDate(defaultValues.fecha_actualizacion)
           : undefined
       );
 
@@ -229,17 +269,23 @@ export function HojaVidaUpsertDialog({
         subcategoria_id: elemento?.subcategoria_id?.toString() || "",
         elemento_id: defaultValues.elemento_id?.toString() || "",
         fecha_dilegenciamiento: defaultValues.fecha_dilegenciamiento
-          ? formatLocalDate(parseServerDate(defaultValues.fecha_dilegenciamiento) || new Date())
+          ? formatLocalDate(
+              parseServerDate(defaultValues.fecha_dilegenciamiento) ||
+                new Date()
+            )
           : formatLocalDate(new Date()),
         tipo_elemento: defaultValues.tipo_elemento || "EQUIPO",
         area_ubicacion: defaultValues.area_ubicacion || "",
         responsable: defaultValues.responsable || "",
         descripcion: defaultValues.descripcion || "",
-        requerimientos_funcionamiento: defaultValues.requerimientos_funcionamiento || "",
+        requerimientos_funcionamiento:
+          defaultValues.requerimientos_funcionamiento || "",
         requerimientos_seguridad: defaultValues.requerimientos_seguridad || "",
         rutina_mantenimiento: defaultValues.rutina_mantenimiento || "",
         fecha_actualizacion: defaultValues.fecha_actualizacion
-          ? formatLocalDate(parseServerDate(defaultValues.fecha_actualizacion) || new Date())
+          ? formatLocalDate(
+              parseServerDate(defaultValues.fecha_actualizacion) || new Date()
+            )
           : "",
         activo: defaultValues.activo ?? true,
       });
@@ -251,25 +297,41 @@ export function HojaVidaUpsertDialog({
       const formData = new FormData();
 
       formData.append("elemento_id", data.elemento_id);
-      
+
       // Convertir fecha de diligenciamiento al formato correcto (zona horaria local)
       if (fechaDiligenciamiento) {
-        formData.append("fecha_dilegenciamiento", formatLocalDate(fechaDiligenciamiento));
+        formData.append(
+          "fecha_dilegenciamiento",
+          formatLocalDate(fechaDiligenciamiento)
+        );
       }
-      
+
       formData.append("tipo_elemento", data.tipo_elemento);
-      if (data.area_ubicacion) formData.append("area_ubicacion", data.area_ubicacion);
+      if (data.area_ubicacion)
+        formData.append("area_ubicacion", data.area_ubicacion);
       if (data.responsable) formData.append("responsable", data.responsable);
       if (data.descripcion) formData.append("descripcion", data.descripcion);
-      if (data.requerimientos_funcionamiento) formData.append("requerimientos_funcionamiento", data.requerimientos_funcionamiento);
-      if (data.requerimientos_seguridad) formData.append("requerimientos_seguridad", data.requerimientos_seguridad);
-      if (data.rutina_mantenimiento) formData.append("rutina_mantenimiento", data.rutina_mantenimiento);
-      
+      if (data.requerimientos_funcionamiento)
+        formData.append(
+          "requerimientos_funcionamiento",
+          data.requerimientos_funcionamiento
+        );
+      if (data.requerimientos_seguridad)
+        formData.append(
+          "requerimientos_seguridad",
+          data.requerimientos_seguridad
+        );
+      if (data.rutina_mantenimiento)
+        formData.append("rutina_mantenimiento", data.rutina_mantenimiento);
+
       // Convertir fecha de actualización al formato correcto (zona horaria local)
       if (fechaActualizacion) {
-        formData.append("fecha_actualizacion", formatLocalDate(fechaActualizacion));
+        formData.append(
+          "fecha_actualizacion",
+          formatLocalDate(fechaActualizacion)
+        );
       }
-      
+
       formData.append("activo", String(data.activo));
 
       if (hiddenFields) {
@@ -281,7 +343,9 @@ export function HojaVidaUpsertDialog({
       const promise = serverAction(formData);
 
       await toast.promise(promise, {
-        loading: create ? "Creando hoja de vida..." : "Actualizando hoja de vida...",
+        loading: create
+          ? "Creando hoja de vida..."
+          : "Actualizando hoja de vida...",
         success: create
           ? "Hoja de vida creada exitosamente"
           : "Hoja de vida actualizada exitosamente",
@@ -302,13 +366,14 @@ export function HojaVidaUpsertDialog({
 
   return (
     <>
-      {create && (
-        <Button onClick={() => setOpen(true)}>{btnText}</Button>
-      )}
-      <Dialog open={open} onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen && onClose) onClose();
-      }}>
+      {create && <Button onClick={() => setOpen(true)}>{btnText}</Button>}
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen && onClose) onClose();
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -329,11 +394,13 @@ export function HojaVidaUpsertDialog({
                 disabled={sedes.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    sedes.length === 0 
-                      ? "No hay sedes disponibles" 
-                      : "Selecciona sede"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      sedes.length === 0
+                        ? "No hay sedes disponibles"
+                        : "Selecciona sede"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {sedes.length === 0 ? (
@@ -371,25 +438,27 @@ export function HojaVidaUpsertDialog({
                 disabled={!selectedSedeId || filteredUbicaciones.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedSedeId 
-                      ? "Primero selecciona una sede" 
-                      : filteredUbicaciones.length === 0 
-                        ? "No hay ubicaciones disponibles" 
+                  <SelectValue
+                    placeholder={
+                      !selectedSedeId
+                        ? "Primero selecciona una sede"
+                        : filteredUbicaciones.length === 0
+                        ? "No hay ubicaciones disponibles"
                         : "Selecciona ubicación"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredUbicaciones.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       <p className="font-medium">
-                        {!selectedSedeId 
-                          ? "Selecciona una sede primero" 
+                        {!selectedSedeId
+                          ? "Selecciona una sede primero"
                           : "No hay ubicaciones disponibles"}
                       </p>
                       <p className="text-xs mt-1">
-                        {!selectedSedeId 
-                          ? "Debes seleccionar una sede para ver sus ubicaciones" 
+                        {!selectedSedeId
+                          ? "Debes seleccionar una sede para ver sus ubicaciones"
                           : "Crea ubicaciones para esta sede en la configuración"}
                       </p>
                     </div>
@@ -403,7 +472,9 @@ export function HojaVidaUpsertDialog({
                 </SelectContent>
               </Select>
               {errors.ubicacion_id && (
-                <p className="text-red-500 text-sm">{errors.ubicacion_id.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.ubicacion_id.message}
+                </p>
               )}
             </div>
 
@@ -420,16 +491,20 @@ export function HojaVidaUpsertDialog({
                 disabled={categorias.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    categorias.length === 0 
-                      ? "No hay categorías disponibles" 
-                      : "Selecciona categoría"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      categorias.length === 0
+                        ? "No hay categorías disponibles"
+                        : "Selecciona categoría"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {categorias.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      <p className="font-medium">No hay categorías disponibles</p>
+                      <p className="font-medium">
+                        No hay categorías disponibles
+                      </p>
                       <p className="text-xs mt-1">
                         Crea categorías en la configuración del sistema
                       </p>
@@ -444,7 +519,9 @@ export function HojaVidaUpsertDialog({
                 </SelectContent>
               </Select>
               {errors.categoria_id && (
-                <p className="text-red-500 text-sm">{errors.categoria_id.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.categoria_id.message}
+                </p>
               )}
             </div>
 
@@ -457,28 +534,32 @@ export function HojaVidaUpsertDialog({
                   setValue("subcategoria_id", value || "");
                   setValue("elemento_id", ""); // Reset elemento
                 }}
-                disabled={!selectedCategoriaId || filteredSubcategorias.length === 0}
+                disabled={
+                  !selectedCategoriaId || filteredSubcategorias.length === 0
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedCategoriaId 
-                      ? "Primero selecciona una categoría" 
-                      : filteredSubcategorias.length === 0 
-                        ? "No hay subcategorías (opcional)" 
+                  <SelectValue
+                    placeholder={
+                      !selectedCategoriaId
+                        ? "Primero selecciona una categoría"
+                        : filteredSubcategorias.length === 0
+                        ? "No hay subcategorías (opcional)"
                         : "Selecciona subcategoría (opcional)"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredSubcategorias.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       <p className="font-medium">
-                        {!selectedCategoriaId 
-                          ? "Selecciona una categoría primero" 
+                        {!selectedCategoriaId
+                          ? "Selecciona una categoría primero"
                           : "No hay subcategorías disponibles"}
                       </p>
                       <p className="text-xs mt-1">
-                        {!selectedCategoriaId 
-                          ? "Debes seleccionar una categoría para ver sus subcategorías" 
+                        {!selectedCategoriaId
+                          ? "Debes seleccionar una categoría para ver sus subcategorías"
                           : "Este campo es opcional, puedes continuar sin seleccionar"}
                       </p>
                     </div>
@@ -507,7 +588,9 @@ export function HojaVidaUpsertDialog({
             {/* Fecha Diligenciamiento y Tipo */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <Label htmlFor="fecha_dilegenciamiento">Fecha Diligenciamiento</Label>
+                <Label htmlFor="fecha_dilegenciamiento">
+                  Fecha Diligenciamiento
+                </Label>
                 <DatePicker
                   date={fechaDiligenciamiento}
                   onDateChange={(date) => {
@@ -519,25 +602,36 @@ export function HojaVidaUpsertDialog({
                   placeholder="Ej: hoy"
                 />
                 {errors.fecha_dilegenciamiento && (
-                  <p className="text-red-500 text-sm">{errors.fecha_dilegenciamiento.message}</p>
+                  <p className="text-red-500 text-sm">
+                    {errors.fecha_dilegenciamiento.message}
+                  </p>
                 )}
               </div>
               <div className="grid gap-1">
                 <Label htmlFor="tipo_elemento">Tipo de Elemento</Label>
                 <Select
                   value={watch("tipo_elemento")}
-                  onValueChange={(value) => setValue("tipo_elemento", value as "EQUIPO" | "RECURSO_DIDACTICO")}
+                  onValueChange={(value) =>
+                    setValue(
+                      "tipo_elemento",
+                      value as "EQUIPO" | "RECURSO_DIDACTICO"
+                    )
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Ej: Equipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="EQUIPO">Equipo</SelectItem>
-                    <SelectItem value="RECURSO_DIDACTICO">Recurso Didáctico</SelectItem>
+                    <SelectItem value="RECURSO_DIDACTICO">
+                      Recurso Didáctico
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.tipo_elemento && (
-                  <p className="text-red-500 text-sm">{errors.tipo_elemento.message}</p>
+                  <p className="text-red-500 text-sm">
+                    {errors.tipo_elemento.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -578,7 +672,9 @@ export function HojaVidaUpsertDialog({
             {/* Requerimientos */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <Label htmlFor="requerimientos_funcionamiento">Requerimientos de Funcionamiento</Label>
+                <Label htmlFor="requerimientos_funcionamiento">
+                  Requerimientos de Funcionamiento
+                </Label>
                 <Textarea
                   id="requerimientos_funcionamiento"
                   placeholder="Ej: Alimentación 110V, ventilación libre, cable HDMI disponible."
@@ -587,7 +683,9 @@ export function HojaVidaUpsertDialog({
                 />
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="requerimientos_seguridad">Requerimientos de Seguridad</Label>
+                <Label htmlFor="requerimientos_seguridad">
+                  Requerimientos de Seguridad
+                </Label>
                 <Textarea
                   id="requerimientos_seguridad"
                   placeholder="Ej: Uso con regulador, no exponer a humedad, manipular con guantes si aplica."
@@ -600,12 +698,26 @@ export function HojaVidaUpsertDialog({
             {/* Rutina Mantenimiento y Fecha Actualización */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1">
-                <Label htmlFor="rutina_mantenimiento">Rutina de Mantenimiento</Label>
+                <Label htmlFor="rutina_mantenimiento">
+                  Rutina de Mantenimiento
+                </Label>
                 <Select
                   value={watch("rutina_mantenimiento") || "NONE"}
                   onValueChange={(value) => {
                     // Si se selecciona "NONE", establecer como cadena vacía para que sea null en el backend
-                    setValue("rutina_mantenimiento", value === "NONE" ? "" : value as "" | "DIARIO" | "SEMANAL" | "MENSUAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL");
+                    setValue(
+                      "rutina_mantenimiento",
+                      value === "NONE"
+                        ? ""
+                        : (value as
+                            | ""
+                            | "DIARIO"
+                            | "SEMANAL"
+                            | "MENSUAL"
+                            | "TRIMESTRAL"
+                            | "SEMESTRAL"
+                            | "ANUAL")
+                    );
                   }}
                 >
                   <SelectTrigger>
@@ -623,7 +735,9 @@ export function HojaVidaUpsertDialog({
                 </Select>
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="fecha_actualizacion">Fecha de Actualización (opcional)</Label>
+                <Label htmlFor="fecha_actualizacion">
+                  Fecha de Actualización (opcional)
+                </Label>
                 <DatePicker
                   date={fechaActualizacion}
                   onDateChange={(date) => {
@@ -672,4 +786,3 @@ export function HojaVidaUpsertDialog({
     </>
   );
 }
-

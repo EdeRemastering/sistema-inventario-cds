@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -63,7 +63,7 @@ type ElementoOption = {
   } | null;
 };
 
-// Funci\u00f3n para parsear fecha del servidor de forma segura
+// Función para parsear fecha del servidor de forma segura
 const parseServerDate = (dateValue: Date | string | null | undefined): Date => {
   if (!dateValue) return new Date();
   const dateStr =
@@ -113,7 +113,7 @@ export function HojasVidaList({
   const [filtroTipo, setFiltroTipo] = useState("all");
   const [filtroEstado, setFiltroEstado] = useState("all");
 
-  // Mapa de elemento_id -> ElementoOption para b\u00fasqueda r\u00e1pida
+  // Mapa de elemento_id -> ElementoOption para búsqueda rápida
   const elementosMap = useMemo(() => {
     const map = new Map<number, ElementoOption>();
     for (const el of elementos) {
@@ -133,7 +133,7 @@ export function HojasVidaList({
     return hojasVida.filter((hoja) => {
       const elemento = elementosMap.get(hoja.elemento_id);
 
-      // Filtro de b\u00fasqueda por texto (serie, marca, modelo, responsable)
+      // Filtro de búsqueda por texto (serie, marca, modelo, responsable)
       if (busqueda.trim()) {
         const q = busqueda.toLowerCase();
         const serie = hoja.elemento?.serie?.toLowerCase() || "";
@@ -158,14 +158,14 @@ export function HojasVidaList({
         }
       }
 
-      // Filtro por ubicaci\u00f3n
+      // Filtro por ubicación
       if (filtroUbicacion !== "all" && elemento) {
         if (elemento.ubicacion_id !== parseInt(filtroUbicacion)) {
           return false;
         }
       }
 
-      // Filtro por categor\u00eda
+      // Filtro por categoría
       if (filtroCategoria !== "all" && elemento) {
         if (elemento.categoria_id !== parseInt(filtroCategoria)) {
           return false;
@@ -189,7 +189,16 @@ export function HojasVidaList({
 
       return true;
     });
-  }, [hojasVida, busqueda, filtroSede, filtroUbicacion, filtroCategoria, filtroTipo, filtroEstado, elementosMap]);
+  }, [
+    hojasVida,
+    busqueda,
+    filtroSede,
+    filtroUbicacion,
+    filtroCategoria,
+    filtroTipo,
+    filtroEstado,
+    elementosMap,
+  ]);
 
   const hayFiltrosActivos =
     busqueda.trim() !== "" ||
@@ -271,7 +280,7 @@ export function HojasVidaList({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-          {/* B\u00fasqueda por texto */}
+          {/* Búsqueda por texto */}
           <div className="space-y-1 xl:col-span-2">
             <Label className="text-xs">Buscar</Label>
             <Input
@@ -306,13 +315,10 @@ export function HojasVidaList({
             </Select>
           </div>
 
-          {/* Ubicaci\u00f3n */}
+          {/* Ubicación */}
           <div className="space-y-1">
-            <Label className="text-xs">Ubicaci\u00f3n</Label>
-            <Select
-              value={filtroUbicacion}
-              onValueChange={setFiltroUbicacion}
-            >
+            <Label className="text-xs">Ubicación</Label>
+            <Select value={filtroUbicacion} onValueChange={setFiltroUbicacion}>
               <SelectTrigger className="h-9 w-full">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
@@ -327,18 +333,15 @@ export function HojasVidaList({
             </Select>
           </div>
 
-          {/* Categor\u00eda */}
+          {/* Categoría */}
           <div className="space-y-1">
-            <Label className="text-xs">Categor\u00eda</Label>
-            <Select
-              value={filtroCategoria}
-              onValueChange={setFiltroCategoria}
-            >
+            <Label className="text-xs">Categoría</Label>
+            <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
               <SelectTrigger className="h-9 w-full">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las categor\u00edas</SelectItem>
+                <SelectItem value="all">Todas las categorías</SelectItem>
                 {categorias.map((c) => (
                   <SelectItem key={c.id} value={c.id.toString()}>
                     {c.nombre}
@@ -358,7 +361,9 @@ export function HojasVidaList({
               <SelectContent>
                 <SelectItem value="all">Todos los tipos</SelectItem>
                 <SelectItem value="EQUIPO">Equipo</SelectItem>
-                <SelectItem value="RECURSO_DIDACTICO">Recurso Did\u00e1ctico</SelectItem>
+                <SelectItem value="RECURSO_DIDACTICO">
+                  Recurso Didáctico
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -367,7 +372,8 @@ export function HojasVidaList({
         {/* Contador de resultados */}
         {hayFiltrosActivos && (
           <p className="text-xs text-muted-foreground">
-            Mostrando {hojasFiltradas.length} de {hojasVida.length} hojas de vida
+            Mostrando {hojasFiltradas.length} de {hojasVida.length} hojas de
+            vida
           </p>
         )}
       </div>
@@ -410,7 +416,7 @@ export function HojasVidaList({
                     <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
                       {hoja.tipo_elemento === "EQUIPO"
                         ? "Equipo"
-                        : "Recurso Did\u00e1ctico"}
+                        : "Recurso Didáctico"}
                     </span>
                   </TableCell>
                   <TableCell>

@@ -1,3 +1,9 @@
+export type SemanaProgramada = {
+  programado: boolean;
+  estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO";
+  tipo: "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO";
+};
+
 export type MantenimientoProgramado = {
   id: number;
   elemento_id: number;
@@ -51,6 +57,8 @@ export type MantenimientoProgramado = {
   diciembre_semana2: boolean;
   diciembre_semana3: boolean;
   diciembre_semana4: boolean;
+  // JSON por semana: programado + estado + tipo
+  tipos_semana: Record<string, SemanaProgramada> | null;
   estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO";
   observaciones: string | null;
   creado_en: Date;

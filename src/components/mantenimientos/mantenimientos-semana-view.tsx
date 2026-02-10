@@ -119,20 +119,54 @@ export function MantenimientosSemanaView({
     });
   }, [mantenimientos, currentYear, mesKey, currentWeek]);
 
-  // Separar por estado
-  const { pendientes, realizados, aplazados } = useMemo(() => {
+  // Mapa: programacion_id → Set de weekKeys realizadas
+  const realizadosWeekMap = useMemo(() => {
+    const map = new Map<number, Set<string>>();
+    for (const r of realizados) {
+      if (r.programacion_id == null) continue;
+      const fecha =
+        typeof r.fecha_mantenimiento === "string"
+          ? new Date(r.fecha_mantenimiento)
+          : r.fecha_mantenimiento;
+      const weekKey = getWeekKeyFromDate(fecha);
+      if (!map.has(r.programacion_id)) {
+        map.set(r.programacion_id, new Set());
+      }
+      map.get(r.programacion_id)!.add(weekKey);
+    }
+    return map;
+  }, [realizados]);
+
+  // La semana actual como weekKey
+  const currentWeekKey = `${mesKey}_semana${Math.min(4, currentWeek)}`;
+
+  // Determinar el estado efectivo: si la semana actual fue marcada como realizada,
+  // el estado efectivo es "REALIZADO" aunque el global sea "PENDIENTE"
+  const getEstadoEfectivo = (m: MantenimientoProgramado): string => {
+    if (m.estado === "PENDIENTE") {
+      const semanasRealizadas = realizadosWeekMap.get(m.id);
+      if (semanasRealizadas?.has(currentWeekKey)) {
+        return "REALIZADO";
+      }
+    }
+    return m.estado;
+  };
+
+  // Separar por estado (considerando realizados individuales por semana)
+  const { pendientes, ejecutados, aplazados } = useMemo(() => {
     const pendientes: MantenimientoProgramado[] = [];
-    const realizados: MantenimientoProgramado[] = [];
+    const ejecutados: MantenimientoProgramado[] = [];
     const aplazados: MantenimientoProgramado[] = [];
 
     mantenimientosSemana.forEach((m) => {
-      if (m.estado === "PENDIENTE") pendientes.push(m);
-      else if (m.estado === "REALIZADO") realizados.push(m);
-      else if (m.estado === "APLAZADO") aplazados.push(m);
+      const estadoEfectivo = getEstadoEfectivo(m);
+      if (estadoEfectivo === "PENDIENTE") pendientes.push(m);
+      else if (estadoEfectivo === "REALIZADO") ejecutados.push(m);
+      else if (estadoEfectivo === "APLAZADO") aplazados.push(m);
     });
 
-    return { pendientes, realizados, aplazados };
-  }, [mantenimientosSemana]);
+    return { pendientes, ejecutados, aplazados };
+  }, [mantenimientosSemana, realizadosWeekMap, currentWeekKey]);
 
   const handleCambiarEstado = async (
     id: number,
@@ -190,9 +224,10 @@ export function MantenimientosSemanaView({
   }) => {
     const elemento = elementosMap.get(mantenimiento.elemento_id);
     const isLoading = loadingId === mantenimiento.id;
+    const estadoEfectivo = getEstadoEfectivo(mantenimiento);
 
     const getEstadoBadge = () => {
-      switch (mantenimiento.estado) {
+      switch (estadoEfectivo) {
         case "PENDIENTE":
           return (
             <Badge className="bg-yellow-500 text-black dark:bg-yellow-600 dark:text-yellow-950 dark:border dark:border-yellow-400/50">
@@ -249,8 +284,8 @@ export function MantenimientosSemanaView({
               )}
             </div>
 
-            {/* Acciones rápidas */}
-            {mantenimiento.estado === "PENDIENTE" &&
+            {/* Acciones rápidas - solo si la semana actual NO fue realizada */}
+            {estadoEfectivo === "PENDIENTE" &&
               (onMarcarSemanaRealizada || onCambiarEstado) && (
                 <div className="flex flex-col gap-1">
                   <Button
@@ -299,7 +334,8 @@ export function MantenimientosSemanaView({
                 </div>
               )}
 
-            {mantenimiento.estado !== "PENDIENTE" && onCambiarEstado && (
+            {/* Mostrar "Restaurar" si está aplazado, o si está ejecutado (estado global) */}
+            {estadoEfectivo !== "PENDIENTE" && estadoEfectivo !== "REALIZADO" && onCambiarEstado && (
               <Button
                 size="sm"
                 variant="outline"
@@ -360,7 +396,7 @@ export function MantenimientosSemanaView({
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-cyan-500 dark:text-cyan-400" />
               <div>
-                <div className="text-2xl font-bold">{realizados.length}</div>
+                <div className="text-2xl font-bold">{ejecutados.length}</div>
                 <div className="text-sm text-muted-foreground">Ejecutados</div>
               </div>
             </div>
@@ -412,14 +448,14 @@ export function MantenimientosSemanaView({
           )}
 
           {/* Ejecutados */}
-          {realizados.length > 0 && (
+          {ejecutados.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-medium text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
                 <Check className="h-4 w-4" />
-                Ejecutados ({realizados.length})
+                Ejecutados ({ejecutados.length})
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {realizados.map((m) => (
+                {ejecutados.map((m) => (
                   <MantenimientoCard key={m.id} mantenimiento={m} />
                 ))}
               </div>

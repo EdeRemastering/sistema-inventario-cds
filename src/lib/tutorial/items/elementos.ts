@@ -6,28 +6,124 @@ export const ELEMENTOS_ITEMS: TutorialItem[] = [
     title: "¿Cómo crear un elemento del inventario?",
     description:
       "Ve a Elementos y usa el botón de crear. Puedes tomar/subir foto y guardar.",
-    // TODO: convertir a flow completo (modal -> campos -> guardar -> verificar en la lista)
-    howto: {
-      route: "/elementos",
-      selector: '[data-tour="elementos-create"]',
+    flow: {
       title: "Crear elemento",
-      description: "Haz clic aquí para crear un elemento.",
-      side: "left",
-      align: "end",
+      steps: [
+        {
+          id: "howto-crear-elemento-1",
+          route: "/elementos",
+          selector: '[data-tour="elementos-create"]',
+          title: "Abrir el formulario",
+          description:
+            "Haz clic en “Crear” para abrir el formulario de elemento en un modal.",
+          autoAdvanceOnClick: true,
+          side: "left",
+          align: "end",
+        },
+        {
+          id: "howto-crear-elemento-2",
+          route: "/elementos",
+          selector: '[data-tour="elementos-create"]',
+          title: "Seleccionar ubicación y categoría",
+          description:
+            "En el formulario, selecciona sede, ubicación, categoría y (si aplica) subcategoría para ubicar correctamente el equipo.",
+          side: "bottom",
+          align: "start",
+        },
+        {
+          id: "howto-crear-elemento-3",
+          route: "/elementos",
+          selector: '[data-tour="elementos-create"]',
+          title: "Datos del equipo",
+          description:
+            "Completa los campos de serie, marca, modelo y cantidad. La serie es clave para identificar el elemento.",
+          side: "bottom",
+          align: "start",
+        },
+        {
+          id: "howto-crear-elemento-4",
+          route: "/elementos",
+          selector: '[data-tour="elementos-create"]',
+          title: "Foto (opcional)",
+          description:
+            "Si quieres, toma o sube una foto del equipo. Esto ayuda a identificarlo visualmente en auditorías.",
+          side: "bottom",
+          align: "start",
+        },
+        {
+          id: "howto-crear-elemento-5",
+          route: "/elementos",
+          selector: '[data-tour="elementos-create"]',
+          title: "Guardar el elemento",
+          description:
+            "Pulsa el botón de guardar del formulario para crear el elemento. El modal se cerrará cuando se guarde correctamente.",
+          autoAdvanceOnGone: true,
+          autoAdvanceGoneSelector: '[data-tour="ticket-form"]',
+          side: "top",
+          align: "end",
+        },
+        {
+          id: "howto-crear-elemento-6",
+          route: "/elementos",
+          selector: '[data-tour="page-title"]',
+          title: "Verificar en la lista",
+          description:
+            "Verifica que el nuevo elemento aparezca en la lista. Si no lo ves, usa el buscador o revisa la paginación.",
+          side: "bottom",
+          align: "start",
+        },
+      ],
     },
   },
   {
     id: "editar-elemento",
     title: "¿Cómo editar un elemento?",
     description: "En la lista, usa el botón Editar del primer elemento.",
-    // TODO: convertir a flow completo (abrir modal -> campos -> guardar)
-    howto: {
-      route: "/elementos",
-      selector: '[data-tour="elementos-edit-first"]',
+    flow: {
       title: "Editar elemento",
-      description: "Usa este botón para editar un elemento.",
-      side: "left",
-      align: "end",
+      steps: [
+        {
+          id: "howto-editar-elemento-1",
+          route: "/elementos",
+          selector: '[data-tour="elementos-edit-first"]',
+          title: "Abrir la edición",
+          description:
+            "Haz clic en el botón de editar del primer elemento para abrir el formulario en un modal.",
+          autoAdvanceOnClick: true,
+          side: "left",
+          align: "end",
+        },
+        {
+          id: "howto-editar-elemento-2",
+          route: "/elementos",
+          selector: '[data-tour="elementos-edit-first"]',
+          title: "Actualizar datos básicos",
+          description:
+            "Ajusta serie, marca, modelo o cantidad según el cambio que necesites registrar.",
+          side: "bottom",
+          align: "start",
+        },
+        {
+          id: "howto-editar-elemento-3",
+          route: "/elementos",
+          selector: '[data-tour="elementos-edit-first"]',
+          title: "Cambiar ubicación o categoría (opcional)",
+          description:
+            "Si el equipo cambió de ambiente o clasificación, actualiza sede, ubicación, categoría y subcategoría.",
+          side: "bottom",
+          align: "start",
+        },
+        {
+          id: "howto-editar-elemento-4",
+          route: "/elementos",
+          selector: '[data-tour="elementos-edit-first"]',
+          title: "Guardar cambios",
+          description:
+            "Pulsa el botón de guardar del formulario para actualizar el elemento.",
+          side: "top",
+          align: "end",
+        },
+      ],
     },
   },
   {

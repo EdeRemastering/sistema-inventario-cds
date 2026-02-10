@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Redirect to mantenimientos page with cronograma tab
+// Redirige a la página de mantenimientos con la pestaña de cronograma seleccionada
 export default function CronogramaPage() {
-  redirect("/mantenimientos");
+  redirect("/mantenimientos?tab=cronograma");
 }
