@@ -3,7 +3,7 @@ import { CATEGORIAS_ITEMS } from "./categorias";
 import { SUBCATEGORIAS_ITEMS } from "./subcategorias";
 import { UBICACIONES_ITEMS } from "./ubicaciones";
 import { ELEMENTOS_ITEMS } from "./elementos";
-import { TICKETS_ITEMS } from "./tickets";
+import { PRESTAMOS_ITEMS } from "./prestamos";
 import { USUARIOS_ITEMS } from "./usuarios";
 import { OBSERVACIONES_ITEMS } from "./observaciones";
 import { MANTENIMIENTOS_ITEMS } from "./mantenimientos";
@@ -14,7 +14,7 @@ export const TUTORIAL_ITEMS: TutorialItem[] = [
   ...SUBCATEGORIAS_ITEMS,
   ...UBICACIONES_ITEMS,
   ...ELEMENTOS_ITEMS,
-  ...TICKETS_ITEMS,
+  ...PRESTAMOS_ITEMS,
   ...USUARIOS_ITEMS,
   ...OBSERVACIONES_ITEMS,
   ...MANTENIMIENTOS_ITEMS,

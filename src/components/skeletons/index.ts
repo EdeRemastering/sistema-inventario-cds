@@ -6,7 +6,7 @@ export { MovimientosSkeleton } from "./movimientos";
 export { ReportesSkeleton } from "./reportes";
 export { SubcategoriasSkeleton } from "./subcategorias";
 export { ObservacionesSkeleton } from "./observaciones";
-export { TicketsSkeleton } from "./tickets";
+export { PrestamosSkeleton } from "./prestamos";
 export { DashboardSkeleton } from "./dashboard";
 export { ListSkeleton } from "./list";
 export { HojasVidaSkeleton } from "./hojas-vida";

@@ -48,7 +48,7 @@ export function TutorialPage() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar en el tutorial (ej: categoría, ticket, KPI)..."
+              placeholder="Buscar en el tutorial (ej: categoría, préstamo, KPI)..."
             />
           </div>
         </CardHeader>

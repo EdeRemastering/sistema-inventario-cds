@@ -35,6 +35,7 @@ export type ElementoOption = {
   categoria_id: number;
   subcategoria_id: number | null;
   ubicacion_id: number | null;
+  activo?: boolean;
   ubicacion_rel: {
     id: number;
     codigo: string;
@@ -123,6 +124,7 @@ async function fetchFormSelectOptions(): Promise<FormSelectOptions> {
           serie: true,
           marca: true,
           modelo: true,
+          activo: true,
           categoria_id: true,
           subcategoria_id: true,
           ubicacion_id: true,
@@ -188,6 +190,7 @@ export async function getAllFormSelectOptions(): Promise<FormSelectOptions> {
         serie: true,
         marca: true,
         modelo: true,
+        activo: true,
         categoria_id: true,
         subcategoria_id: true,
         ubicacion_id: true,
