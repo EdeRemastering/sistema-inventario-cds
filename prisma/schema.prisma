@@ -91,6 +91,9 @@ model ubicaciones {
   nombre      String    @db.VarChar(100)
   sede_id     Int
   activo      Boolean   @default(true)
+  capacidad   Int?      @db.Int  // Capacidad del ambiente (ej. número de puestos)
+  ancho_metros  Decimal? @db.Decimal(8, 2)  // Dimensiones del ambiente (ej. 4 x 8 metros)
+  largo_metros  Decimal? @db.Decimal(8, 2)
   creado_en   DateTime  @default(now()) @db.Timestamp(0)
   actualizado_en DateTime @default(now()) @updatedAt @db.Timestamp(0)
 
@@ -101,6 +104,7 @@ model ubicaciones {
   movimientos_nueva movimientos[] @relation("MovimientoUbicacionNueva")
   historico_movimientos_anterior historico_movimientos[] @relation("HistoricoUbicacionAnterior")
   historico_movimientos_nueva historico_movimientos[] @relation("HistoricoUbicacionNueva")
+  programacion_ambientes programacion_ambientes[]
 
   @@index([sede_id])
   @@map("ubicaciones")
@@ -184,6 +188,7 @@ model elementos {
   mantenimientos_programados mantenimientos_programados[]
   mantenimientos_realizados mantenimientos_realizados[]
   hojas_vida hojas_vida[]
+  baja_elemento bajas_elementos?
 
   @@index([categoria_id], map: "idx_elementos_categoria")
   @@index([subcategoria_id], map: "idx_elementos_subcategoria")
@@ -305,6 +310,8 @@ model tickets_guardados {
   numero_ticket              String    @unique @db.VarChar(50)
   fecha_salida               DateTime  @db.DateTime(0)
   fecha_estimada_devolucion  DateTime? @db.DateTime(0)
+  fecha_devolucion_real      DateTime? @db.DateTime(0)  // Cuando se devolvió (prestado=false)
+  responsable_nombre         String?   @db.VarChar(200)  // Responsable del préstamo
   // Nuevo: ahora se presta una ubicación (salón/ambiente)
   ubicacion_id               Int?
   elemento                   String?   @db.VarChar(255) // Mantener para compatibilidad
@@ -368,6 +375,8 @@ model usuarios {
 
   logs logs[]
   notifications notifications[]
+  bajas_autorizadas bajas_elementos[] @relation("BajaAutorizadoPor")
+  bajas_solicitadas bajas_elementos[] @relation("BajaCreadoPor")
 
   @@map("usuarios")
 }
@@ -396,6 +405,7 @@ model notifications {
 enum Rol {
   administrador
   usuario
+  autorizador  // Autoriza bajas y procesos críticos
 }
 
 model configuracion_frecuencias {
@@ -437,7 +447,7 @@ model mantenimientos_programados {
 }
 
 model mantenimientos_realizados {
-  id                Int                  @id @default(autoincrement())
+  id                Int                  @id @default(autoincrement()) 
   elemento_id       Int
   programacion_id   Int?
   fecha_mantenimiento DateTime            @db.Date
@@ -501,4 +511,45 @@ model cambios_elementos {
   @@index([hoja_vida_id])
   @@index([fecha_cambio])
   @@map("cambios_elementos")
+}
+
+// Bajas de elementos con evidencia PDF y autorización
+model bajas_elementos {
+  id                Int       @id @default(autoincrement())
+  elemento_id       Int
+  fecha_baja        DateTime  @db.Date
+  motivo            String    @db.Text
+  evidencia_pdf_url String    @db.Text  // URL del PDF en R2 (no fotos)
+  autorizado_por_id Int       // Usuario con rol autorizador
+  creado_por_id     Int       // Usuario que solicita la baja
+  creado_en         DateTime  @default(now()) @db.Timestamp(0)
+
+  elemento       elementos @relation(fields: [elemento_id], references: [id], onDelete: Restrict)
+  autorizador    usuarios  @relation("BajaAutorizadoPor", fields: [autorizado_por_id], references: [id], onDelete: Restrict)
+  solicitante    usuarios  @relation("BajaCreadoPor", fields: [creado_por_id], references: [id], onDelete: Restrict)
+
+  @@unique([elemento_id], map: "unique_baja_elemento")
+  @@index([elemento_id])
+  @@index([fecha_baja])
+  @@map("bajas_elementos")
+}
+
+// Programación académica de ambientes (integración con Q10)
+model programacion_ambientes {
+  id               Int       @id @default(autoincrement())
+  ubicacion_id     Int
+  fecha            DateTime  @db.Date
+  hora_inicio      String    @db.VarChar(5)  // HH:mm
+  hora_fin         String    @db.VarChar(5)  // HH:mm
+  docente_id_q10   String?   @db.VarChar(50)  // ID externo del docente en Q10 (no se crean usuarios)
+  descripcion      String?   @db.VarChar(255)
+  ocupado          Boolean   @default(true)  // true = ocupado, false = disponible
+  creado_en        DateTime  @default(now()) @db.Timestamp(0)
+  actualizado_en   DateTime  @default(now()) @updatedAt @db.Timestamp(0)
+
+  ubicacion ubicaciones @relation(fields: [ubicacion_id], references: [id], onDelete: Cascade)
+
+  @@index([ubicacion_id])
+  @@index([fecha])
+  @@map("programacion_ambientes")
 }
