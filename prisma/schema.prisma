@@ -411,70 +411,28 @@ model configuracion_frecuencias {
 }
 
 model mantenimientos_programados {
-  id                Int                    @id @default(autoincrement())
-  elemento_id       Int
-  frecuencia        FrecuenciaMantenimiento
-  año               Int
-  enero_semana1     Boolean                @default(false)
-  enero_semana2     Boolean                @default(false)
-  enero_semana3     Boolean                @default(false)
-  enero_semana4     Boolean                @default(false)
-  febrero_semana1   Boolean                @default(false)
-  febrero_semana2   Boolean                @default(false)
-  febrero_semana3   Boolean                @default(false)
-  febrero_semana4   Boolean                @default(false)
-  marzo_semana1     Boolean                @default(false)
-  marzo_semana2     Boolean                @default(false)
-  marzo_semana3     Boolean                @default(false)
-  marzo_semana4     Boolean                @default(false)
-  abril_semana1     Boolean                @default(false)
-  abril_semana2     Boolean                @default(false)
-  abril_semana3     Boolean                @default(false)
-  abril_semana4     Boolean                @default(false)
-  mayo_semana1      Boolean                @default(false)
-  mayo_semana2      Boolean                @default(false)
-  mayo_semana3      Boolean                @default(false)
-  mayo_semana4      Boolean                @default(false)
-  junio_semana1     Boolean                @default(false)
-  junio_semana2     Boolean                @default(false)
-  junio_semana3     Boolean                @default(false)
-  junio_semana4     Boolean                @default(false)
-  julio_semana1     Boolean                @default(false)
-  julio_semana2     Boolean                @default(false)
-  julio_semana3     Boolean                @default(false)
-  julio_semana4     Boolean                @default(false)
-  agosto_semana1    Boolean                @default(false)
-  agosto_semana2     Boolean                @default(false)
-  agosto_semana3     Boolean                @default(false)
-  agosto_semana4     Boolean                @default(false)
-  septiembre_semana1 Boolean                @default(false)
-  septiembre_semana2 Boolean                @default(false)
-  septiembre_semana3 Boolean                @default(false)
-  septiembre_semana4 Boolean                @default(false)
-  octubre_semana1   Boolean                @default(false)
-  octubre_semana2   Boolean                @default(false)
-  octubre_semana3   Boolean                @default(false)
-  octubre_semana4   Boolean                @default(false)
-  noviembre_semana1 Boolean                @default(false)
-  noviembre_semana2 Boolean                @default(false)
-  noviembre_semana3 Boolean                @default(false)
-  noviembre_semana4 Boolean                @default(false)
-  diciembre_semana1  Boolean                @default(false)
-  diciembre_semana2  Boolean                @default(false)
-  diciembre_semana3  Boolean                @default(false)
-  diciembre_semana4  Boolean                @default(false)
-  tipos_semana      Json?                  @default("{}")
-  estado            EstadoMantenimiento    @default(PENDIENTE)
-  observaciones     String?                @db.Text
-  creado_en         DateTime               @default(now()) @db.Timestamp(0)
-  actualizado_en    DateTime               @default(now()) @updatedAt @db.Timestamp(0)
+  id                  Int                  @id @default(autoincrement())
+  elemento_id         Int
+  fecha_mantenimiento DateTime             @db.Date
+  tipo                TipoMantenimiento
+  descripcion         String               @db.Text
+  averias_encontradas String?              @db.Text
+  repuestos_utilizados String?             @db.Text
+  responsable         String               @db.VarChar(100)
+  costo               Decimal?             @db.Decimal(10, 2)
+  estado              EstadoMantenimiento  @default(PENDIENTE)
+  observaciones       String?              @db.Text
+  creado_por          String?              @db.VarChar(50)
+  creado_en           DateTime             @default(now()) @db.Timestamp(0)
+  actualizado_en      DateTime             @default(now()) @updatedAt @db.Timestamp(0)
 
   elemento elementos @relation(fields: [elemento_id], references: [id], onDelete: Cascade)
   mantenimientos_realizados mantenimientos_realizados[]
 
   @@index([elemento_id])
-  @@index([año])
+  @@index([fecha_mantenimiento])
   @@index([estado])
+  @@index([tipo])
   @@map("mantenimientos_programados")
 }
 

@@ -168,8 +168,8 @@ export function MantenimientosProgramadosList({
           <TableHeader>
             <TableRow>
               <TableHead>Elemento</TableHead>
-              <TableHead>Frecuencia</TableHead>
-              <TableHead>Año</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -197,8 +197,12 @@ export function MantenimientosProgramadosList({
                           } ${mantenimiento.elemento.modelo || ""}`.trim()
                         : `Elemento ID: ${mantenimiento.elemento_id}`}
                     </TableCell>
-                    <TableCell>{mantenimiento.frecuencia}</TableCell>
-                    <TableCell>{mantenimiento.año}</TableCell>
+                    <TableCell>
+                      {mantenimiento.fecha_mantenimiento instanceof Date
+                        ? mantenimiento.fecha_mantenimiento.toLocaleDateString("es-CO")
+                        : new Date(mantenimiento.fecha_mantenimiento).toLocaleDateString("es-CO")}
+                    </TableCell>
+                    <TableCell className="capitalize">{mantenimiento.tipo}</TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(

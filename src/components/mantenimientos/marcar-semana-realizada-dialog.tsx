@@ -10,12 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import {
-  SEMANAS_KEYS,
-  getWeekLabel,
-  getWeekKeyFromDate,
-  isWeekProgrammed,
-} from "@/lib/mantenimientos-semanas";
+import { getWeekLabel, getWeekKeyFromDate } from "@/lib/mantenimientos-semanas";
 import type { MantenimientoProgramado } from "@/modules/mantenimientos/types";
 
 type MantenimientoRealizadoConProgramacion = {
@@ -40,9 +35,14 @@ export function MarcarSemanaRealizadaDialog({
   const [loading, setLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
 
-  const semanasProgramadas = SEMANAS_KEYS.filter((key) =>
-    isWeekProgrammed(programacion as unknown as Record<string, unknown>, key)
-  );
+  // Cada programado tiene una sola fecha; la semana es la de esa fecha
+  const semanasProgramadas = [
+    getWeekKeyFromDate(
+      programacion.fecha_mantenimiento instanceof Date
+        ? programacion.fecha_mantenimiento
+        : new Date(programacion.fecha_mantenimiento)
+    ),
+  ];
 
   function yaEjecutada(weekKey: string): boolean {
     return realizadosDeEstaProgramacion.some((r) => {

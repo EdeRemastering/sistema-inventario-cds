@@ -108,16 +108,16 @@ export function MantenimientosSemanaView({
     return map;
   }, [elementos]);
 
-  // Filtrar mantenimientos de la semana actual
+  // Filtrar mantenimientos de la semana actual (por fecha_mantenimiento)
   const mantenimientosSemana = useMemo(() => {
-    const semanaKey =
-      `${mesKey}_semana${currentWeek}` as keyof MantenimientoProgramado;
-
     return mantenimientos.filter((m) => {
-      if (m.año !== currentYear) return false;
-      return m[semanaKey] === true;
+      const fecha = m.fecha_mantenimiento instanceof Date ? m.fecha_mantenimiento : new Date(m.fecha_mantenimiento);
+      if (fecha.getFullYear() !== currentYear) return false;
+      if (fecha.getMonth() !== currentMonth) return false;
+      const semanaDelProgramado = getWeekOfMonth(fecha);
+      return semanaDelProgramado === currentWeek;
     });
-  }, [mantenimientos, currentYear, mesKey, currentWeek]);
+  }, [mantenimientos, currentYear, currentMonth, currentWeek]);
 
   // Mapa: programacion_id → Set de weekKeys realizadas
   const realizadosWeekMap = useMemo(() => {
@@ -273,8 +273,8 @@ export function MantenimientosSemanaView({
               )}
               <div className="flex items-center gap-2 mt-2">
                 {getEstadoBadge()}
-                <span className="text-xs text-muted-foreground">
-                  {mantenimiento.frecuencia}
+                <span className="text-xs text-muted-foreground capitalize">
+                  {mantenimiento.tipo}
                 </span>
               </div>
               {mantenimiento.observaciones && (
@@ -297,10 +297,8 @@ export function MantenimientosSemanaView({
                       if (onMarcarSemanaRealizada) {
                         setLoadingId(mantenimiento.id);
                         try {
-                          const weekKey = `${mesKey}_semana${Math.min(
-                            4,
-                            currentWeek
-                          )}`;
+                          const fecha = mantenimiento.fecha_mantenimiento instanceof Date ? mantenimiento.fecha_mantenimiento : new Date(mantenimiento.fecha_mantenimiento);
+                          const weekKey = getWeekKeyFromDate(fecha);
                           await onMarcarSemanaRealizada(
                             mantenimiento.id,
                             weekKey

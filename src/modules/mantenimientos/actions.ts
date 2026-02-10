@@ -25,31 +25,91 @@ import {
 } from "./services";
 import { logAction } from "../../lib/audit-logger";
 import { authOptions } from "@/lib/auth";
-import {
-  SEMANAS_KEYS,
-  getDateFromWeekKey,
-  getWeekLabel,
-  isWeekProgrammed,
-} from "../../lib/mantenimientos-semanas";
+import { getDateFromWeekKey, getWeekLabel } from "../../lib/mantenimientos-semanas";
 import type {
   CreateMantenimientoProgramadoInput,
   UpdateMantenimientoProgramadoInput,
 } from "./types";
 import { prisma } from "../../lib/prisma";
 
-/**
- * Normaliza el nombre del usuario autenticado para usarlo como "responsable".
- * Importante: esto se calcula en el servidor para evitar que el cliente lo manipule.
- */
+const SEMANAS_KEYS = [
+  "enero_semana1", "enero_semana2", "enero_semana3", "enero_semana4",
+  "febrero_semana1", "febrero_semana2", "febrero_semana3", "febrero_semana4",
+  "marzo_semana1", "marzo_semana2", "marzo_semana3", "marzo_semana4",
+  "abril_semana1", "abril_semana2", "abril_semana3", "abril_semana4",
+  "mayo_semana1", "mayo_semana2", "mayo_semana3", "mayo_semana4",
+  "junio_semana1", "junio_semana2", "junio_semana3", "junio_semana4",
+  "julio_semana1", "julio_semana2", "julio_semana3", "julio_semana4",
+  "agosto_semana1", "agosto_semana2", "agosto_semana3", "agosto_semana4",
+  "septiembre_semana1", "septiembre_semana2", "septiembre_semana3", "septiembre_semana4",
+  "octubre_semana1", "octubre_semana2", "octubre_semana3", "octubre_semana4",
+  "noviembre_semana1", "noviembre_semana2", "noviembre_semana3", "noviembre_semana4",
+  "diciembre_semana1", "diciembre_semana2", "diciembre_semana3", "diciembre_semana4",
+] as const;
+
+const cronogramaSetSchema = z.object({
+  elemento_id: z.coerce.number().int().positive(),
+  año: z.coerce.number().int().min(2020).max(2100),
+  frecuencia: z.enum(["DIARIO", "SEMANAL", "MENSUAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"]).optional(),
+  tipos_semana: z.string().optional(),
+  observaciones: z.string().optional(),
+  enero_semana1: z.coerce.boolean().optional(),
+  enero_semana2: z.coerce.boolean().optional(),
+  enero_semana3: z.coerce.boolean().optional(),
+  enero_semana4: z.coerce.boolean().optional(),
+  febrero_semana1: z.coerce.boolean().optional(),
+  febrero_semana2: z.coerce.boolean().optional(),
+  febrero_semana3: z.coerce.boolean().optional(),
+  febrero_semana4: z.coerce.boolean().optional(),
+  marzo_semana1: z.coerce.boolean().optional(),
+  marzo_semana2: z.coerce.boolean().optional(),
+  marzo_semana3: z.coerce.boolean().optional(),
+  marzo_semana4: z.coerce.boolean().optional(),
+  abril_semana1: z.coerce.boolean().optional(),
+  abril_semana2: z.coerce.boolean().optional(),
+  abril_semana3: z.coerce.boolean().optional(),
+  abril_semana4: z.coerce.boolean().optional(),
+  mayo_semana1: z.coerce.boolean().optional(),
+  mayo_semana2: z.coerce.boolean().optional(),
+  mayo_semana3: z.coerce.boolean().optional(),
+  mayo_semana4: z.coerce.boolean().optional(),
+  junio_semana1: z.coerce.boolean().optional(),
+  junio_semana2: z.coerce.boolean().optional(),
+  junio_semana3: z.coerce.boolean().optional(),
+  junio_semana4: z.coerce.boolean().optional(),
+  julio_semana1: z.coerce.boolean().optional(),
+  julio_semana2: z.coerce.boolean().optional(),
+  julio_semana3: z.coerce.boolean().optional(),
+  julio_semana4: z.coerce.boolean().optional(),
+  agosto_semana1: z.coerce.boolean().optional(),
+  agosto_semana2: z.coerce.boolean().optional(),
+  agosto_semana3: z.coerce.boolean().optional(),
+  agosto_semana4: z.coerce.boolean().optional(),
+  septiembre_semana1: z.coerce.boolean().optional(),
+  septiembre_semana2: z.coerce.boolean().optional(),
+  septiembre_semana3: z.coerce.boolean().optional(),
+  septiembre_semana4: z.coerce.boolean().optional(),
+  octubre_semana1: z.coerce.boolean().optional(),
+  octubre_semana2: z.coerce.boolean().optional(),
+  octubre_semana3: z.coerce.boolean().optional(),
+  octubre_semana4: z.coerce.boolean().optional(),
+  noviembre_semana1: z.coerce.boolean().optional(),
+  noviembre_semana2: z.coerce.boolean().optional(),
+  noviembre_semana3: z.coerce.boolean().optional(),
+  noviembre_semana4: z.coerce.boolean().optional(),
+  diciembre_semana1: z.coerce.boolean().optional(),
+  diciembre_semana2: z.coerce.boolean().optional(),
+  diciembre_semana3: z.coerce.boolean().optional(),
+  diciembre_semana4: z.coerce.boolean().optional(),
+});
+
 function getResponsableFromSession(session: Session | null): string {
-  // `nombre`/`apellido` son campos extendidos en nuestra sesión (module augmentation).
-  const nombre = (session?.user as any)?.nombre ?? "";
-  const apellido = (session?.user as any)?.apellido ?? "";
+  const nombre = (session?.user as { nombre?: string })?.nombre ?? "";
+  const apellido = (session?.user as { apellido?: string })?.apellido ?? "";
   const full = `${nombre} ${apellido}`.trim();
-  return full || session?.user?.name || (session?.user as any)?.username || "";
+  return full || session?.user?.name || (session?.user as { username?: string })?.username || "";
 }
 
-// Actions para Mantenimientos Programados
 export async function actionCreateMantenimientoProgramado(formData: FormData) {
   const parsed = mantenimientoProgramadoCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) {
@@ -57,52 +117,21 @@ export async function actionCreateMantenimientoProgramado(formData: FormData) {
     throw new Error("Datos inválidos");
   }
 
-  // Parsear tipos_semana plano (weekKey -> tipo) desde el formulario, si viene
-  let tiposPlano: Record<string, string> | null = null;
-  if (parsed.data.tipos_semana) {
-    try {
-      tiposPlano = JSON.parse(parsed.data.tipos_semana);
-    } catch {
-      tiposPlano = null;
-    }
-  }
-
-  // Construir JSON completo por semana: programado + estado + tipo
-  const semanas: Record<
-    string,
-    {
-      programado: boolean;
-      estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO";
-      tipo: "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO";
-    }
-  > = {};
-
-  // Y en paralelo, los booleanos (enero_semana1, ...) para la tabla
-  const booleanWeeks: Partial<CreateMantenimientoProgramadoInput> = {};
-
-  for (const weekKey of SEMANAS_KEYS) {
-    const programado = (parsed.data as any)[weekKey] === true;
-    (booleanWeeks as any)[weekKey] = programado;
-    if (!programado) continue;
-
-    const tipo =
-      (tiposPlano?.[weekKey] as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO" | undefined) ||
-      "PREVENTIVO";
-    semanas[weekKey] = {
-      programado: true,
-      estado: parsed.data.estado ?? "PENDIENTE",
-      tipo,
-    };
-  }
+  const session = await getServerSession(authOptions);
+  const responsable = getResponsableFromSession(session) || "Sistema";
 
   const createData: CreateMantenimientoProgramadoInput = {
     elemento_id: parsed.data.elemento_id,
-    frecuencia: parsed.data.frecuencia,
-    año: parsed.data.año,
-    ...(booleanWeeks as any),
-    tipos_semana: semanas,
+    fecha_mantenimiento: parsed.data.fecha_mantenimiento,
+    tipo: parsed.data.tipo,
+    descripcion: parsed.data.descripcion,
+    averias_encontradas: parsed.data.averias_encontradas ?? null,
+    repuestos_utilizados: parsed.data.repuestos_utilizados ?? null,
+    responsable,
+    costo: parsed.data.costo === "" ? null : (parsed.data.costo ?? null),
     estado: parsed.data.estado ?? "PENDIENTE",
     observaciones: parsed.data.observaciones ?? null,
+    creado_por: (session?.user as { username?: string })?.username ?? null,
   };
 
   const mantenimiento = await createMantenimientoProgramado(createData);
@@ -119,62 +148,18 @@ export async function actionUpdateMantenimientoProgramado(formData: FormData) {
   const parsed = mantenimientoProgramadoUpdateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
-  // Parsear tipos_semana plano (weekKey -> tipo) desde el formulario, si viene
-  let tiposPlano: Record<string, string> | null = null;
-  if (parsed.data.tipos_semana) {
-    try {
-      tiposPlano = JSON.parse(parsed.data.tipos_semana);
-    } catch {
-      tiposPlano = null;
-    }
-  }
-
-  // Reconstruir JSON por semana a partir de los booleanos enviados
-  const semanas: Record<
-    string,
-    {
-      programado: boolean;
-      estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO";
-      tipo: "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO";
-    }
-  > = {};
-
-  const booleanWeeks: Partial<UpdateMantenimientoProgramadoInput> = {};
-
-  for (const weekKey of SEMANAS_KEYS) {
-    const programado = (parsed.data as any)[weekKey] === true;
-    (booleanWeeks as any)[weekKey] = programado;
-    if (!programado) continue;
-    const tipo =
-      (tiposPlano?.[weekKey] as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO" | undefined) ||
-      "PREVENTIVO";
-    semanas[weekKey] = {
-      programado: true,
-      estado: parsed.data.estado ?? "PENDIENTE",
-      tipo,
-    };
-  }
-
   const updateData: UpdateMantenimientoProgramadoInput = {
-    ...(booleanWeeks as any),
-    tipos_semana: semanas,
+    ...(parsed.data.elemento_id !== undefined && { elemento_id: parsed.data.elemento_id }),
+    ...(parsed.data.fecha_mantenimiento !== undefined && { fecha_mantenimiento: parsed.data.fecha_mantenimiento }),
+    ...(parsed.data.tipo !== undefined && { tipo: parsed.data.tipo }),
+    ...(parsed.data.descripcion !== undefined && { descripcion: parsed.data.descripcion }),
+    ...(parsed.data.averias_encontradas !== undefined && { averias_encontradas: parsed.data.averias_encontradas ?? null }),
+    ...(parsed.data.repuestos_utilizados !== undefined && { repuestos_utilizados: parsed.data.repuestos_utilizados ?? null }),
+    ...(parsed.data.responsable !== undefined && parsed.data.responsable !== "" && { responsable: parsed.data.responsable }),
+    ...(parsed.data.costo !== undefined && { costo: parsed.data.costo === "" ? null : parsed.data.costo }),
+    ...(parsed.data.estado !== undefined && { estado: parsed.data.estado }),
+    ...(parsed.data.observaciones !== undefined && { observaciones: parsed.data.observaciones ?? null }),
   };
-
-  if (parsed.data.elemento_id !== undefined) {
-    updateData.elemento_id = parsed.data.elemento_id;
-  }
-  if (parsed.data.frecuencia !== undefined) {
-    updateData.frecuencia = parsed.data.frecuencia as any;
-  }
-  if (parsed.data.año !== undefined) {
-    updateData.año = parsed.data.año as any;
-  }
-  if (parsed.data.estado !== undefined) {
-    updateData.estado = parsed.data.estado as any;
-  }
-  if (parsed.data.observaciones !== undefined) {
-    updateData.observaciones = parsed.data.observaciones ?? null;
-  }
 
   await updateMantenimientoProgramado(parsed.data.id!, updateData);
   await logAction({
@@ -197,57 +182,56 @@ export async function actionDeleteMantenimientoProgramado(id: number) {
   revalidatePath("/mantenimientos");
 }
 
-/**
- * Reemplaza TODO el cronograma de un elemento en un año:
- * - borra programados existentes de ese elemento/año
- * - crea 1 registro por cada semana marcada (mantenimiento independiente)
- *
- * Se usa desde el Cronograma (pintar semanas).
- */
 export async function actionSetCronogramaElementoYear(formData: FormData) {
-  const parsed = mantenimientoProgramadoCreateSchema.safeParse(formDataToObject(formData));
+  const parsed = cronogramaSetSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) {
     console.error("Validation error:", parsed.error);
     throw new Error("Datos inválidos");
   }
 
-  // Parsear tipos_semana de string JSON a objeto
-  let tiposSemana: Record<string, string> | null = null;
+  let tiposSemana: Record<string, string> = {};
   if (parsed.data.tipos_semana) {
     try {
-      tiposSemana = JSON.parse(parsed.data.tipos_semana);
+      tiposSemana = JSON.parse(parsed.data.tipos_semana) ?? {};
     } catch {
-      tiposSemana = null;
+      tiposSemana = {};
     }
   }
 
-  const weekKeys = Object.entries(parsed.data)
-    .filter(([k, v]) => k.includes("_semana") && v === true)
-    .map(([k]) => k);
+  const weekKeys = SEMANAS_KEYS.filter((k) => (parsed.data as Record<string, unknown>)[k] === true);
 
-  // Reemplazar: borrar todo lo anterior del elemento/año
+  const start = new Date(parsed.data.año, 0, 1);
+  const end = new Date(parsed.data.año, 11, 31);
+
   await prisma.mantenimientos_programados.deleteMany({
     where: {
       elemento_id: parsed.data.elemento_id,
-      año: parsed.data.año,
+      fecha_mantenimiento: { gte: start, lte: end },
     },
   });
 
-  // Si no se marcaron semanas, simplemente queda "vacío" (cronograma eliminado)
+  const session = await getServerSession(authOptions);
+  const responsable = getResponsableFromSession(session) || "Sistema";
   let firstId: number | null = null;
+
   for (const weekKey of weekKeys) {
     const tipo =
-      (tiposSemana?.[weekKey] as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO" | undefined) ||
+      (tiposSemana[weekKey] as "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO" | undefined) ||
       "PREVENTIVO";
+    const fecha = getDateFromWeekKey(weekKey, parsed.data.año);
     const created = await createMantenimientoProgramado({
       elemento_id: parsed.data.elemento_id,
-      frecuencia: parsed.data.frecuencia,
-      año: parsed.data.año,
-      [weekKey]: true,
-      tipos_semana: { [weekKey]: tipo },
+      fecha_mantenimiento: fecha,
+      tipo,
+      descripcion: `Mantenimiento programado - ${getWeekLabel(weekKey)}`,
+      averias_encontradas: null,
+      repuestos_utilizados: null,
+      responsable,
+      costo: null,
       estado: "PENDIENTE",
       observaciones: parsed.data.observaciones ?? null,
-    } as any);
+      creado_por: (session?.user as { username?: string })?.username ?? null,
+    });
     if (firstId == null) firstId = created.id;
   }
 
@@ -255,7 +239,7 @@ export async function actionSetCronogramaElementoYear(formData: FormData) {
     action: "UPDATE",
     entity: "mantenimiento_programado",
     entityId: firstId ?? 0,
-    details: `Cronograma reemplazado: ${weekKeys.length} mantenimiento(s) programado(s) para elemento ${parsed.data.elemento_id} (año ${parsed.data.año})`,
+    details: `Cronograma reemplazado: ${weekKeys.length} mantenimiento(s) para elemento ${parsed.data.elemento_id} (año ${parsed.data.año})`,
   });
 
   revalidatePath("/mantenimientos");
@@ -263,7 +247,6 @@ export async function actionSetCronogramaElementoYear(formData: FormData) {
   revalidatePath("/kpis/mantenimientos");
 }
 
-// Actions para Mantenimientos Realizados
 export async function actionCreateMantenimientoRealizado(formData: FormData) {
   const parsed = mantenimientoRealizadoCreateSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) {
@@ -280,9 +263,8 @@ export async function actionCreateMantenimientoRealizado(formData: FormData) {
     averias_encontradas: parsed.data.averias_encontradas ?? null,
     repuestos_utilizados: parsed.data.repuestos_utilizados ?? null,
     costo: parsed.data.costo === "" ? null : (parsed.data.costo ?? null),
-    // Fuerza el responsable como el usuario autenticado (evita manipulación del formulario).
     responsable: responsableFromSession || String(parsed.data.responsable ?? "").trim(),
-    creado_por: session?.user?.username ?? parsed.data.creado_por ?? null,
+    creado_por: (session?.user as { username?: string })?.username ?? parsed.data.creado_por ?? null,
   };
 
   if (!createData.responsable) {
@@ -339,16 +321,8 @@ const bulkUpdateRealizadosByElementoSchema = z.object({
   responsable: z.string().max(100).optional().or(z.literal("")),
 });
 
-/**
- * Aplica el mismo tipo (y opcionalmente responsable) a todos los mantenimientos
- * realizados de un mismo equipo. Útil para pasar de preventivo a correctivo en bloque.
- */
-export async function actionBulkUpdateMantenimientosRealizadosByElemento(
-  formData: FormData
-) {
-  const parsed = bulkUpdateRealizadosByElementoSchema.safeParse(
-    formDataToObject(formData)
-  );
+export async function actionBulkUpdateMantenimientosRealizadosByElemento(formData: FormData) {
+  const parsed = bulkUpdateRealizadosByElementoSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) throw new Error("Datos inválidos");
 
   const { elemento_id, tipo, responsable } = parsed.data;
@@ -366,12 +340,10 @@ export async function actionBulkUpdateMantenimientosRealizadosByElemento(
   revalidatePath("/mantenimientos");
 }
 
-// Obtener conteo de mantenimientos pendientes
 export async function actionGetMantenimientosPendientes(): Promise<number> {
   return countMantenimientosPendientes();
 }
 
-// Cambiar estado de mantenimiento (acción rápida: aplazado, cancelado, restaurar pendiente)
 export async function actionCambiarEstadoMantenimiento(
   id: number,
   estado: "PENDIENTE" | "REALIZADO" | "APLAZADO" | "CANCELADO"
@@ -387,74 +359,21 @@ export async function actionCambiarEstadoMantenimiento(
   revalidatePath("/cronograma");
 }
 
-/**
- * Marcar UNA semana concreta de una programación como ejecutada.
- * Crea un registro en mantenimientos_realizados para esa semana y NO cambia el estado de toda la programación.
- */
-export async function actionMarcarSemanaComoRealizada(
-  programacionId: number,
-  weekKey: string
-) {
-  if (!SEMANAS_KEYS.includes(weekKey)) {
-    throw new Error("Semana no válida");
-  }
-
-  let programacion = await getMantenimientoProgramado(programacionId);
+export async function actionMarcarSemanaComoRealizada(programacionId: number, weekKey: string) {
+  const programacion = await getMantenimientoProgramado(programacionId);
   if (!programacion) {
     throw new Error("Programación no encontrada");
   }
 
-  // Si esta programación no tiene esa semana marcada, buscar otra programación
-  // del mismo elemento y año que sí tenga esa semana programada.
-  if (!isWeekProgrammed(programacion as unknown as Record<string, unknown>, weekKey)) {
-    const otras = await prisma.mantenimientos_programados.findMany({
-      where: {
-        elemento_id: programacion.elemento_id,
-        año: programacion.año,
-      },
-    });
-
-    const candidata = otras.find((p) =>
-      isWeekProgrammed(p as unknown as Record<string, unknown>, weekKey)
-    );
-
-    if (!candidata) {
-      throw new Error("Esa semana no está programada para este mantenimiento");
-    }
-
-    programacion = candidata as any;
-    programacionId = candidata.id;
-  }
-
-  // En este punto TypeScript ya sabe que programacion no es null
-  const nonNullProgramacion = programacion!;
-
   const session = await getServerSession(authOptions);
   const responsable = getResponsableFromSession(session);
-  const fecha = getDateFromWeekKey(weekKey, nonNullProgramacion.año);
   const descripcion = `Mantenimiento programado - ${getWeekLabel(weekKey)}`;
 
-  // Determinar el tipo de mantenimiento desde tipos_semana, o PREVENTIVO por defecto
-  const tiposSemana = (nonNullProgramacion.tipos_semana as Record<string, string> | null) ?? {};
-  // Compatibilidad: soportar tanto mapa plano como objeto por semana
-  let tipo: "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO" = "PREVENTIVO";
-  const entry = tiposSemana[weekKey] as
-    | { tipo?: "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO" }
-    | "PREVENTIVO"
-    | "CORRECTIVO"
-    | "PREDICTIVO"
-    | undefined;
-  if (entry && typeof entry === "object" && "tipo" in entry && entry.tipo) {
-    tipo = entry.tipo;
-  } else if (typeof entry === "string") {
-    tipo = entry as any;
-  }
-
   await createMantenimientoRealizado({
-    elemento_id: nonNullProgramacion.elemento_id,
+    elemento_id: programacion.elemento_id,
     programacion_id: programacionId,
-    fecha_mantenimiento: fecha,
-    tipo,
+    fecha_mantenimiento: programacion.fecha_mantenimiento,
+    tipo: programacion.tipo,
     descripcion,
     responsable: responsable || "Sistema",
     averias_encontradas: null,
@@ -463,32 +382,16 @@ export async function actionMarcarSemanaComoRealizada(
     creado_por: (session?.user as { username?: string })?.username ?? null,
   });
 
-  // Actualizar el JSON de tipos_semana para reflejar que esta semana está ejecutada
-  const tiposSemanaFull =
-    (nonNullProgramacion.tipos_semana as Record<
-      string,
-      { programado?: boolean; estado?: string; tipo?: string }
-    > | null) ?? {};
-  const prev = tiposSemanaFull[weekKey] || {};
-  tiposSemanaFull[weekKey] = {
-    programado: true,
-    tipo,
-    estado: "REALIZADO",
-  };
-  await prisma.mantenimientos_programados.update({
-    where: { id: programacionId },
-    data: { tipos_semana: tiposSemanaFull },
-  });
+  await updateEstadoMantenimiento(programacionId, "REALIZADO");
 
   await logAction({
     action: "CREATE",
     entity: "mantenimiento_realizado",
     entityId: programacionId,
-    details: `Semana ${getWeekLabel(weekKey)} marcada como ejecutada para elemento ${nonNullProgramacion.elemento_id}`,
+    details: `Mantenimiento marcado como ejecutado para elemento ${programacion.elemento_id}`,
   });
 
   revalidatePath("/mantenimientos");
   revalidatePath("/cronograma");
   revalidatePath("/kpis/mantenimientos");
 }
-

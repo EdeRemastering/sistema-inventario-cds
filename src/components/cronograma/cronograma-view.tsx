@@ -32,10 +32,7 @@ import {
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
-import type {
-  MantenimientoProgramado,
-  SemanaProgramada,
-} from "../../modules/mantenimientos/types";
+import type { MantenimientoProgramado } from "../../modules/mantenimientos/types";
 import { getWeekKeyFromDate } from "@/lib/mantenimientos-semanas";
 import { MarcarSemanaRealizadaDialog } from "../mantenimientos/marcar-semana-realizada-dialog";
 
@@ -176,18 +173,23 @@ export function CronogramaView({
     );
   }, [elementos, selectedUbicacionId]);
 
-  // Obtener mantenimientos del año seleccionado
+  // Obtener mantenimientos del año seleccionado (por fecha_mantenimiento)
   const mantenimientosDelAno = useMemo(() => {
-    return mantenimientos.filter((m) => m.año === selectedYear);
+    return mantenimientos.filter((m) => {
+      const fecha = m.fecha_mantenimiento instanceof Date ? m.fecha_mantenimiento : new Date(m.fecha_mantenimiento);
+      return fecha.getFullYear() === selectedYear;
+    });
   }, [mantenimientos, selectedYear]);
 
+  /** Tipo sintético para la vista del cronograma (grid con semanas y tipos) */
+  type MantenimientoParaCronograma = MantenimientoProgramado & {
+    [key: string]: boolean | unknown;
+    tipos_semana: Record<string, "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"> | null;
+  };
+
   /**
-   * Crear mapa de mantenimientos por elemento, MERGEANDO todas las programaciones
-   * del mismo elemento/año.
-   *
-   * Si hay 5-6 programaciones para el mismo equipo, aquí se combinan todas las
-   * semanas en un solo objeto sintético, para que el cronograma muestre TODAS
-   * las celdas programadas de ese equipo.
+   * Crear mapa de mantenimientos por elemento. Cada programado tiene una fecha;
+   * se agrupan por elemento y se construye un objeto sintético con semanas y tipos.
    */
   const mantenimientosMap = useMemo(() => {
     const byElemento = new Map<number, MantenimientoProgramado[]>();
@@ -197,7 +199,6 @@ export function CronogramaView({
       byElemento.set(m.elemento_id, list);
     }
 
-    // Todas las weekKeys a partir de MESES
     const weekKeys: string[] = [];
     MESES.forEach((mes) => {
       [1, 2, 3, 4].forEach((semana) => {
@@ -205,34 +206,30 @@ export function CronogramaView({
       });
     });
 
-    const map = new Map<number, MantenimientoProgramado>();
+    const map = new Map<number, MantenimientoParaCronograma>();
 
     for (const [elementoId, registros] of byElemento) {
       if (registros.length === 0) continue;
 
-      // Empezar con el primer registro como base
-      const base = { ...registros[0] } as MantenimientoProgramado;
+      const base = registros[0];
+      const sintetico: MantenimientoParaCronograma = {
+        ...base,
+        tipos_semana: {},
+      } as MantenimientoParaCronograma;
 
-      // OR de todas las semanas marcadas en cualquiera de los registros
       for (const wk of weekKeys) {
-        const key = wk as keyof MantenimientoProgramado;
-        const isTrueInAny = registros.some(
-          (r) => (r[key] as unknown as boolean) === true
-        );
-        (base as any)[key] = isTrueInAny;
+        sintetico[wk] = false;
       }
-
-      // Merge de tipos_semana: las programaciones posteriores pueden sobreescribir el tipo
-      let mergedTipos: Record<string, SemanaProgramada> = {};
       for (const r of registros) {
-        const ts =
-          (r.tipos_semana as Record<string, SemanaProgramada> | null) ?? {};
-        mergedTipos = { ...mergedTipos, ...ts };
+        const fecha = r.fecha_mantenimiento instanceof Date ? r.fecha_mantenimiento : new Date(r.fecha_mantenimiento);
+        const wk = getWeekKeyFromDate(fecha);
+        if (weekKeys.includes(wk)) {
+          sintetico[wk] = true;
+          sintetico.tipos_semana![wk] = r.tipo;
+        }
       }
-      base.tipos_semana =
-        Object.keys(mergedTipos).length > 0 ? mergedTipos : null;
-
-      map.set(elementoId, base);
+      sintetico.tipos_semana = Object.keys(sintetico.tipos_semana!).length > 0 ? sintetico.tipos_semana : null;
+      map.set(elementoId, sintetico);
     }
 
     return map;
@@ -273,36 +270,24 @@ export function CronogramaView({
       MESES.forEach((mes) => {
         [1, 2, 3, 4].forEach((semana) => {
           const key = `${mes.key}_semana${semana}`;
-          semanas[key] = mantenimiento[
-            key as keyof MantenimientoProgramado
-          ] as boolean;
+          semanas[key] = Boolean((mantenimiento as Record<string, unknown>)[key]);
         });
       });
       setFormSemanas(semanas);
       // Cargar tipos por semana del mantenimiento existente
-      const tiposExistentesRaw =
+      const tiposExistentes =
         (mantenimiento.tipos_semana as Record<
           string,
-          SemanaProgramada
-        > | null) ?? null;
-      const tiposSoloTipo: Record<
-        string,
-        "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"
-      > = {};
-      if (tiposExistentesRaw) {
-        for (const [key, value] of Object.entries(tiposExistentesRaw)) {
-          if (
-            value &&
-            typeof value === "object" &&
-            "tipo" in value &&
-            value.tipo
-          ) {
-            tiposSoloTipo[key] = value.tipo;
-          }
+          "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"
+        > | null) ?? {};
+      const tiposSoloTipo: Record<string, "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"> = {};
+      for (const [key, value] of Object.entries(tiposExistentes)) {
+        if (typeof value === "string" && ["PREVENTIVO", "CORRECTIVO", "PREDICTIVO"].includes(value)) {
+          tiposSoloTipo[key] = value;
         }
       }
       setFormTiposSemana(tiposSoloTipo);
-      setFormFrecuencia(mantenimiento.frecuencia);
+      setFormFrecuencia("TRIMESTRAL");
       setFormObservaciones(mantenimiento.observaciones || "");
     } else {
       const semanas: Record<string, boolean> = {};
@@ -392,15 +377,34 @@ export function CronogramaView({
   };
 
   const handleDelete = async () => {
-    if (!selectedMantenimiento) return;
+    if (!selectedElemento) return;
 
     startTransition(async () => {
       try {
-        await toast.promise(onDeleteMantenimiento(selectedMantenimiento.id), {
-          loading: "Eliminando cronograma...",
-          success: "Cronograma eliminado",
-          error: "Error al eliminar",
-        });
+        if (onSetCronograma) {
+          const formData = new FormData();
+          formData.append("elemento_id", selectedElemento.id.toString());
+          formData.append("año", selectedYear.toString());
+          formData.append("frecuencia", formFrecuencia);
+          formData.append("observaciones", "");
+          formData.append("tipos_semana", "{}");
+          MESES.forEach((mes) => {
+            [1, 2, 3, 4].forEach((semana) => {
+              formData.append(`${mes.key}_semana${semana}`, "false");
+            });
+          });
+          await toast.promise(onSetCronograma(formData), {
+            loading: "Eliminando cronograma...",
+            success: "Cronograma eliminado",
+            error: "Error al eliminar",
+          });
+        } else if (selectedMantenimiento && "id" in selectedMantenimiento && selectedMantenimiento.id) {
+          await toast.promise(onDeleteMantenimiento(selectedMantenimiento.id), {
+            loading: "Eliminando cronograma...",
+            success: "Cronograma eliminado",
+            error: "Error al eliminar",
+          });
+        }
         setIsDialogOpen(false);
       } catch (error) {
         console.error(error);
@@ -414,25 +418,23 @@ export function CronogramaView({
    * - Tipo: preventivo/correctivo/predictivo
    */
   const getCellVisual = (
-    mantenimiento: MantenimientoProgramado | undefined,
+    mantenimiento: (MantenimientoProgramado & { [k: string]: unknown }) | undefined,
     mesKey: string,
     semana: number
   ): { estadoClass: string; tipoClass: string } => {
     if (!mantenimiento) return { estadoClass: "", tipoClass: "" };
 
     const weekKeyStr = `${mesKey}_semana${semana}`;
-    const weekKey = weekKeyStr as keyof MantenimientoProgramado;
-    const isMarked = mantenimiento[weekKey] as boolean;
+    const isMarked = mantenimiento[weekKeyStr] === true;
 
     if (!isMarked) return { estadoClass: "", tipoClass: "" };
 
-    // Estado principal de la celda (80%)
     let estadoClass = "";
     const semanasRealizadas = realizadosWeekMap.get(mantenimiento.elemento_id);
     const isEjecutado = semanasRealizadas?.has(weekKeyStr);
 
     if (isEjecutado) {
-      estadoClass = "bg-cyan-400"; // Ejecutado
+      estadoClass = "bg-cyan-400";
     } else {
       switch (mantenimiento.estado) {
         case "APLAZADO":
@@ -442,17 +444,14 @@ export function CronogramaView({
           estadoClass = "bg-gray-400";
           break;
         default:
-          // Pendiente / Programado
           estadoClass = "bg-yellow-300";
           break;
       }
     }
 
-    // Banda pequeña para el tipo (20%)
     const tiposSemana =
-      (mantenimiento.tipos_semana as Record<string, SemanaProgramada> | null) ??
-      {};
-    const tipo = tiposSemana[weekKeyStr]?.tipo ?? "PREVENTIVO";
+      (mantenimiento.tipos_semana as Record<string, "PREVENTIVO" | "CORRECTIVO" | "PREDICTIVO"> | null) ?? {};
+    const tipo = (typeof tiposSemana[weekKeyStr] === "string" ? tiposSemana[weekKeyStr] : null) ?? "PREVENTIVO";
 
     let tipoClass = "";
     switch (tipo) {
@@ -732,7 +731,7 @@ export function CronogramaView({
                             transform: "rotate(180deg)",
                           }}
                         >
-                          {mantenimiento?.frecuencia || "-"}
+                          -
                         </td>
                         {/* Celdas de semanas */}
                         {MESES.map((mes) =>
