@@ -1,25 +1,30 @@
 import { z } from "zod";
 
-export const movimientoCreateSchema = z.object({
-  elemento_id: z.coerce.number().int().positive(),
-  cantidad: z.coerce.number().int().positive(),
-  orden_numero: z.string().default(""),
-  fecha_movimiento: z.coerce.date(),
-  dependencia_entrega: z.string().optional().or(z.literal("")),
-  firma_funcionario_entrega: z.string().optional(),
-  dependencia_recibe: z.string().optional().or(z.literal("")),
-  firma_funcionario_recibe: z.string().optional(),
-  motivo: z.string().default(""),
-  fecha_estimada_devolucion: z.coerce.date(),
-  tipo: z.enum(["ENTRADA", "SALIDA", "DEVOLUCION", "TRASLADO"]).default("SALIDA"),
-  ubicacion_anterior_id: z.coerce.number().int().positive().optional().or(z.literal("")),
-  ubicacion_nueva_id: z.coerce.number().int().positive().optional().or(z.literal("")),
-  usuario: z.string().optional().or(z.literal("")),
-  numero_ticket: z.string().default(""),
-  cargo_funcionario_entrega: z.string().optional(),
-  cargo_funcionario_recibe: z.string().optional(),
-  observaciones_entrega: z.string().optional(),
-});
+export const movimientoCreateSchema = z
+  .object({
+    elemento_id: z.coerce.number().int().positive(),
+    cantidad: z.coerce.number().int().positive(),
+    orden_numero: z.string().default(""),
+    fecha_movimiento: z.coerce.date(),
+    dependencia_entrega: z.string().optional().or(z.literal("")),
+    firma_funcionario_entrega: z.string().optional(),
+    dependencia_recibe: z.string().optional().or(z.literal("")),
+    firma_funcionario_recibe: z.string().optional(),
+    motivo: z.string().default(""),
+    fecha_estimada_devolucion: z.coerce.date(),
+    tipo: z.enum(["ENTRADA", "SALIDA", "DEVOLUCION", "TRASLADO"]).default("SALIDA"),
+    ubicacion_anterior_id: z.coerce.number().int().positive().optional().or(z.literal("")),
+    ubicacion_nueva_id: z.coerce.number().int().positive().optional().or(z.literal("")),
+    usuario: z.string().optional().or(z.literal("")),
+    numero_ticket: z.string().default(""),
+    cargo_funcionario_entrega: z.string().optional(),
+    cargo_funcionario_recibe: z.string().optional(),
+    observaciones_entrega: z.string().optional(),
+  })
+  .refine(
+    (data) => data.fecha_estimada_devolucion >= data.fecha_movimiento,
+    { message: "La fecha estimada de devolución debe ser mayor o igual a la fecha del movimiento", path: ["fecha_estimada_devolucion"] }
+  );
 
 export const movimientoUpdateSchema = movimientoCreateSchema.partial().extend({
   id: z.number().int().positive(),
